@@ -20,7 +20,7 @@ class PotentialDistance(Potential):
     geoDist = geoDistance(neighbouringCell, cell)
     cartesianDist = cartesianDistance(neighbouringCell, cell)
     # print('r =', cartesianDist / geoDist - 1)
-    x = self._computeQuantity(5 * (cartesianDist / geoDist - 1), **kwargs)
+    x = self._computeQuantity(cartesianDist / geoDist - 1, **kwargs)
     # print('f(r) =', x)
     # print(f"r = {cartesianDist / geoDist - 1:9.3f} | f(r) = {x:10.0f}")
     return x

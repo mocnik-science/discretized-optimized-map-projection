@@ -27,6 +27,7 @@ class WorkerThread(Thread):
     self.__g = None
     self.__shallRun = False
     self.__shallRun1 = False
+    self.__shallQuit = False
     self.__fpsLastRuns = []
     self.start()
   
@@ -34,7 +35,7 @@ class WorkerThread(Thread):
     # initialize
     self.__gg = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status: wx.PostEvent(self.__notifyWindow, ResultEvent(None, status)))
     wx.PostEvent(self.__notifyWindow, ResultEvent(self.__gg.getImage(self.__viewSettings), None))
-    while True:
+    while not self.__shallQuit:
       if not self.__shallRun and not self.__shallRun1:
         # wait
         time.sleep(.01)
@@ -58,7 +59,11 @@ class WorkerThread(Thread):
 
   def pause(self):
     self.__shallRun = False
+    self.__shallRun1 = False
 
   def unpause1(self):
     self.__shallRun1 = True
     self.__shallRun = False
+
+  def quit(self):
+    self.__shallQuit = True

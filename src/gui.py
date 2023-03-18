@@ -12,7 +12,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 class App(wx.App):
   def OnInit(self):
     self.tskic = TaskBarIcon()
-    window = Window('Map Projection')
+    window = Window('Map Projection Grid')
     window.Show()
     return True
 
@@ -20,13 +20,14 @@ class Window(wx.Frame):
   def __init__(self, title):
     self.__worker = None
     self.__workerRunning = False
-    self.__imNew = None
+    self.__newImage = None
+    self.__isLoadingNewImage = False
     self.__geoGridSettings = GeoGridSettings(resolution=3)
     self.__viewSettings = {}
     wx.Frame.__init__(self, None, wx.ID_ANY, title=title, size=(900, 600))
 
     ## menu bar
-    menuBar = wx.MenuBar()
+    # functions
     self.__menuDict = {}
     def addItem(menu, label, data, callback):
       newId = wx.NewId()
@@ -43,6 +44,8 @@ class Window(wx.Frame):
       self.Bind(wx.EVT_MENU, cb, menuItem)
       if key not in object:
         object[key] = data
+    # init
+    menuBar = wx.MenuBar()
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
@@ -69,12 +72,16 @@ class Window(wx.Frame):
     iconPlay = wx.Icon('assets/play.png', type=wx.BITMAP_TYPE_PNG)
     iconPlay1 = wx.Icon('assets/play1.png', type=wx.BITMAP_TYPE_PNG)
     iconPause = wx.Icon('assets/pause.png', type=wx.BITMAP_TYPE_PNG)
+    iconReset = wx.Icon('assets/reset.png', type=wx.BITMAP_TYPE_PNG)
+    # functions
+    def addTool(id, label, icon, callback):
+      tool = toolBar.AddTool(id, label, icon)
+      self.Bind(wx.EVT_TOOL, callback, tool)
     # init
     toolBar = self.CreateToolBar()
-    toolBar.AddTool(0, 'Run', iconPlay)
-    self.Bind(wx.EVT_TOOL, self.onButtonRun, id=0)
-    toolBar.AddTool(1, 'Run one step', iconPlay1)
-    self.Bind(wx.EVT_TOOL, self.onButtonRun1, id=1)
+    addTool(0, 'Run', iconPlay, self.onButtonRun)
+    addTool(1, 'Run one step', iconPlay1, self.onButtonRun1)
+    addTool(2, 'Reset', iconReset, self.onButtonReset)
     toolBar.Realize()
     # update functions
     def toolPlayIconPlay(isPlaying):
@@ -90,7 +97,6 @@ class Window(wx.Frame):
     ## layout
     self._panel = wx.Panel(self, style=wx.RAISED_BORDER)
     box = wx.BoxSizer(wx.VERTICAL)
-
 
     ## image
     self._image = wx.StaticBitmap(self._panel)
@@ -110,35 +116,52 @@ class Window(wx.Frame):
     self._panel.SetSizer(box)
     self._panel.Layout()
 
-    ## prepare worker thread
-    wx.FutureCall(10, self.prepareWorkerThread)
-    wx.FutureCall(10, self.prepareImageUpdate)
+    ## register handlers
+    self.Bind(wx.EVT_CLOSE, self.onClose)
+
+    ## reset
+    wx.FutureCall(10, self.reset)
 
   def updateViewSettings(self):
     self.__worker.updateViewSettings(self.__viewSettings)
 
-  def prepareImageUpdate(self):
-    while True:
+  def loadImage(self, image):
+    self.__newImage = image
+    if self.__isLoadingNewImage:
+      return
+    self.__isLoadingNewImage = True
+    while self.__newImage is not None:
       wx.Yield()
-      if self.__imNew is not None:
-        im = self.__imNew
-        self.__imNew = None
+      im = self.__newImage
+      self.__newImage = None
+      try:
         im2 = wx.EmptyImage(*im.size)
         im2.SetData(im.convert('RGB').tobytes())
         self._image.SetBitmap(wx.BitmapFromImage(im2))
         self._panel.Layout()
-
-  def loadImage(self, filename):
-    self.__imNew = filename
+      except:
+        pass
+    self.__isLoadingNewImage = False
 
   def setStatus(self, text):
     self._statusBar.SetStatusText(text)
+
+  def reset(self):
+    if self.__worker is not None:
+      self.__worker.pause()
+    self.__workerRunning = False
+    self._toolPlayIconPlay(False)
+    self.__newImage = None
+    self.__isLoadingNewImage = False
+    self.prepareWorkerThread()
 
   def prepareWorkerThread(self):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
     self.__worker = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
   
   def __workerThreadUpdate(self, event):
+    if self.__worker is None:
+      return
     if event.im is not None:
       self.loadImage(event.im)
     if event.status is not None:
@@ -155,6 +178,15 @@ class Window(wx.Frame):
 
   def onButtonRun1(self, event):
     self.__worker.unpause1()
+  
+  def onButtonReset(self, event):
+    self.reset()
+
+  def onClose(self, event):
+    if self.__worker is not None:
+      self.__worker.quit()
+    self.__worker = None
+    self.Destroy()
 
 def runGui():
   app = App(redirect=False)
