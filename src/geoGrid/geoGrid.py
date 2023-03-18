@@ -9,7 +9,7 @@ import numpy as np
 import os
 import pandas as pd
 import pickle
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import pyproj
 from scipy.optimize import minimize_scalar
 from scipy.spatial import KDTree
@@ -229,6 +229,10 @@ class GeoGrid:
     return shapely.Point(x, y)
 
   def getImage(self, viewSettings={}, width=2000, height=1000, border=10, d=6, boundsExtend=1.6, save=False):
+    print(self.__cells['1294'])
+    print([n for n in self.__cells['1294']._neighbours if n in self.__cells])
+    for force in self.__cells['1294']._forcesNext:
+      print(force)
     with timer('render', step=self.__step):
       # view settings
       viewSettings = {
@@ -272,9 +276,13 @@ class GeoGrid:
           for p2 in p2s:
             draw.line((*project(*p1), *project(*p2)), fill=(150, 150, 150))
       # draw centres
+      if viewSettings['drawLabels']:
+        font = ImageFont.truetype('Helvetica', size=12)
       for cell in self.__cells.values():
         x, y = project(*cell.xy())
         draw.ellipse((x - d2, y - d2, x + d2, y + d2), fill=(255, 0, 0) if cell._isActive else (0, 0, 255))
+        if viewSettings['drawLabels']:
+          draw.text((x, y), cell._id2, font=font, fill=(0, 0, 0))
       # save
       if save:
         if not os.path.exists(self.__pathTmp):

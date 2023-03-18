@@ -64,6 +64,11 @@ class Window(wx.Frame):
     key = 'drawNeighbours'
     addRadioItem(viewMenu, 'hide neighbours', self.__viewSettings, key, False, self.updateViewSettings)
     addRadioItem(viewMenu, 'show neighbours', self.__viewSettings, key, True, self.updateViewSettings)
+    viewMenu.AppendSeparator()
+    # view menu: draw labels
+    key = 'drawLabels'
+    addRadioItem(viewMenu, 'hide labels', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show labels', self.__viewSettings, key, True, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 
@@ -118,6 +123,12 @@ class Window(wx.Frame):
 
     ## register handlers
     self.Bind(wx.EVT_CLOSE, self.onClose)
+
+    ## adapt app menu
+    appMenu = self.MenuBar.OSXGetAppleMenu()
+    for m in appMenu.GetMenuItems():
+      if m.GetId() == wx.ID_EXIT:
+        self.Bind(wx.EVT_MENU, self.onClose, m)
 
     ## reset
     wx.FutureCall(10, self.reset)
