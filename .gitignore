@@ -1,0 +1,4 @@
+__pycache__
+/DGGRID
+*.pickle.gzip
+cells.gen
