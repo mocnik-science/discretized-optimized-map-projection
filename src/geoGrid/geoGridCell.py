@@ -1,23 +1,33 @@
 import math
+import shapely
 
 from src.geo import *
 
+def translatePoint(p, dLon):
+  if dLon is None:
+    return p
+  return shapely.Point(p.x + dLon, p.y)
+
+def translatePolygon(p, dLon):
+  if dLon is None:
+    return p
+  return shapely.Polygon([(x + dLon, y) for (x, y) in p.exterior.coords])
+
 class GeoGridCell:
-  def __init__(self, d):
-    self._id1 = d.id
-    self._id2 = d.id2
-    self.x = d.geometry.x * math.pi / 180 * radiusEarth
-    self.y = d.geometry.y * math.pi / 180 * radiusEarth
-    self._xInitial = self.x
-    self._yInitial = self.y
+  def __init__(self, id2, dggridCell, dLon=None):
+    self._id1 = dggridCell.id
+    self._id2 = id2
+    self._kInitial = math.pi / 180 * radiusEarth
     self._forcesNext = []
     self._xForcesNext = None
     self._yForcesNext = None
     self._isActive = False
-    self._isHexagon = len(d.geometry_polygons.exterior.coords) - 1 == 5
-    self._neighbours = d.neighbours
-    self._geometryCentre = d.geometry
-    self._geometryPolygon = d.geometry_polygons
+    self._isHexagon = dggridCell.isHexagon()
+    self._neighbours = dggridCell.neighbours
+    self._neighboursOriginal = dggridCell.neighbours
+    self._centreOriginal = translatePoint(dggridCell.centre, dLon)
+    self._polygonOriginal = translatePolygon(dggridCell.polygon, dLon)
+    self.setCalibrationFactor(1)
 
   def xy(self):
     return self.x, self.y
@@ -26,8 +36,9 @@ class GeoGridCell:
     return shapely.Point(self.x, self.y)
 
   def setCalibrationFactor(self, k):
-    self.x = k * self._xInitial
-    self.y = k * self._yInitial
+    self._k = self._kInitial * k
+    self.x = self._k * self._centreOriginal.x
+    self.y = self._k * self._centreOriginal.y
 
   def addForce(self, force):
     # compute effect of the force
@@ -87,4 +98,4 @@ class GeoGridCell:
     return (self.x, self.y), [(self.x + k * force[0], self.y + k * force[1]) for force in forces.values()]
 
   def __str__(self):
-    return f"{self._id1:>4} | {self._id2:>5} | {self.x:11.1f} | {self.y:11.1f} | {'active' if self._isActive else 'inactive':>8} | {'hexagon' if self._isHexagon else 'pentagon':>8} | {', '.join(self._neighbours):>70} | {self._geometryCentre.x:9.4f} | {self._geometryCentre.y:9.4f}"
+    return f"{self._id1:>4} | {self._id2:>5} | {self.x:11.1f} | {self.y:11.1f} | {'active' if self._isActive else 'inactive':>8} | {'hexagon' if self._isHexagon else 'pentagon':>8} | {', '.join([str(x) for x in self._neighbours]) if self._neighbours else '':<70} | {self._centreOriginal.x:9.4f} | {self._centreOriginal.y:9.4f}"

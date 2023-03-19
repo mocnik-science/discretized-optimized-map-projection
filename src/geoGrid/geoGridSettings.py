@@ -23,6 +23,6 @@ class GeoGridSettings:
     self.potentials = [PotentialArea(self), PotentialDistance(self)]
 
   def updateGridStats(self, gridStats):
-    self._typicalDistance = gridStats.at[self.resolution, 'CLS (km)'] * 10**3
-    self._typicalArea = gridStats.at[self.resolution, 'Area (km^2)'] * 10**6
+    self._typicalDistance = gridStats.typicalDistance() * 10**3
+    self._typicalArea = gridStats.typicalArea() * 10**6
     self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance

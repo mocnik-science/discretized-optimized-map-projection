@@ -69,6 +69,11 @@ class Window(wx.Frame):
     key = 'drawLabels'
     addRadioItem(viewMenu, 'hide labels', self.__viewSettings, key, False, self.updateViewSettings)
     addRadioItem(viewMenu, 'show labels', self.__viewSettings, key, True, self.updateViewSettings)
+    viewMenu.AppendSeparator()
+    # view menu: draw original polygons
+    key = 'drawOriginalPolygons'
+    addRadioItem(viewMenu, 'hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show initial cells', self.__viewSettings, key, True, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 
@@ -155,7 +160,10 @@ class Window(wx.Frame):
     self.__isLoadingNewImage = False
 
   def setStatus(self, text):
-    self._statusBar.SetStatusText(text)
+    try:
+      self._statusBar.SetStatusText(text)
+    except:
+      pass
 
   def reset(self):
     if self.__worker is not None:
