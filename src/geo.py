@@ -2,7 +2,7 @@ import math
 import numpy as np
 # import shapely
 
-radiusEarth = 6378137
+radiusEarth = 6371007.1809
 
 def cartesianLength(x, y):
   return math.sqrt(x**2 + y**2)
@@ -10,10 +10,22 @@ def cartesianLength(x, y):
 def cartesianDistance(start, end):
   return cartesianLength(end.x - start.x, end.y - start.y)
 
-def geoDistance(start, end): # in meters
+def cartesianArea(cs):
+  xs = np.array([c.x for c in cs])
+  ys = np.array([c.y for c in cs])
+  # Shoelace formula
+  areaMain = np.dot(xs[:-1], ys[1:]) - np.dot(ys[:-1], xs[1:])
+  areaCorrection = xs[-1] * ys[0] - ys[-1] * xs[0]
+  return np.abs(areaMain + areaCorrection) / 2
+
+def geoDistance(start, end): # in metres
+  startX = np.deg2rad(start.x)
+  startY = np.deg2rad(start.y)
+  endX = np.deg2rad(end.x)
+  endY = np.deg2rad(end.y)
   # Haversine theorem
-  a = math.sin((end.y - start.y) / 2)**2 + math.cos(start.y) * math.cos(end.y) * math.sin((end.x - start.x) / 2)**2
-  return radiusEarth * 2 * math.atan2(math.sqrt(1), math.sqrt(1 - a))
+  a = math.sin((endY - startY) / 2)**2 + math.cos(startY) * math.cos(endY) * math.sin((endX - startX) / 2)**2
+  return radiusEarth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 def geoBearing(start, end): # in radiant
   startX = np.deg2rad(start.x)
