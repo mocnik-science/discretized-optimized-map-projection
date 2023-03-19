@@ -15,7 +15,7 @@ class timer(object):
       label1 = ''
       if 'step' in self.__formatKwargs:
         label1 = f"step {self.__formatKwargs['step']:>5}"
-      print(f"{label1:<10} | {self.__label:<26} {self.end() * 10**3:8.3f} ms")
+      print(f"{label1:<10} | {self.__label:<36} {self.end() * 10**3:8.3f} ms")
 
   def end(self):
     return time.time() - self.__time
