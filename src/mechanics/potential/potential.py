@@ -5,8 +5,29 @@ class Potential:
 
   def __init__(self, settings):
     self._settings = settings
+    self.calibrationFactor = 1
 
-  def _computeQuantity(self, r, energy=False, force=False):
+  def setCalibrationFactor(self, k):
+    self.calibrationFactor = k
+
+  def _computeQuantity(self, r, energy=False, force=False, exponent=1):
+    R = .5
+    # D – spring constant
+    #     chosen such that the force at r = R is -r (where r is the multiple of the typical distance)
+    #     R = D * exponent * R**(exponent - 1)
+    #     => D = R**(2 - exponent) / exponent
+    sgn = sign(r)
+    r = abs(r)
+    D = R**(2 - exponent) / exponent * self._settings._forceFactor
+    if energy:
+      return D * r**exponent
+    if force:
+      return -D * exponent * r**(exponent - 1) * sgn
+
+
+
+
+
     # gravitational potential of a hogomeneous solid sphere
     # m, r – mass and radius of the ‘outer’ point mass
     # M, R – mass and radius of the big solid sphere mass
