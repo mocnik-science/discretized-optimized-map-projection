@@ -16,7 +16,7 @@ from src.mechanics.potential.potentialDistance import *
 class GeoGridSettings:
   def __init__(self, resolution=4):
     self.resolution = resolution
-    self._dampingFactor = .95
+    self._dampingFactor = .99
     self._typicalDistance = None
     self._typicalArea = None
     self._forceFactor = None

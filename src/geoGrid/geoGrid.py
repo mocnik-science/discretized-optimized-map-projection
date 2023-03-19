@@ -31,7 +31,6 @@ class GeoGrid:
     self.__cells = None
     self.__pathTmp = '_tmp'
     self.__step = 0
-    self.__bounds = None
     self.__ballTree = None
     # load data
     filename = 'cells-{resolution}.pickle.gzip'.format(resolution=self.__settings.resolution)
@@ -105,18 +104,22 @@ class GeoGrid:
     }
 
   def calibrate(self, callbackStatus):
-    callbackStatus('calibrating ...', None)
-    def computeEnergy(k):
-      for cell in self.__cells.values():
-        cell.setCalibrationFactor(k)
-      return self.energy()
-    result = minimize_scalar(computeEnergy, method='brent')
-    self._bounds = [result.x * -math.pi * radiusEarth, result.x * -math.pi / 2 * radiusEarth, result.x * math.pi * radiusEarth, result.x * math.pi / 2 * radiusEarth]
-    callbackStatus(f"calibrated: k = {result.x}", result.fun)
-
-  def energy(self):
-    energy = 0
     for potential in self.__settings.potentials:
+      callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
+      def computeEnergy(k):
+        k = abs(k)
+        potential.setCalibrationFactor(k)
+        return self.energy(potential=potential)
+      result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
+      potential.setCalibrationFactor(abs(result.x))
+    statusPotentials = []
+    for potential in self.__settings.potentials:
+      statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
+    callbackStatus(f"calibrated: {', '.join(statusPotentials)}", result.fun)
+
+  def energy(self, potential=None):
+    energy = 0
+    for potential in [potential] if potential is not None else self.__settings.potentials:
       for cell in self.__cells.values():
         if cell._isActive:
           energy += potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
@@ -135,9 +138,9 @@ class GeoGrid:
         for cell in self.__cells.values():
           cell.applyForce()
     # compute forces
-    with timer('compute forces', step=self.__step):
-      forces = []
-      for potential in self.__settings.potentials:
+    forces = []
+    for potential in self.__settings.potentials:
+      with timer(f"compute forces: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
           if cell._isActive:
             forces += potential.force(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
@@ -171,7 +174,7 @@ class GeoGrid:
     y = sum([coordinates[i] * triangle[i].y for i in range(0, 3)])
     return shapely.Point(x, y)
 
-  def getImage(self, viewSettings={}, width=2000, height=1000, border=10, d=6, boundsExtend=1.6, save=False):
+  def getImage(self, viewSettings={}, width=2000, height=1000, border=10, d=6, boundsExtend=1.3, save=False):
     with timer('render', step=self.__step):
       # view settings
       viewSettings = {
@@ -183,11 +186,10 @@ class GeoGrid:
       # compute
       width -= 2 * border
       height -= 2 * border
-      xMin, yMin, xMax, yMax = self._bounds
-      xMin *= boundsExtend
-      xMax *= boundsExtend
-      yMin *= boundsExtend
-      yMax *= boundsExtend
+      xMin = -math.pi * radiusEarth * boundsExtend
+      xMax = -xMin
+      yMin = -math.pi / 2 * radiusEarth * boundsExtend
+      yMax = -yMin
       w = min(width, (xMax - xMin) / (yMax - yMin) * height)
       h = min(height, (yMax - yMin) / (xMax - xMin) * width)
       dx2 = border + (width - w) / 2

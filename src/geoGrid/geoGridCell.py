@@ -17,7 +17,6 @@ class GeoGridCell:
   def __init__(self, id2, dggridCell, dLon=None):
     self._id1 = dggridCell.id
     self._id2 = id2
-    self._kInitial = math.pi / 180 * radiusEarth
     self._forcesNext = []
     self._xForcesNext = None
     self._yForcesNext = None
@@ -27,7 +26,8 @@ class GeoGridCell:
     self._neighboursOriginal = dggridCell.neighbours
     self._centreOriginal = translatePoint(dggridCell.centre, dLon)
     self._polygonOriginal = translatePolygon(dggridCell.polygon, dLon)
-    self.setCalibrationFactor(1)
+    self.x = math.pi / 180 * radiusEarth * self._centreOriginal.x
+    self.y = math.pi / 180 * radiusEarth * self._centreOriginal.y
 
   def xy(self):
     return self.x, self.y
@@ -35,15 +35,10 @@ class GeoGridCell:
   def point(self):
     return shapely.Point(self.x, self.y)
 
-  def setCalibrationFactor(self, k):
-    self._k = self._kInitial * k
-    self.x = self._k * self._centreOriginal.x
-    self.y = self._k * self._centreOriginal.y
-
   def addForce(self, force):
     # compute effect of the force
-    dX = force.xTo - force.x
-    dY = force.yTo - force.y
+    dX = force.x - force.xTo
+    dY = force.y - force.yTo
     if dX == 0 and dY == 0:
       raise Exception('The differences dX and dY should never both vanish')
     l = cartesianLength(dX, dY)
