@@ -12,7 +12,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 class App(wx.App):
   def OnInit(self):
     self.tskic = TaskBarIcon()
-    window = Window('Map Projection Grid')
+    window = Window('Discretized Optimized Map Projection')
     window.Show()
     return True
 
@@ -101,11 +101,11 @@ class Window(wx.Frame):
     self._toolPlayIconPlay = toolPlayIconPlay
 
     ## status bar
-    self._statusBar = self.CreateStatusBar()
-    self.setStatus('')
+    self._statusBar = self.CreateStatusBar(2)
+    self._statusBar.SetStatusWidths([-1, 130])
 
     ## layout
-    self._panel = wx.Panel(self, style=wx.RAISED_BORDER)
+    self._panel = wx.Panel(self, style=wx.DEFAULT)
     box = wx.BoxSizer(wx.VERTICAL)
 
     ## image
@@ -165,6 +165,12 @@ class Window(wx.Frame):
     except:
       pass
 
+  def setEnergy(self, energy):
+    try:
+      self._statusBar.SetStatusText(f"energy = {energy:.2E}", 1)
+    except:
+      pass
+
   def reset(self):
     if self.__worker is not None:
       self.__worker.pause()
@@ -185,6 +191,8 @@ class Window(wx.Frame):
       self.loadImage(event.im)
     if event.status is not None:
       self.setStatus(event.status)
+    if event.energy is not None:
+      self.setEnergy(event.energy)
 
   def onButtonRun(self, event):
     if self.__workerRunning:

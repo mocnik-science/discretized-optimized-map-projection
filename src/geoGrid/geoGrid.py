@@ -23,7 +23,7 @@ from src.geoGrid.geoGridCell import *
 warnings.filterwarnings('ignore')
 
 class GeoGrid:
-  def __init__(self, settings, callbackStatus=lambda _: None):
+  def __init__(self, settings, callbackStatus=lambda status, energy: None):
     # save settings
     self.__settings = settings
     # init
@@ -36,12 +36,12 @@ class GeoGrid:
     # load data
     filename = 'cells-{resolution}.pickle.gzip'.format(resolution=self.__settings.resolution)
     if os.path.exists(filename):
-      callbackStatus('loading cells from proxy file ...')
+      callbackStatus('loading cells from proxy file ...', None)
       with timer('load cells from proxy file'):
         with gzip.open(filename, 'rb') as f:
           data = pickle.load(f)
     else:
-      callbackStatus('creating cells and save to proxy file ...')
+      callbackStatus('creating cells and save to proxy file ...', None)
       with timer('create cells and save to proxy file'):
         data = self.createCells(resolution=self.__settings.resolution)
         with gzip.open(filename, 'wb') as f:
@@ -105,14 +105,14 @@ class GeoGrid:
     }
 
   def calibrate(self, callbackStatus):
-    callbackStatus('calibrating ...')
+    callbackStatus('calibrating ...', None)
     def computeEnergy(k):
       for cell in self.__cells.values():
         cell.setCalibrationFactor(k)
       return self.energy()
     result = minimize_scalar(computeEnergy, method='brent')
     self._bounds = [result.x * -math.pi * radiusEarth, result.x * -math.pi / 2 * radiusEarth, result.x * math.pi * radiusEarth, result.x * math.pi / 2 * radiusEarth]
-    callbackStatus(f"calibrated: k = {result.x}, energy = {result.fun}")
+    callbackStatus(f"calibrated: k = {result.x}", result.fun)
 
   def energy(self):
     energy = 0

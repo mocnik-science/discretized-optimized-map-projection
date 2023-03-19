@@ -12,11 +12,12 @@ def EVT_WORKER_THREAD_UPDATE(win, f):
   win.Connect(-1, -1, EVT_WORKER_THREAD_UPDATE_ID, f)
 
 class ResultEvent(wx.PyEvent):
-  def __init__(self, im, status):
+  def __init__(self, im, status, energy):
     wx.PyEvent.__init__(self)
     self.SetEventType(EVT_WORKER_THREAD_UPDATE_ID)
     self.im = im
     self.status = status
+    self.energy = energy
 
 class WorkerThread(Thread):
   def __init__(self, notifyWindow, geoGridSettings, viewSettings):
@@ -33,8 +34,8 @@ class WorkerThread(Thread):
   
   def run(self):
     # initialize
-    self.__gg = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status: wx.PostEvent(self.__notifyWindow, ResultEvent(None, status)))
-    wx.PostEvent(self.__notifyWindow, ResultEvent(self.__gg.getImage(self.__viewSettings), None))
+    self.__gg = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: wx.PostEvent(self.__notifyWindow, ResultEvent(None, status, energy)))
+    wx.PostEvent(self.__notifyWindow, ResultEvent(self.__gg.getImage(self.__viewSettings), None, None))
     while not self.__shallQuit:
       if not self.__shallRun and not self.__shallRun1:
         # wait
@@ -46,12 +47,12 @@ class WorkerThread(Thread):
         self.__gg.performStep()
         im = self.__gg.getImage(self.__viewSettings)
         self.__fpsLastRuns = self.__fpsLastRuns[-50:] + [1 / t.end()]
-        wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, energy = {self.__gg.energy():>10.0f}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps"))
+        wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", self.__gg.energy()))
 
   def updateViewSettings(self, viewSettings):
     self.__viewSettings = viewSettings
     im = self.__gg.getImage(self.__viewSettings)
-    wx.PostEvent(self.__notifyWindow, ResultEvent(im, None))
+    wx.PostEvent(self.__notifyWindow, ResultEvent(im, None, None))
 
   def unpause(self):
     self.__shallRun1 = False
