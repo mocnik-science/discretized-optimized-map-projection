@@ -31,10 +31,10 @@ class DGGRIDStats:
 
   def numberOfCells(self, **kargs):
     return self.__getStatsForResolution(**kargs)['numberOfCells']
-  def typicalArea(self, **kargs): # km^2
-    return self.__getStatsForResolution(**kargs)['typicalArea']
-  def typicalDistance(self, **kargs): # km
-    return self.__getStatsForResolution(**kargs)['typicalDistance']
+  def typicalArea(self, **kargs): # m^2
+    return self.__getStatsForResolution(**kargs)['typicalArea'] * 1e6
+  def typicalDistance(self, **kargs): # m
+    return self.__getStatsForResolution(**kargs)['typicalDistance'] * 1e3
 
 class DGGRID:
   def __init__(self, executable='DGGRID/build/src/apps/dggrid/dggrid', tmpWorkingDir='.dggrid', removeTmpWorkingDirAfterUse=True):
