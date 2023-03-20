@@ -1,5 +1,5 @@
-from src.cartesian import *
-from src.geo import *
+from src.geometry.cartesian import *
+from src.geometry.geo import *
 from src.mechanics.force import *
 from src.mechanics.potential.potential import *
 
@@ -24,11 +24,11 @@ class PotentialDistance(Potential):
 
   def _quantity(self, cell, neighbouringCell, **kwargs):
     geoD = self._geoDistanceForCells(neighbouringCell, cell) * self.calibrationFactor
-    cartesianD = cartesianDistance(neighbouringCell, cell)
+    cartesianD = Cartesian.distance(neighbouringCell, cell)
     return self._computeQuantity(cartesianD / geoD - 1, **kwargs)
 
   def _geoDistanceForCells(self, cell1, cell2):
     key = (cell1._id2, cell2._id2)
     if key not in self._geoDistanceCache:
-      self._geoDistanceCache[key] = geoDistance(cell1._centreOriginal, cell2._centreOriginal)
+      self._geoDistanceCache[key] = Geo.distance(cell1._centreOriginal, cell2._centreOriginal)
     return self._geoDistanceCache[key]

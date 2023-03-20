@@ -1,8 +1,8 @@
 import shapely
 
-from src.cartesian import *
 from src.common import *
-from src.geo import *
+from src.geometry.cartesian import *
+from src.geometry.geo import *
 from src.geoGrid.geoGrid import *
 from src.mechanics.force import *
 from src.mechanics.potential.potential import *
@@ -17,6 +17,7 @@ from src.mechanics.potential.potential import *
 
 class PotentialArea(Potential):
   kind = 'AREA'
+  calibrationPossible = True
 
   def energy(self, cell, neighbouringCells):
     q = self._quantity(cell, neighbouringCells, energy=True)
@@ -30,5 +31,5 @@ class PotentialArea(Potential):
     # hexagon:   1 + 6 * 2/6 = 3
     # pentagon:  5/6 + 5 * 2/6 = 15/6 = 2.5
     geoA = self._settings._typicalArea * (3 if cell._isHexagon else 2.5) * self.calibrationFactor
-    cartesianA = cartesianArea(neighbouringCells)
+    cartesianA = Cartesian.area(neighbouringCells)
     return self._computeQuantity(cartesianA / geoA - 1, **kwargs)

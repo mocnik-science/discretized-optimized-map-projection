@@ -1,8 +1,8 @@
 import math
 import shapely
 
-from src.cartesian import *
-from src.geo import *
+from src.geometry.cartesian import *
+from src.geometry.geo import *
 
 def translatePoint(p, dLon):
   if dLon is None:
@@ -37,7 +37,7 @@ class GeoGridCell:
       self._neighboursBearings2 = None
       return
     self._neighbours = [neighbour._id2 for neighbour in neighbours]
-    neighboursBearings = [geoBearing(self._centreOriginal, neighbour._centreOriginal) for neighbour in neighbours]
+    neighboursBearings = [Geo.bearing(self._centreOriginal, neighbour._centreOriginal) for neighbour in neighbours]
     neighboursBearings2 = []
     i = 0
     for b0, b1 in zip(neighboursBearings, neighboursBearings[1:] + [neighboursBearings[0]]):
@@ -61,7 +61,7 @@ class GeoGridCell:
     dY = force.y - force.yTo
     if dX == 0 and dY == 0:
       raise Exception('The differences dX and dY should never both vanish')
-    l = cartesianLength(dX, dY)
+    l = Cartesian.length(dX, dY)
     k = force.strength / l
     # update the force
     force.xForce += k * dX
@@ -119,7 +119,7 @@ class GeoGridCell:
   def neighboursWithEnclosingBearing(self, cells, point):
     if self._neighboursBearings2 is None:
       return None
-    bearing = geoBearing(self._centreOriginal, point)
+    bearing = Geo.bearing(self._centreOriginal, point)
     for i, b0, b1 in self._neighboursBearings2:
       if b0 > bearing and bearing >= b1:
         return [cells[self._neighbours[j]] for j in [i, (i + 1) % len(self._neighbours)]]

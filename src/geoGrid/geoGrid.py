@@ -15,10 +15,11 @@ from sklearn.neighbors import BallTree
 from sklearn.metrics.pairwise import haversine_distances
 import warnings
 
-from src.cartesian import *
 from src.common import *
-from src.dggrid import DGGRID
-from src.geo import *
+from src.geometry.common import *
+from src.geometry.cartesian import *
+from src.geometry.dggrid import DGGRID
+from src.geometry.geo import *
 from src.naturalEarth import NaturalEarth
 from src.timer import timer
 from src.geoGrid.geoGridCell import *
@@ -97,7 +98,7 @@ class GeoGrid:
         polesById1[cell._id1] = cell
     # identify neighbours in cartesian space
     for id2 in cells:
-      cells[id2].initNeighbours([polesById1[n] if n in polesById1 else minBy(cellsById1[n], by=lambda cellNeighbour: cartesianDistance(cells[id2]._centreOriginal, cellNeighbour._centreOriginal)) for n in cells[id2]._neighbours])
+      cells[id2].initNeighbours([polesById1[n] if n in polesById1 else minBy(cellsById1[n], by=lambda cellNeighbour: Cartesian.distance(cells[id2]._centreOriginal, cellNeighbour._centreOriginal)) for n in cells[id2]._neighbours])
     # identify cells to keep
     bbox = shapely.geometry.box(-180, -90 - 1e-10, 180, 90 + 1e-10)
     shapely.prepare(bbox)
@@ -190,7 +191,7 @@ class GeoGrid:
     nearestCell = None
     cornerCells = None
     for id2s in [self.__ballTreeCellsId1s[i] for i in ind[0]]:
-      nearestCell = minBy([self.__cells[id2] for id2 in id2s], by=lambda cell: cartesianDistance(pointLonLat, cell._centreOriginal))
+      nearestCell = minBy([self.__cells[id2] for id2 in id2s], by=lambda cell: Cartesian.distance(pointLonLat, cell._centreOriginal))
       cornerCells = nearestCell.neighboursWithEnclosingBearing(self.__cells, pointLonLat)
       if cornerCells is not None:
         break
@@ -202,7 +203,7 @@ class GeoGrid:
 
   @staticmethod
   def __toBarycentricCoordinatesSpherical(triangle, point):
-    coordinates = [geoAreaOfTriangle([p if i != n else point for i, p in enumerate(triangle)]) for n in range(0, 3)]
+    coordinates = [Geo.areaOfTriangle([p if i != n else point for i, p in enumerate(triangle)]) for n in range(0, 3)]
     s = sum(coordinates)
     return [c / s for c in coordinates]
 
