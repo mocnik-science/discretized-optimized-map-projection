@@ -1,6 +1,5 @@
 import math
 import numpy as np
-# import shapely
 
 radiusEarth = 6371007.1809
 
@@ -26,23 +25,26 @@ def geoDistance(start, end): # in metres
   # Haversine theorem
   a = math.sin((endY - startY) / 2)**2 + math.cos(startY) * math.cos(endY) * math.sin((endX - startX) / 2)**2
   return radiusEarth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+  # faster, but numerically less stable:
+  # a = (1 - math.cos(endY - startY) + math.cos(startY) * math.cos(endY) * (1 - math.cos(endX - startX))) / 2
+  # return radiusEarth * 2 * math.asin(min(1, math.sqrt(a)))
 
 def geoBearing(start, end): # in radiant
   startX = np.deg2rad(start.x)
   startY = np.deg2rad(start.y)
   endX = np.deg2rad(end.x)
   endY = np.deg2rad(end.y)
-  y = math.sin(endY - startY) * math.cos(endX)
-  x = math.cos(startX) * math.sin(endX) - math.sin(startX) * math.cos(endX) * math.cos(endY - startY)
-  return math.atan2(y, x) + 2 * math.pi % (2 * math.pi)
+  y = math.sin(endX - startX) * math.cos(endY)
+  x = math.cos(startY) * math.sin(endY) - math.sin(startY) * math.cos(endY) * math.cos(endX - startX)
+  return (math.atan2(y, x) + 2 * math.pi) % (2 * math.pi)
 
 def geoAreaOfTriangle(triangle): # in metres
   # compute spherical excess
   e = -math.pi
   for i, j, k in [[0, 1, 2], [1, 2, 0], [2, 0, 1]]:
-    d = geoBearing(triangle[i], triangle[k]) - geoBearing(triangle[i], triangle[j])
+    d = geoBearing(triangle[i], triangle[j]) - geoBearing(triangle[i], triangle[k])
     if d < -math.pi:
-      d = d + 2 * math.pi
+      d += 2 * math.pi
     e += d
   # Girard's theorem
   return e * radiusEarth**2

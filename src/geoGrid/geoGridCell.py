@@ -28,6 +28,25 @@ class GeoGridCell:
     self._polygonOriginal = translatePolygon(dggridCell.polygon, dLon)
     self.x = math.pi / 180 * radiusEarth * self._centreOriginal.x
     self.y = math.pi / 180 * radiusEarth * self._centreOriginal.y
+    self._neighboursBearings2 = None
+
+  def initNeighbours(self, neighbours):
+    if any(abs(neighbour._centreOriginal.x - self._centreOriginal.x) > 270 for neighbour in neighbours):
+      self._neighbours = None
+      self._neighboursBearings2 = None
+      return
+    self._neighbours = [neighbour._id2 for neighbour in neighbours]
+    neighboursBearings = [geoBearing(self._centreOriginal, neighbour._centreOriginal) for neighbour in neighbours]
+    neighboursBearings2 = []
+    i = 0
+    for b0, b1 in zip(neighboursBearings, neighboursBearings[1:] + [neighboursBearings[0]]):
+      if b0 >= b1:
+        neighboursBearings2.append((i, b0, b1))
+      else:
+        neighboursBearings2.append((i, b0, 0))
+        neighboursBearings2.append((i, 2 * math.pi, b1))
+      i += 1
+    self._neighboursBearings2 = neighboursBearings2
 
   def xy(self):
     return self.x, self.y
@@ -91,6 +110,15 @@ class GeoGridCell:
         forces[force.id2To][0] += force.xForce
         forces[force.id2To][1] += force.yForce
     return (self.x, self.y), [(self.x + k * force[0], self.y + k * force[1]) for force in forces.values()]
+
+  def neighboursWithEnclosingBearing(self, cells, point):
+    if self._neighboursBearings2 is None:
+      return None
+    bearing = geoBearing(self._centreOriginal, point)
+    for i, b0, b1 in self._neighboursBearings2:
+      if b0 > bearing and bearing >= b1:
+        return [cells[self._neighbours[j]] for j in [i, (i + 1) % len(self._neighbours)]]
+    raise Exception('This should never happen – some bearing should have been found')
 
   def __str__(self):
     return f"{self._id1:>4} | {self._id2:>5} | {self.x:11.1f} | {self.y:11.1f} | {'active' if self._isActive else 'inactive':>8} | {'hexagon' if self._isHexagon else 'pentagon':>8} | {', '.join([str(x) for x in self._neighbours]) if self._neighbours else '':<70} | {self._centreOriginal.x:9.4f} | {self._centreOriginal.y:9.4f}"

@@ -1,7 +1,7 @@
 import time
 
 class timer(object):
-  def __init__(self, label='', log=False, **kwargs):
+  def __init__(self, label='', log=True, **kwargs):
     self.__label = label
     self.__log = log
     self.__formatKwargs = kwargs

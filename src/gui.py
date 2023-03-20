@@ -74,6 +74,11 @@ class Window(wx.Frame):
     key = 'drawOriginalPolygons'
     addRadioItem(viewMenu, 'hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
     addRadioItem(viewMenu, 'show initial cells', self.__viewSettings, key, True, self.updateViewSettings)
+    viewMenu.AppendSeparator()
+    # view menu: draw continental borders
+    key = 'drawContinentalBorders'
+    addRadioItem(viewMenu, 'hide continental borders', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show continental borders', self.__viewSettings, key, True, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 

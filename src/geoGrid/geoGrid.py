@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import geopandas as gpd
 import gzip
 import numpy as np
 import os
@@ -9,14 +8,17 @@ from PIL import Image, ImageDraw, ImageFont
 import pyproj
 from scipy.optimize import minimize_scalar
 from scipy.spatial import KDTree
+import shapefile
 import shapely
 import shutil
 from sklearn.neighbors import BallTree
+from sklearn.metrics.pairwise import haversine_distances
 import warnings
 
 from src.common import *
 from src.dggrid import DGGRID
 from src.geo import *
+from src.naturalEarth import NaturalEarth
 from src.timer import timer
 from src.geoGrid.geoGridCell import *
 
@@ -32,17 +34,25 @@ class GeoGrid:
     self.__pathTmp = '_tmp'
     self.__step = 0
     self.__ballTree = None
+    self.__ballTreeCellsId1s = None
     # load data
     filename = 'cells-{resolution}.pickle.gzip'.format(resolution=self.__settings.resolution)
     if os.path.exists(filename):
-      callbackStatus('loading cells from proxy file ...', None)
-      with timer('load cells from proxy file'):
+      callbackStatus('loading cells and indices from proxy file ...', None)
+      with timer('load data from proxy file'):
         with gzip.open(filename, 'rb') as f:
           data = pickle.load(f)
     else:
-      callbackStatus('creating cells and save to proxy file ...', None)
-      with timer('create cells and save to proxy file'):
-        data = self.createCells(resolution=self.__settings.resolution)
+      callbackStatus('creating cells and indices, and save them to proxy file ...', None)
+      with timer('create cells'):
+        dataCells = self.createCells(resolution=self.__settings.resolution)
+      with timer('compute ball tree'):
+        dataBallTree = self.createBallTree(dataCells)
+      with timer('save data to proxy file'):
+        data = {
+          **dataCells,
+          **dataBallTree,
+        }
         with gzip.open(filename, 'wb') as f:
           pickle.dump(data, f)
     for k, v in data.items():
@@ -79,11 +89,14 @@ class GeoGrid:
         if dggridCell.id not in cellsById1:
           cellsById1[dggridCell.id] = []
         cellsById1[dggridCell.id].append(cells[id2])
+    # identify poles
+    polesById1 = {}
+    for cell in cells.values():
+      if cell._id1 == cell._id2 and abs(cell._centreOriginal.x) < 1e-10 and (abs(cell._centreOriginal.y - 90) < 1e-10 or abs(cell._centreOriginal.y + 90) < 1e-10):
+        polesById1[cell._id1] = cell
     # identify neighbours in cartesian space
     for id2 in cells:
-      cells[id2]._neighbours = [minBy(cellsById1[n], by=lambda cellNeighbour: cartesianDistance(cellNeighbour._centreOriginal, cells[id2]._centreOriginal))._id2 for n in cells[id2]._neighbours]
-      if any(abs(cells[n]._centreOriginal.x - cells[id2]._centreOriginal.x) > 180 for n in cells[id2]._neighbours):
-        cells[id2]._neighbours = None
+      cells[id2].initNeighbours([polesById1[n] if n in polesById1 else minBy(cellsById1[n], by=lambda cellNeighbour: cartesianDistance(cells[id2]._centreOriginal, cellNeighbour._centreOriginal)) for n in cells[id2]._neighbours])
     # identify cells to keep
     bbox = shapely.geometry.box(-180, -90 - 1e-10, 180, 90 + 1e-10)
     shapely.prepare(bbox)
@@ -103,12 +116,27 @@ class GeoGrid:
       '__cells': cells,
     }
 
+  @staticmethod
+  def createBallTree(dataCells):
+    cells = dataCells['__cells']
+    cellsById1 = {}
+    for cell in cells.values():
+      if cell._id1 not in cellsById1:
+        cellsById1[cell._id1] = []
+      cellsById1[cell._id1].append(cell._id2)
+    ballTreeCells = [cell for cell in cells.values() if cell._id1 == cell._id2]
+    ballTreeCellsId1s = [cellsById1[cell._id1] for cell in ballTreeCells]
+    ballTree = BallTree([(np.deg2rad(cell._centreOriginal.y), np.deg2rad(cell._centreOriginal.x)) for cell in ballTreeCells], metric='haversine')
+    return {
+      '__ballTree': ballTree,
+      '__ballTreeCellsId1s': ballTreeCellsId1s,
+    }
+
   def calibrate(self, callbackStatus):
     for potential in self.__settings.potentials:
       callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
       def computeEnergy(k):
-        k = abs(k)
-        potential.setCalibrationFactor(k)
+        potential.setCalibrationFactor(abs(k))
         return self.energy(potential=potential)
       result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
       potential.setCalibrationFactor(abs(result.x))
@@ -149,19 +177,22 @@ class GeoGrid:
       for force in forces:
         self.__cells[force.id2].addForce(force)
 
-  def __getBallTree(self):
-    if self.__ballTree is None:
-      with timer('compute ball tree', step=self.__step):
-        self.__ballTree = BallTree([np.deg2rad(cell.geometry.coords[0]) for cell in self.__cells.values()], metric='haversine')
-    return self.__ballTree
-
   def project(self, lon, lat):
-    dist, ind = self.__getBallTree().query(np.deg2rad([[lon, lat]]), k=3)
-    cornerCells = [self.__cells[i] for i in ind[0]]
-    cs = GeoGrid.__toBarycentricCoordinatesSpherical([cell.geometryCentre for cell in cornerCells], shapely.Point(lon, lat))
-    p = GeoGrid.__fromBarycentricCoordinates([cell.point() for cell in cornerCells], cs)
-    return p.coords[0]
-  
+    pointLonLat = shapely.Point(lon, lat)
+    dist, ind = self.__ballTree.query([np.deg2rad([lat, lon])], k=3)
+    nearestCell = None
+    cornerCells = None
+    for id2s in [self.__ballTreeCellsId1s[i] for i in ind[0]]:
+      nearestCell = minBy([self.__cells[id2] for id2 in id2s], by=lambda cell: cartesianDistance(pointLonLat, cell._centreOriginal))
+      cornerCells = nearestCell.neighboursWithEnclosingBearing(self.__cells, pointLonLat)
+      if cornerCells is not None:
+        break
+    if nearestCell is None or cornerCells is None:
+      raise Exception('No nearest cell found')
+    cornerCells = [nearestCell, *cornerCells]
+    cs = GeoGrid.__toBarycentricCoordinatesSpherical([cell._centreOriginal for cell in cornerCells], pointLonLat)
+    return GeoGrid.__fromBarycentricCoordinates([cell.point() for cell in cornerCells], cs)
+
   @staticmethod
   def __toBarycentricCoordinatesSpherical(triangle, point):
     coordinates = [geoAreaOfTriangle([p if i != n else point for i, p in enumerate(triangle)]) for n in range(0, 3)]
@@ -170,11 +201,11 @@ class GeoGrid:
 
   @staticmethod
   def __fromBarycentricCoordinates(triangle, coordinates):
-    x = sum([coordinates[i] * triangle[i].x for i in range(0, 3)])
-    y = sum([coordinates[i] * triangle[i].y for i in range(0, 3)])
-    return shapely.Point(x, y)
+    return sum([coordinates[i] * triangle[i].x for i in range(0, 3)]), sum([coordinates[i] * triangle[i].y for i in range(0, 3)])
 
   def getImage(self, viewSettings={}, width=2000, height=1000, border=10, d=6, boundsExtend=1.3, save=False):
+    if viewSettings['drawContinentalBorders']:
+      NaturalEarth.preparedData()
     with timer('render', step=self.__step):
       # view settings
       viewSettings = {
@@ -195,21 +226,29 @@ class GeoGrid:
       dx2 = border + (width - w) / 2
       dy2 = border + (height - h) / 2
       s = w / (xMax - xMin)
-      project = lambda x, y: (dx2 + s * (x - xMin), dy2 + s * (y - yMin))
+      project = lambda x, y: (dx2 + s * (x - xMin), dy2 + s * (-y - yMin))
+      k = math.pi / 180 * radiusEarth
+      lonLatToCartesian = lambda cs: (k * c for c in cs)
       d2 = d / 2
       # create image
       im = Image.new('RGB', (width, height), (255, 255, 255))
       draw = ImageDraw.Draw(im)
+      # draw continental borders
+      if viewSettings['drawContinentalBorders']:
+        for cs in NaturalEarth.preparedData():
+          draw.polygon([project(*self.project(*c)) for c in cs], fill=(230, 230, 230))
+          # draw.polygon([project(*lonLatToCartesian(c)) for c in cs], outline=(0, 255, 0))
       # draw original polygons
       if viewSettings['drawOriginalPolygons']:
         for cell in self.__cells.values():
-          draw.polygon([project(cell._k * x, cell._k * y) for x, y in cell._polygonOriginal.exterior.coords[:-1]], outline=(255, 100, 100))
+          draw.polygon([project(*lonLatToCartesian(c)) for c in cell._polygonOriginal.exterior.coords[:-1]], outline=(255, 100, 100))
       # draw neighbours
       if viewSettings['drawNeighbours']:
         for cell in self.__cells.values():
-          for cell2Id2 in cell._neighbours:
-            if cell2Id2 in self.__cells:
-              draw.line((*project(*cell.xy()), *project(*self.__cells[cell2Id2].xy())), fill=(220, 220, 220))
+          if cell._neighbours is not None:
+            for cell2Id2 in cell._neighbours:
+              if cell2Id2 in self.__cells:
+                draw.line((*project(*cell.xy()), *project(*self.__cells[cell2Id2].xy())), fill=(220, 220, 220))
       # draw forces
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in self.__cells.values():
