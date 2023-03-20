@@ -1,6 +1,4 @@
-import shapely
-
-from src.common import *
+from src.common.functions import *
 from src.geometry.cartesian import *
 from src.geometry.geo import *
 from src.geoGrid.geoGrid import *

@@ -15,13 +15,13 @@ from sklearn.neighbors import BallTree
 from sklearn.metrics.pairwise import haversine_distances
 import warnings
 
-from src.common import *
+from src.common.functions import *
+from src.common.timer import timer
 from src.geometry.common import *
 from src.geometry.cartesian import *
 from src.geometry.dggrid import DGGRID
 from src.geometry.geo import *
-from src.naturalEarth import NaturalEarth
-from src.timer import timer
+from src.geometry.naturalEarth import NaturalEarth
 from src.geoGrid.geoGridCell import *
 
 warnings.filterwarnings('ignore')

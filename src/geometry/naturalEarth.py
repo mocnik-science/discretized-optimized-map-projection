@@ -4,7 +4,7 @@ import shapefile
 import shapely
 from zipfile import ZipFile
 
-from src.timer import timer
+from src.common.timer import timer
 
 class NaturalEarth:
   urlNaturalEarthData = 'http://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip'
