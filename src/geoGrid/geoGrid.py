@@ -15,6 +15,7 @@ from sklearn.neighbors import BallTree
 from sklearn.metrics.pairwise import haversine_distances
 import warnings
 
+from src.cartesian import *
 from src.common import *
 from src.dggrid import DGGRID
 from src.geo import *
@@ -133,17 +134,23 @@ class GeoGrid:
     }
 
   def calibrate(self, callbackStatus):
+    energy = 0
     for potential in self.__settings.potentials:
-      callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
-      def computeEnergy(k):
-        potential.setCalibrationFactor(abs(k))
-        return self.energy(potential=potential)
-      result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
-      potential.setCalibrationFactor(abs(result.x))
+      if potential.calibrationPossible:
+        callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
+        def computeEnergy(k):
+          potential.setCalibrationFactor(abs(k))
+          return self.energy(potential=potential)
+        result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
+        potential.setCalibrationFactor(abs(result.x))
+        energy += result.fun
+      else:
+        energy += self.energy(potential=potential)
     statusPotentials = []
     for potential in self.__settings.potentials:
-      statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
-    callbackStatus(f"calibrated: {', '.join(statusPotentials)}", result.fun)
+      if potential.calibrationPossible:
+        statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
+    callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy)
 
   def energy(self, potential=None):
     energy = 0

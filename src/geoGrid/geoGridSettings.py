@@ -4,6 +4,7 @@ from src.geoGrid.geoGrid import *
 from src.mechanics.force import *
 from src.mechanics.potential.potentialArea import *
 from src.mechanics.potential.potentialDistance import *
+from src.mechanics.potential.potentialShape import *
 
 # F = - G m1 m2 / r^2
 # U = F * r
@@ -20,7 +21,7 @@ class GeoGridSettings:
     self._typicalDistance = None
     self._typicalArea = None
     self._forceFactor = None
-    self.potentials = [PotentialArea(self), PotentialDistance(self)]
+    self.potentials = [PotentialArea(self), PotentialDistance(self), PotentialShape(self)]
 
   def updateGridStats(self, gridStats):
     self._typicalDistance = gridStats.typicalDistance()

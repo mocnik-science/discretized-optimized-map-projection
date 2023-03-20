@@ -17,6 +17,9 @@ def cartesianArea(cs):
   areaCorrection = xs[-1] * ys[0] - ys[-1] * xs[0]
   return np.abs(areaMain + areaCorrection) / 2
 
+def cartesianBearing(start, end): # in radiant, positively oriented, north is 0
+  return (math.atan2(end.y - start.y, end.x - start.x) + 1.5 * math.pi) % (2 * math.pi)
+
 def geoDistance(start, end): # in metres
   startX = np.deg2rad(start.x)
   startY = np.deg2rad(start.y)
@@ -29,7 +32,7 @@ def geoDistance(start, end): # in metres
   # a = (1 - math.cos(endY - startY) + math.cos(startY) * math.cos(endY) * (1 - math.cos(endX - startX))) / 2
   # return radiusEarth * 2 * math.asin(min(1, math.sqrt(a)))
 
-def geoBearing(start, end): # in radiant
+def geoBearing(start, end): # in radiant, negatively oriented, north is 0
   startX = np.deg2rad(start.x)
   startY = np.deg2rad(start.y)
   endX = np.deg2rad(end.x)

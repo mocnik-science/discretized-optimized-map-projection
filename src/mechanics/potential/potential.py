@@ -2,6 +2,7 @@ from src.common import *
 
 class Potential:
   kind = None
+  calibrationPossible = False
 
   def __init__(self, settings):
     self._settings = settings
@@ -23,6 +24,7 @@ class Potential:
       return D * r**exponent
     if force:
       return -D * exponent * r**(exponent - 1) * sgn
+    raise Exception('Provide either energy or force')
 
 
 
@@ -55,5 +57,3 @@ class Potential:
     #   return -1 / r**exponent * self._forceFactor
     # if force:
     #   return -exponent / r**(exponent + 1) * self._forceFactor
-    raise Exception('Provide either energy or force')
-    # return sign(x) * abs(x)**exponent * self._forceFactor

@@ -1,6 +1,7 @@
 import math
 import shapely
 
+from src.cartesian import *
 from src.geo import *
 
 def translatePoint(p, dLon):
@@ -88,7 +89,7 @@ class GeoGridCell:
         self._yForcesNext += force.yForce
     return self._xForcesNext, self._yForcesNext
 
-  def forceVector(self, potential, k=6):
+  def forceVector(self, potential, k=20):
     if potential == 'ALL':
       xForcesNext, yForcesNext = self._computeForcesNext()
       return (self.x, self.y), (self.x + k * xForcesNext, self.y + k * yForcesNext)
@@ -100,16 +101,20 @@ class GeoGridCell:
         yForce += force.yForce
     return (self.x, self.y), (self.x + k * xForce, self.y + k * yForce)
 
-  def forceVectors(self, potential, k=6):
+  def forceVectors(self, potential, k=20):
     k *= 2
-    forces = {}
+    collectedForces = []
+    collectedForcesById = {}
     for force in self._forcesNext:
       if potential == 'ALL' or force.kind == potential:
-        if force.id2To not in forces:
-          forces[force.id2To] = [0, 0]
-        forces[force.id2To][0] += force.xForce
-        forces[force.id2To][1] += force.yForce
-    return (self.x, self.y), [(self.x + k * force[0], self.y + k * force[1]) for force in forces.values()]
+        if force.id2To is None:
+          collectedForces.append([self.x + k * force.xForce, self.y + k * force.yForce])
+        else:
+          if force.id2To not in collectedForcesById:
+            collectedForcesById[force.id2To] = [0, 0]
+          collectedForcesById[force.id2To][0] += force.xForce
+          collectedForcesById[force.id2To][1] += force.yForce
+    return (self.x, self.y), collectedForces + [(self.x + k * force[0], self.y + k * force[1]) for force in collectedForcesById.values()]
 
   def neighboursWithEnclosingBearing(self, cells, point):
     if self._neighboursBearings2 is None:
