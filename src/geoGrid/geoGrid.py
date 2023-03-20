@@ -204,7 +204,7 @@ class GeoGrid:
     return sum([coordinates[i] * triangle[i].x for i in range(0, 3)]), sum([coordinates[i] * triangle[i].y for i in range(0, 3)])
 
   def getImage(self, viewSettings={}, width=2000, height=1000, border=10, d=6, boundsExtend=1.3, save=False):
-    if viewSettings['drawContinentalBorders']:
+    if viewSettings['drawContinentsTolerance']:
       NaturalEarth.preparedData()
     with timer('render', step=self.__step):
       # view settings
@@ -234,10 +234,13 @@ class GeoGrid:
       im = Image.new('RGB', (width, height), (255, 255, 255))
       draw = ImageDraw.Draw(im)
       # draw continental borders
-      if viewSettings['drawContinentalBorders']:
-        for cs in NaturalEarth.preparedData():
+      if viewSettings['drawContinentsTolerance']:
+        csExteriors, csInteriors = NaturalEarth.preparedData(viewSettings['drawContinentsTolerance'])
+        for cs in csExteriors:
           draw.polygon([project(*self.project(*c)) for c in cs], fill=(230, 230, 230))
           # draw.polygon([project(*lonLatToCartesian(c)) for c in cs], outline=(0, 255, 0))
+        for cs in csInteriors:
+          draw.polygon([project(*self.project(*c)) for c in cs], fill=(255, 255, 255))
       # draw original polygons
       if viewSettings['drawOriginalPolygons']:
         for cell in self.__cells.values():

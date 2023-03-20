@@ -1,6 +1,7 @@
 import os
 import requests
 import shapefile
+import shapely
 from zipfile import ZipFile
 
 from src.timer import timer
@@ -12,7 +13,7 @@ class NaturalEarth:
   fileSubpathNaturalEarthData = os.path.join(pathNaturalEarthData, 'ne_110m_land')
   fileShpNaturalEarthData = os.path.join(fileSubpathNaturalEarthData, 'ne_110m_land.shp')
   _shpData = None
-  _prepData = None
+  _prepData = {}
 
   def __new__(cls):
     if not hasattr(cls, '_instance'):
@@ -48,25 +49,42 @@ class NaturalEarth:
         self._shpData = shapefile.Reader(NaturalEarth()._ensureNaturalEarthData())
     return self._shpData
 
-  def _preparedData(self):
-    if self._prepData is None:
+  @staticmethod
+  def __simplify(exteriors, interiors, tolerance):
+    exteriors = [shapely.simplify(shapely.Polygon(cs), tolerance) for cs in exteriors]
+    if tolerance <= 2:
+      exteriors = [cs.exterior.coords for cs in sorted(exteriors, key=lambda cs: cs.area)[-20:]]
+      interiors = [shapely.simplify(shapely.Polygon(cs), tolerance).exterior.coords for cs in interiors]
+      return exteriors, interiors
+    return [cs.exterior.coords for cs in sorted(exteriors, key=lambda cs: cs.area)[-4:]], []
+
+  def _preparedData(self, simplifyTolerance='full'):
+    if 'full' not in self._prepData:
       data = NaturalEarth.data()
       with timer('prepare natural earth data'):
-        self._prepData = []
+        exteriors = []
+        interiors = []
         for g in data.shapes():
           if g.shapeType == shapefile.POLYGON:
             kStart = None
+            geometries = []
             for i, partStart in enumerate(g.parts):
               if i > 0:
-                self._prepData.append(g.points[kStart:partStart])
+                geometries.append(g.points[kStart:partStart])
               kStart = partStart
-            self._prepData.append(g.points[kStart:])
-    return self._prepData
+            geometries.append(g.points[kStart:])
+            exteriors.append(geometries[0])
+            interiors += geometries[1:]
+        self._prepData['full'] = [exteriors, interiors]
+    if simplifyTolerance != 'full' and simplifyTolerance not in self._prepData:
+        self._prepData[simplifyTolerance] = self.__simplify(*self._prepData['full'], simplifyTolerance)
+        # self._prepData[simplifyTolerance] = [[self.__simplify(cs, simplifyTolerance) for cs in css] for css in self._prepData['full']]
+    return self._prepData['full' if simplifyTolerance == 'full' else simplifyTolerance]
 
   @staticmethod
   def data():
     return NaturalEarth()._data()
 
   @staticmethod
-  def preparedData():
-    return NaturalEarth()._preparedData()
+  def preparedData(*args, **kwargs):
+    return NaturalEarth()._preparedData(*args, **kwargs)

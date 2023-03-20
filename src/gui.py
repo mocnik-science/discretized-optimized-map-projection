@@ -75,10 +75,12 @@ class Window(wx.Frame):
     addRadioItem(viewMenu, 'hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
     addRadioItem(viewMenu, 'show initial cells', self.__viewSettings, key, True, self.updateViewSettings)
     viewMenu.AppendSeparator()
-    # view menu: draw continental borders
-    key = 'drawContinentalBorders'
-    addRadioItem(viewMenu, 'hide continental borders', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show continental borders', self.__viewSettings, key, True, self.updateViewSettings)
+    # view menu: draw continents
+    key = 'drawContinentsTolerance'
+    addRadioItem(viewMenu, 'hide continents', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show strongly simplified continents (a little bit faster)', self.__viewSettings, key, 3, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 
