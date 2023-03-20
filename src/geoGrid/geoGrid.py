@@ -65,7 +65,8 @@ class GeoGrid:
     # update the settings
     self.__settings.updateGridStats(self.__gridStats)
     # calibrate
-    self.calibrate(callbackStatus)
+    with timer('calibrate'):
+      self.calibrate(callbackStatus)
     # compute the force without applying the step
     self.performStep(_onlyComputeNextForces=True)
 
@@ -154,12 +155,13 @@ class GeoGrid:
     callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy)
 
   def energy(self, potential=None):
-    energy = 0
-    for potential in [potential] if potential is not None else self.__settings.potentials:
-      for cell in self.__cells.values():
-        if cell._isActive:
-          energy += potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
-    return energy
+    with timer('compute energy', log=potential is None, step=self.__step):
+      energy = 0
+      for potential in [potential] if potential is not None else self.__settings.potentials:
+        for cell in self.__cells.values():
+          if cell._isActive:
+            energy += potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+      return energy
 
   def step(self):
     return self.__step
