@@ -120,8 +120,8 @@ class Window(wx.Frame):
     self._toolPlayIconPlay = toolPlayIconPlay
 
     ## status bar
-    self._statusBar = self.CreateStatusBar(2)
-    self._statusBar.SetStatusWidths([-1, 130])
+    self._statusBar = self.CreateStatusBar(3)
+    self._statusBar.SetStatusWidths([200, -1, 130])
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
@@ -181,13 +181,18 @@ class Window(wx.Frame):
 
   def setStatus(self, text):
     try:
-      self._statusBar.SetStatusText(text)
+      self._statusBar.SetStatusText(text, 0)
+    except:
+      pass
+  def setStatus2(self, text):
+    try:
+      self._statusBar.SetStatusText(text, 1)
     except:
       pass
 
   def setEnergy(self, energy):
     try:
-      self._statusBar.SetStatusText(f"energy = {energy:.2E}", 1)
+      self._statusBar.SetStatusText(f"energy = {energy:.2E}", 2)
     except:
       pass
 
@@ -220,6 +225,8 @@ class Window(wx.Frame):
       return
     if event.im is not None:
       self.loadImage(event.im)
+    if event.status is not None:
+      self.setStatus2(event.status)
   def __workerThreadUpdate(self, event):
     if self.__workerThread is None:
       return

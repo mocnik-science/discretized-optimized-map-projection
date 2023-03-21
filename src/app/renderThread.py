@@ -12,10 +12,11 @@ def EVT_RENDER_THREAD_UPDATE(win, f):
   win.Connect(-1, -1, EVT_RENDER_THREAD_UPDATE_ID, f)
 
 class RenderResultEvent(wx.PyEvent):
-  def __init__(self, im=None):
+  def __init__(self, im=None, status=None):
     wx.PyEvent.__init__(self)
     self.SetEventType(EVT_RENDER_THREAD_UPDATE_ID)
     self.im = im
+    self.status = status
 
 class RenderThread(Thread):
   def __init__(self, notifyWindow, viewSettings):
@@ -29,14 +30,18 @@ class RenderThread(Thread):
     self.start()
   
   def run(self):
+    t = timer(log=False)
+    # loop
     while not self.__shallQuit:
       if self.__serializedData is None or self.__projection is None:
         # wait
         time.sleep(.01)
       else:
         # render
-        im = GeoGridRenderer.render(self.__serializedData, viewSettings=self.__viewSettings, projection=self.__projection)
-        self.__post(im=im)
+        with t:
+          im = GeoGridRenderer.render(self.__serializedData, viewSettings=self.__viewSettings, projection=self.__projection)
+        # cleanup
+        self.__post(im=im, status=f"rendering {1000 * t.average():.0f} ms")
         self.__serializedDataPrevious = self.__serializedData
         self.__serializedData = None
 

@@ -31,7 +31,6 @@ class WorkerThread(Thread):
     self.__shallRun1 = False
     self.__shallQuit = False
     self.__needsGUIUpdate = False
-    self.__fpsLastRuns = []
     self.start()
   
   def run(self):
@@ -39,6 +38,8 @@ class WorkerThread(Thread):
     self.__post(projection=self.__gg.projection())
     # initialize
     self.updateViewSettings()
+    t = timer(log=False)
+    # loop
     while not self.__shallQuit:
       if not self.__shallRun and not self.__shallRun1:
         # perform gui update if necessary
@@ -53,13 +54,13 @@ class WorkerThread(Thread):
         self.__shallRun1 = False
         self.__needsGUIUpdate = True
         # step
-        t = timer()
-        self.__gg.performStep()
-        serializedDataForProjection = self.__gg.serializedDataForProjection()
-        if shallShow:
-          guiData = self.__guiUpdate1()
-        self.__fpsLastRuns = self.__fpsLastRuns[-50:] + [1 / t.end()]
-        self.__post(status=f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", serializedDataForProjection=serializedDataForProjection)
+        with t:
+          self.__gg.performStep()
+          serializedDataForProjection = self.__gg.serializedDataForProjection()
+          if shallShow:
+            guiData = self.__guiUpdate1()
+        # cleanup
+        self.__post(status=f"Step {self.__gg.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection)
         if shallShow:
           self.__guiUpdate2(guiData)
 
