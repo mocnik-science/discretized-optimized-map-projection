@@ -26,7 +26,6 @@ class RenderThread(Thread):
     self.__projection = None
     self.__shallQuit = False
     self.__serializedData = None
-    self.__serializedDataPrevious = None
     self.start()
   
   def run(self):
@@ -42,7 +41,6 @@ class RenderThread(Thread):
           im = GeoGridRenderer.render(self.__serializedData, viewSettings=self.__viewSettings, projection=self.__projection)
         # cleanup
         self.__post(im=im, status=f"rendering {1000 * t.average():.0f} ms")
-        self.__serializedDataPrevious = self.__serializedData
         self.__serializedData = None
 
   def __post(self, **kwargs):
@@ -60,7 +58,6 @@ class RenderThread(Thread):
   def updateViewSettings(self, viewSettings=None):
     if viewSettings is not None:
       self.__viewSettings = viewSettings
-      self.__serializedData = self.__serializedDataPrevious
 
   def quit(self):
     self.__shallQuit = True
