@@ -1,5 +1,3 @@
-import shapely
-
 from src.geoGrid.geoGrid import *
 from src.mechanics.force import *
 from src.mechanics.potential.potentialArea import *

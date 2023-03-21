@@ -7,7 +7,7 @@ from src.geometry.geo import *
 def translatePoint(p, dLon):
   if dLon is None:
     return p
-  return Point(p.x + dLon, p.y)
+  return shapely.Point(p.x + dLon, p.y)
 
 def translatePolygon(p, dLon):
   if dLon is None:
@@ -116,13 +116,25 @@ class GeoGridCell:
           collectedForcesById[force.id2To][1] += force.yForce
     return (self.x, self.y), collectedForces + [(self.x + k * force[0], self.y + k * force[1]) for force in collectedForcesById.values()]
 
-  def neighboursWithEnclosingBearing(self, cells, point):
-    if self._neighboursBearings2 is None:
+  # def neighboursWithEnclosingBearing(self, cells, point):
+  #   return GeoGridCell.neighboursWithEnclosingBearingStatic(self.getNeighboursWithEnclosingBearingStaticData())
+
+  def getNeighboursWithEnclosingBearingStaticData(self):
+    return {
+      'point': self.point(),
+      'neighboursBearings2': self._neighboursBearings2,
+      'centreOriginal': self._centreOriginal,
+      'neighbours': self._neighbours,
+    }
+
+  @staticmethod
+  def neighboursWithEnclosingBearingStatic(cellData, cells, point):
+    if cellData['neighboursBearings2'] is None:
       return None
-    bearing = Geo.bearing(self._centreOriginal, point)
-    for i, b0, b1 in self._neighboursBearings2:
+    bearing = Geo.bearing(cellData['centreOriginal'], point)
+    for i, b0, b1 in cellData['neighboursBearings2']:
       if b0 > bearing and bearing >= b1:
-        return [cells[self._neighbours[j]] for j in [i, (i + 1) % len(self._neighbours)]]
+        return [cells[cellData['neighbours'][j]] for j in [i, (i + 1) % len(cellData['neighbours'])]]
     raise Exception('This should never happen – some bearing should have been found')
 
   def __str__(self):

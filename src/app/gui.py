@@ -1,6 +1,7 @@
 import wx
 import wx.adv
 
+from src.app.renderThread import *
 from src.app.workerThread import *
 from src.geoGrid.geoGrid import *
 
@@ -18,8 +19,9 @@ class App(wx.App):
 
 class Window(wx.Frame):
   def __init__(self, title):
-    self.__worker = None
-    self.__workerRunning = False
+    self.__workerThread = None
+    self.__renderThread = None
+    self.__workerThreadRunning = False
     self.__newImage = None
     self.__isLoadingNewImage = False
     self.__geoGridSettings = GeoGridSettings(resolution=3)
@@ -81,7 +83,7 @@ class Window(wx.Frame):
     # view menu: draw continents
     key = 'drawContinentsTolerance'
     addRadioItem(viewMenu, 'hide continents', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings, default=True)
     addRadioItem(viewMenu, 'show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
     addRadioItem(viewMenu, 'show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
     viewMenu.AppendSeparator()
@@ -153,10 +155,11 @@ class Window(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onClose, m)
 
     ## reset
-    wx.FutureCall(10, self.reset)
+    wx.CallLater(10, self.reset)
 
   def updateViewSettings(self):
-    self.__worker.updateViewSettings(self.__viewSettings)
+    self.__workerThread.updateViewSettings(self.__viewSettings)
+    self.__renderThread.updateViewSettings(self.__viewSettings)
 
   def loadImage(self, image):
     self.__newImage = image
@@ -168,9 +171,9 @@ class Window(wx.Frame):
       im = self.__newImage
       self.__newImage = None
       try:
-        im2 = wx.EmptyImage(*im.size)
+        im2 = wx.Image(*im.size)
         im2.SetData(im.convert('RGB').tobytes())
-        self._image.SetBitmap(wx.BitmapFromImage(im2))
+        self._image.SetBitmap(wx.Bitmap(im2))
         self._panel.Layout()
       except:
         pass
@@ -188,48 +191,68 @@ class Window(wx.Frame):
     except:
       pass
 
+  def quitThreads(self):
+    if self.__workerThread is not None:
+      self.__workerThread.quit()
+    self.__workerThread = None
+    if self.__renderThread is not None:
+      self.__renderThread.quit()
+    self.__renderThread = None
+
   def reset(self):
-    if self.__worker is not None:
-      self.__worker.pause()
-    self.__workerRunning = False
+    self.quitThreads()
+    self.__workerThreadRunning = False
     self._toolPlayIconPlay(False)
     self.__newImage = None
     self.__isLoadingNewImage = False
+    self.prepareRenderThread()
     self.prepareWorkerThread()
 
+  def prepareRenderThread(self):
+    EVT_RENDER_THREAD_UPDATE(self, self.__renderThreadUpdate)
+    self.__renderThread = RenderThread(self, self.__viewSettings)
   def prepareWorkerThread(self):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
-    self.__worker = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
+    self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
   
-  def __workerThreadUpdate(self, event):
-    if self.__worker is None:
+  def __renderThreadUpdate(self, event):
+    if self.__renderThread is None:
       return
     if event.im is not None:
       self.loadImage(event.im)
+  def __workerThreadUpdate(self, event):
+    if self.__workerThread is None:
+      return
+    if event.projection is not None:
+      self.__renderThread.setProjection(event.projection)
+    if event.serializedDataForProjection is not None:
+      self.__renderThread.updateSerializedDataForProjection(event.serializedDataForProjection)
+    if event.serializedData is not None:
+      self.__renderThread.render(event.serializedData)
     if event.status is not None:
       self.setStatus(event.status)
     if event.energy is not None:
       self.setEnergy(event.energy)
 
   def onButtonRun(self, event):
-    if self.__workerRunning:
+    if self.__workerThreadRunning:
       self._toolPlayIconPlay(False)
-      self.__worker.pause()
+      self.__workerThread.pause()
     else:
       self._toolPlayIconPlay(True)
-      self.__worker.unpause()
-    self.__workerRunning = not self.__workerRunning
+      self.__workerThread.unpause()
+    self.__workerThreadRunning = not self.__workerThreadRunning
 
   def onButtonRun1(self, event):
-    self.__worker.unpause1()
+    self.__workerThreadRunning = False
+    self._toolPlayIconPlay(False)
+    self.__workerThread.unpause1()
   
   def onButtonReset(self, event):
     self.reset()
 
   def onClose(self, event):
-    if self.__worker is not None:
-      self.__worker.quit()
-    self.__worker = None
+    self.quitThreads()
     self.Destroy()
 
 def runGui():
