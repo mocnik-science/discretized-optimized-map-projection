@@ -29,6 +29,7 @@ class WorkerThread(Thread):
     self.__shallRun = False
     self.__shallRun1 = False
     self.__shallQuit = False
+    self.__needsGUIUpdate = False
     self.__fpsLastRuns = []
     self.start()
   
@@ -39,19 +40,33 @@ class WorkerThread(Thread):
     wx.PostEvent(self.__notifyWindow, ResultEvent(self.__gg.getImage(self.__viewSettings), None, None))
     while not self.__shallQuit:
       if not self.__shallRun and not self.__shallRun1:
+        if self.__needsGUIUpdate:
+          guiData = self.__guiUpdate1()
+          self.__guiUpdate2(guiData)
         # wait
         time.sleep(.01)
       else:
+        shallShow = self.__shallRun1 or (self.__gg.step() + 1) % showNthStep == 0
         self.__shallRun1 = False
+        self.__needsGUIUpdate = True
         # step
         t = timer()
         self.__gg.performStep()
-        if self.__gg.step() % showNthStep == 0:
-          im = self.__gg.getImage(self.__viewSettings)
-          energy = self.__gg.energy()
+        if shallShow:
+          guiData = self.__guiUpdate1()
         self.__fpsLastRuns = self.__fpsLastRuns[-50:] + [1 / t.end()]
-        if self.__gg.step() % showNthStep == 0:
-          wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", energy))
+        if shallShow:
+          self.__guiUpdate2(guiData)
+
+  def __guiUpdate1(self):
+    im = self.__gg.getImage(self.__viewSettings)
+    energy = self.__gg.energy()
+    return im, energy
+
+  def __guiUpdate2(self, guiData):
+    im, energy = guiData
+    wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", energy))
+    self.__needsGUIUpdate = False
 
   def updateViewSettings(self, viewSettings):
     self.__viewSettings = viewSettings
