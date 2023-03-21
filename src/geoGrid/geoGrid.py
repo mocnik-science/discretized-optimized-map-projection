@@ -184,7 +184,8 @@ class GeoGrid:
         self.__cells[force.id2].addForce(force)
 
   def serializedDataForProjection(self):
-    return GeoGridProjection.serializedDataForProjection(self.__cells)
+    with timer('serialize data for projection', step=self.__step):
+      return GeoGridProjection.serializedDataForProjection(self.__cells)
 
   def projection(self):
     if self.__projection is None:
