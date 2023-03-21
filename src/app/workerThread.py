@@ -34,7 +34,6 @@ class WorkerThread(Thread):
     self.start()
   
   def run(self):
-    showNthStep = 10
     # initialize
     self.__gg = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: wx.PostEvent(self.__notifyWindow, ResultEvent(None, status, energy)))
     wx.PostEvent(self.__notifyWindow, ResultEvent(self.__gg.getImage(self.__viewSettings), None, None))
@@ -46,7 +45,7 @@ class WorkerThread(Thread):
         # wait
         time.sleep(.01)
       else:
-        shallShow = self.__shallRun1 or (self.__gg.step() + 1) % showNthStep == 0
+        shallShow = self.__shallRun1 or (self.__gg.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
         self.__shallRun1 = False
         self.__needsGUIUpdate = True
         # step
@@ -55,6 +54,7 @@ class WorkerThread(Thread):
         if shallShow:
           guiData = self.__guiUpdate1()
         self.__fpsLastRuns = self.__fpsLastRuns[-50:] + [1 / t.end()]
+        wx.PostEvent(self.__notifyWindow, ResultEvent(None, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", None))
         if shallShow:
           self.__guiUpdate2(guiData)
 
@@ -65,7 +65,7 @@ class WorkerThread(Thread):
 
   def __guiUpdate2(self, guiData):
     im, energy = guiData
-    wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", energy))
+    wx.PostEvent(self.__notifyWindow, ResultEvent(im, None, energy))
     self.__needsGUIUpdate = False
 
   def updateViewSettings(self, viewSettings):

@@ -34,15 +34,17 @@ class Window(wx.Frame):
       self.__menuDict[newId] = data
       menuItem = menu.Append(newId, label, label)
       self.Bind(wx.EVT_MENU, lambda event: callback(self.__menuDict[event.Id]), menuItem)
-    def addRadioItem(menu, label, object, key, data, callback):
+    def addRadioItem(menu, label, object, key, data, callback, default=False):
       newId = wx.NewId()
       self.__menuDict[newId] = data
       menuItem = menu.Append(newId, label, label, wx.ITEM_RADIO)
+      if default:
+        menuItem.Check(True)
       def cb(event):
         object[key] = self.__menuDict[event.Id]
         callback()
       self.Bind(wx.EVT_MENU, cb, menuItem)
-      if key not in object:
+      if key not in object or default:
         object[key] = data
     # init
     menuBar = wx.MenuBar()
@@ -51,7 +53,8 @@ class Window(wx.Frame):
     menuBar.Append(viewMenu, "&View")
     # view menu: potentials
     key = 'selectedPotential'
-    addRadioItem(viewMenu, 'all forces', self.__viewSettings, key, 'ALL', self.updateViewSettings)
+    addRadioItem(viewMenu, 'hide forces', self.__viewSettings, key, None, self.updateViewSettings)
+    addRadioItem(viewMenu, 'all forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True)
     for potential in self.__geoGridSettings.potentials:
       addRadioItem(viewMenu, f"force for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
@@ -81,6 +84,13 @@ class Window(wx.Frame):
     addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings)
     addRadioItem(viewMenu, 'show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
     addRadioItem(viewMenu, 'show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
+    viewMenu.AppendSeparator()
+    # view menu: showNthStep
+    key = 'showNthStep'
+    addRadioItem(viewMenu, 'update every step', self.__viewSettings, key, 1, self.updateViewSettings)
+    addRadioItem(viewMenu, 'update every 5th step', self.__viewSettings, key, 5, self.updateViewSettings)
+    addRadioItem(viewMenu, 'update every 10th step', self.__viewSettings, key, 10, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'update every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 

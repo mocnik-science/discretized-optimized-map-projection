@@ -219,9 +219,13 @@ class GeoGrid:
     with timer('render', step=self.__step):
       # view settings
       viewSettings = {
-        'drawNeighbours': True,
         'selectedPotential': 'ALL',
         'selectedVisualizationMethod': 'SUM',
+        'drawNeighbours': True,
+        'drawLabels': False,
+        'drawOriginalPolygons': False,
+        'drawContinentsTolerance': False,
+        'showNthStep': 10,
         **viewSettings,
       }
       # compute
@@ -263,15 +267,16 @@ class GeoGrid:
               if cell2Id2 in self.__cells:
                 draw.line((*project(*cell.xy()), *project(*self.__cells[cell2Id2].xy())), fill=(220, 220, 220))
       # draw forces
-      if viewSettings['selectedVisualizationMethod'] == 'SUM':
-        for cell in self.__cells.values():
-          p1, p2 = cell.forceVector(viewSettings['selectedPotential'])
-          draw.line((*project(*p1), *project(*p2)), fill=(150, 150, 150))
-      else:
-        for cell in self.__cells.values():
-          p1, p2s = cell.forceVectors(viewSettings['selectedPotential'])
-          for p2 in p2s:
+      if viewSettings['selectedPotential'] is not None:
+        if viewSettings['selectedVisualizationMethod'] == 'SUM':
+          for cell in self.__cells.values():
+            p1, p2 = cell.forceVector(viewSettings['selectedPotential'])
             draw.line((*project(*p1), *project(*p2)), fill=(150, 150, 150))
+        else:
+          for cell in self.__cells.values():
+            p1, p2s = cell.forceVectors(viewSettings['selectedPotential'])
+            for p2 in p2s:
+              draw.line((*project(*p1), *project(*p2)), fill=(150, 150, 150))
       # draw centres
       if viewSettings['drawLabels']:
         font = ImageFont.truetype('Helvetica', size=12)
