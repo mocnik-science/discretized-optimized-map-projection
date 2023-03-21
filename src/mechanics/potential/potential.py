@@ -11,6 +11,12 @@ class Potential:
   def setCalibrationFactor(self, k):
     self.calibrationFactor = k
 
+  def energy(self, cell, neighbouringCells):
+    raise Exception('Needs to be implemented by inheriting class')
+
+  def force(self, cell, neighbouringCells):
+    raise Exception('Needs to be implemented by inheriting class')
+
   def _computeQuantity(self, r, energy=False, force=False, exponent=1):
     R = .5
     # D – spring constant

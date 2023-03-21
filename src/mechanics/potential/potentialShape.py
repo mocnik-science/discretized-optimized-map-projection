@@ -1,5 +1,3 @@
-import shapely
-
 from src.geometry.cartesian import *
 from src.geometry.common import *
 from src.geometry.geo import *
@@ -20,7 +18,7 @@ class PotentialShape(Potential):
     forces = []
     for i, q in enumerate(self._quantity(cell, neighbouringCells, force=True)):
       neighbouringCell = neighbouringCells[i]
-      forces.append(Force(self.kind, neighbouringCell, shapely.Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
+      forces.append(Force(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
     return forces
 
   def _quantity(self, cell, neighbouringCells, **kwargs):

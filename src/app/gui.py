@@ -78,7 +78,7 @@ class Window(wx.Frame):
     # view menu: draw continents
     key = 'drawContinentsTolerance'
     addRadioItem(viewMenu, 'hide continents', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show strongly simplified continents (a little bit faster)', self.__viewSettings, key, 3, self.updateViewSettings)
+    addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings)
     addRadioItem(viewMenu, 'show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
     addRadioItem(viewMenu, 'show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
     # finalize

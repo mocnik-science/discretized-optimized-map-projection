@@ -188,7 +188,7 @@ class GeoGrid:
         self.__cells[force.id2].addForce(force)
 
   def project(self, lon, lat):
-    pointLonLat = shapely.Point(lon, lat)
+    pointLonLat = Point(lon, lat)
     dist, ind = self.__ballTree.query([np.deg2rad([lat, lon])], k=3)
     nearestCell = None
     cornerCells = None

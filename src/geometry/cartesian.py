@@ -1,6 +1,11 @@
 import math
 import numpy as np
 
+class Point:
+  def __init__(self, x, y):
+    self.x = x
+    self.y = y
+
 class Cartesian:
   @staticmethod
   def length(x, y):

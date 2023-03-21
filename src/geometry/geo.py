@@ -46,4 +46,4 @@ class Geo:
   #   d = distance / radiusEarth # angular distance
   #   y2 = math.asin(math.sin(startY) * math.cos(d) + math.cos(startY) * math.sin(d) * math.cos(bearing))
   #   x2 = startX + math.atan2(math.sin(bearing) * math.sin(d) * math.cos(startY), math.cos(d) - math.sin(startY) * math.sin(y2))
-  #   return shapely.Point(x2, y2)
+  #   return Point(x2, y2)

@@ -46,8 +46,9 @@ class WorkerThread(Thread):
         t = timer()
         self.__gg.performStep()
         im = self.__gg.getImage(self.__viewSettings)
+        energy = self.__gg.energy()
         self.__fpsLastRuns = self.__fpsLastRuns[-50:] + [1 / t.end()]
-        wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", self.__gg.energy()))
+        wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", energy))
 
   def updateViewSettings(self, viewSettings):
     self.__viewSettings = viewSettings

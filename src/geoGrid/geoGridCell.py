@@ -7,7 +7,7 @@ from src.geometry.geo import *
 def translatePoint(p, dLon):
   if dLon is None:
     return p
-  return shapely.Point(p.x + dLon, p.y)
+  return Point(p.x + dLon, p.y)
 
 def translatePolygon(p, dLon):
   if dLon is None:
@@ -53,7 +53,7 @@ class GeoGridCell:
     return self.x, self.y
 
   def point(self):
-    return shapely.Point(self.x, self.y)
+    return Point(self.x, self.y)
 
   def addForce(self, force):
     # compute effect of the force
