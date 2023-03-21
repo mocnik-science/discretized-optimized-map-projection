@@ -33,6 +33,7 @@ class WorkerThread(Thread):
     self.start()
   
   def run(self):
+    showNthStep = 10
     # initialize
     self.__gg = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: wx.PostEvent(self.__notifyWindow, ResultEvent(None, status, energy)))
     wx.PostEvent(self.__notifyWindow, ResultEvent(self.__gg.getImage(self.__viewSettings), None, None))
@@ -45,10 +46,12 @@ class WorkerThread(Thread):
         # step
         t = timer()
         self.__gg.performStep()
-        im = self.__gg.getImage(self.__viewSettings)
-        energy = self.__gg.energy()
+        if self.__gg.step() % showNthStep == 0:
+          im = self.__gg.getImage(self.__viewSettings)
+          energy = self.__gg.energy()
         self.__fpsLastRuns = self.__fpsLastRuns[-50:] + [1 / t.end()]
-        wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", energy))
+        if self.__gg.step() % showNthStep == 0:
+          wx.PostEvent(self.__notifyWindow, ResultEvent(im, f"Step {self.__gg.step()}, {sum(self.__fpsLastRuns) / len(self.__fpsLastRuns):.0f} fps", energy))
 
   def updateViewSettings(self, viewSettings):
     self.__viewSettings = viewSettings
