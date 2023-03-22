@@ -15,19 +15,18 @@ from src.mechanics.potential.potential import *
 
 class PotentialArea(Potential):
   kind = 'AREA'
-  calibrationPossible = True
+  calibrationPossible = False
 
   def energy(self, cell, neighbouringCells):
-    q = self._quantity(cell, neighbouringCells, energy=True)
-    return q * len(neighbouringCells)
+    return self._quantity(cell, neighbouringCells, energy=True) * len(neighbouringCells)
 
   def force(self, cell, neighbouringCells):
     q = self._quantity(cell, neighbouringCells, force=True)
     return [Force(self.kind, neighbouringCell, cell, q) for neighbouringCell in neighbouringCells]
 
-  def _quantity(self, cell, neighbouringCells, **kwargs):
+  def _value(self, cell, neighbouringCells):
     # hexagon:   1 + 6 * 2/6 = 3
     # pentagon:  5/6 + 5 * 2/6 = 15/6 = 2.5
     geoA = self._settings._typicalArea * (3 if cell._isHexagon else 2.5) * self.calibrationFactor
     cartesianA = Cartesian.area(neighbouringCells)
-    return self._computeQuantity(cartesianA / geoA - 1, **kwargs)
+    return cartesianA / geoA - 1

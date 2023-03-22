@@ -3,9 +3,10 @@ import time
 class timer(object):
   __durationsByLabel = {}
   
-  def __init__(self, label='', log=True, showAverage=20, **kwargs):
+  def __init__(self, label='', log=True, filterLog=None, showAverage=100, **kwargs):
     self.__label = label
     self.__log = log
+    self.__filterLog = filterLog
     self.__showAverage = showAverage
     self.__formatKwargs = kwargs
     self.__time = None
@@ -16,7 +17,7 @@ class timer(object):
 
   def __exit__(self, *args):
     duration = self.end()
-    if not self.__log or self.__time is None:
+    if not self.__log or self.__time is None or (self.__filterLog is not None and self.__filterLog not in self.__label):
       return
     label1 = ''
     if 'step' in self.__formatKwargs:
@@ -31,7 +32,7 @@ class timer(object):
       return None
     duration = time.time() - self.__time
     self.__durations.append(duration)
-    if self.__showAverage is not False:
+    if self.__showAverage is not False and self.__log:
       if self.__label not in timer.__durationsByLabel:
         timer.__durationsByLabel[self.__label] = []
       timer.__durationsByLabel[self.__label] = timer.__durationsByLabel[self.__label][-self.__showAverage:] + [duration]

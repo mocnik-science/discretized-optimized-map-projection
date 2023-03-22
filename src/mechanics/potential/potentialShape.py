@@ -12,16 +12,16 @@ class PotentialShape(Potential):
     super().__init__(*args, **kwargs)
 
   def energy(self, cell, neighbouringCells):
-    return sum(self._quantity(cell, neighbouringCells, energy=True))
+    return sum(self._quantities(cell, neighbouringCells, energy=True))
 
   def force(self, cell, neighbouringCells):
     forces = []
-    for i, q in enumerate(self._quantity(cell, neighbouringCells, force=True)):
+    for i, q in enumerate(self._quantities(cell, neighbouringCells, force=True)):
       neighbouringCell = neighbouringCells[i]
       forces.append(Force(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
     return forces
 
-  def _quantity(self, cell, neighbouringCells, **kwargs):
+  def _values(self, cell, neighbouringCells):
     lenNeighbours = len(cell._neighbours)
     stepBearingIdeal = 2 * math.pi / lenNeighbours
     # compute bearings
@@ -29,4 +29,4 @@ class PotentialShape(Potential):
     # compute average difference
     avgDiff = sum([Common.normalizeAngle(bearings[i] - i * stepBearingIdeal, intervalStart=-math.pi) for i in range(0, lenNeighbours)]) / lenNeighbours
     # quantities
-    return [self._computeQuantity(Common.normalizeAngle(bearing - (i * stepBearingIdeal + avgDiff), intervalStart=-math.pi), **kwargs) for i, bearing in enumerate(bearings)]
+    return [Common.normalizeAngle(bearing - (i * stepBearingIdeal + avgDiff), intervalStart=-math.pi) for i, bearing in enumerate(bearings)]

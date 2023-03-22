@@ -3,33 +3,42 @@ from src.common.functions import *
 class Potential:
   kind = None
   calibrationPossible = False
+  __exponent = 2
 
   def __init__(self, settings):
     self._settings = settings
     self.calibrationFactor = 1
+    self.__D = None
 
   def setCalibrationFactor(self, k):
     self.calibrationFactor = k
 
   def energy(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
-
   def force(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
 
-  def _computeQuantity(self, r, energy=False, force=False, exponent=1):
-    R = .5
+  def _value(self, cell, neighbouringCells):
+    raise Exception('Needs to be implemented by inheriting class')
+  def _values(self, cell, neighbouringCells):
+    raise Exception('Needs to be implemented by inheriting class')
+
+  def _quantity(self, *args, **kwargs):
+    return self.__quantity(self._value(*args), **kwargs)
+  def _quantities(self, *args, **kwargs):
+    return [self.__quantity(r, **kwargs) for r in self._values(*args)]
+  def __quantity(self, r, energy=False, force=False):
     # D – spring constant
     #     chosen such that the force at r = R is -r (where r is the multiple of the typical distance)
     #     R = D * exponent * R**(exponent - 1)
     #     => D = R**(2 - exponent) / exponent
-    sgn = sign(r)
-    r = abs(r)
-    D = R**(2 - exponent) / exponent * self._settings._forceFactor
+    if self.__D is None:
+      R = .5
+      self.__D = R**(2 - self.__exponent) / self.__exponent * self._settings._forceFactor
     if energy:
-      return D * r**exponent
+      return self.__D * abs(r)**self.__exponent
     if force:
-      return -D * exponent * r**(exponent - 1) * sgn
+      return -self.__D * self.__exponent * abs(r)**(self.__exponent - 1) * sign(r)
     raise Exception('Provide either energy or force')
 
 
