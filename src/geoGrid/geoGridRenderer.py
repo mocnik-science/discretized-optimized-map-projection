@@ -114,7 +114,7 @@ class GeoGridRenderer:
       radius = r
       if viewSettings['selectedEnergy'] is not None and cell['isActive']:
         radius *= .5 + max(0, min(10, 3 + math.log(cell['energy'] * factor)))
-      GeoGridRenderer.__point(d, cell['xy'], radius, fill=(255, 0, 0) if cell['isActive'] else (0, 0, 255))
+      GeoGridRenderer.__point(d, cell['xy'], radius, fill=(255, 140, 140) if cell['isActive'] else (140, 140, 255))
       if viewSettings['drawLabels']:
         GeoGridRenderer.__text(d, cell['xy'], str(id2), font=font, fill=(0, 0, 0))
 

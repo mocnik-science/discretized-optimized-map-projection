@@ -57,26 +57,24 @@ class WorkerThread(Thread):
         with t:
           self.__gg.performStep()
           serializedDataForProjection = self.__gg.serializedDataForProjection()
+          energy = self.__gg.energy()
           if shallUpdateGui:
             guiData = self.__updateGui1()
         # cleanup
-        self.__post(status=f"Step {self.__gg.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}))
+        self.__post(status=f"Step {self.__gg.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy)
 
   def __post(self, **kwargs):
     wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
 
   def __updateGui1(self):
     serializedData = self.__gg.serializedData(self.__viewSettings)
-    energy = self.__gg.energy()
-    return serializedData, energy
+    return serializedData
 
-  def __updateGui2(self, guiData, post=True):
-    serializedData, energy = guiData
+  def __updateGui2(self, serializedData, post=True):
     self.__needsGUIUpdate = False
     self.__shallUpdateGui = False
     kwargs = {
       'serializedData': serializedData,
-      'energy': energy,
     }
     if post:
       self.__post(**kwargs)
