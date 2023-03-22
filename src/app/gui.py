@@ -36,6 +36,7 @@ class Window(wx.Frame):
       self.__menuDict[newId] = data
       menuItem = menu.Append(newId, label, label)
       self.Bind(wx.EVT_MENU, lambda event: callback(self.__menuDict[event.Id]), menuItem)
+      return menuItem
     def addRadioItem(menu, label, object, key, data, callback, default=False):
       newId = wx.NewId()
       self.__menuDict[newId] = data
@@ -48,8 +49,17 @@ class Window(wx.Frame):
       self.Bind(wx.EVT_MENU, cb, menuItem)
       if key not in object or default:
         object[key] = data
+      return menuItem
     # init
     menuBar = wx.MenuBar()
+    # simulation menu
+    simulationMenu = wx.Menu()
+    menuBar.Append(simulationMenu, "&Simulation")
+    # simulation menu: start/stop animation
+    startMenuItem = addItem(simulationMenu, 'start\tSpace', None, self.onRun)
+    stopMenuItem = addItem(simulationMenu, 'stop\tSpace', None, self.onRun)
+    addItem(simulationMenu, 'compute next step\tRight', None, self.onRun1)
+    addItem(simulationMenu, 'reset\tBack', None, self.onReset)
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
@@ -90,8 +100,8 @@ class Window(wx.Frame):
     # view menu: showNthStep
     key = 'showNthStep'
     addRadioItem(viewMenu, 'update every step', self.__viewSettings, key, 1, self.updateViewSettings)
-    addRadioItem(viewMenu, 'update every 5th step', self.__viewSettings, key, 5, self.updateViewSettings)
-    addRadioItem(viewMenu, 'update every 10th step', self.__viewSettings, key, 10, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'update every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'update every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
     addRadioItem(viewMenu, 'update every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
@@ -108,16 +118,21 @@ class Window(wx.Frame):
       self.Bind(wx.EVT_TOOL, callback, tool)
     # init
     toolBar = self.CreateToolBar()
-    addTool(0, 'Run', iconPlay, self.onButtonRun)
-    addTool(1, 'Run one step', iconPlay1, self.onButtonRun1)
-    addTool(2, 'Reset', iconReset, self.onButtonReset)
+    addTool(0, 'Run', iconPlay, self.onRun)
+    addTool(1, 'Run one step', iconPlay1, self.onRun1)
+    addTool(2, 'Reset', iconReset, self.onReset)
     toolBar.Realize()
+
     # update functions
-    def toolPlayIconPlay(isPlaying):
+    def guiPlay(isPlaying):
+      # menu
+      startMenuItem.Enable(enable=not isPlaying)
+      stopMenuItem.Enable(enable=isPlaying)
+      # toolbar
       toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlay)
       toolBar.Realize()
       toolBar.Refresh()
-    self._toolPlayIconPlay = toolPlayIconPlay
+    self._guiPlay = guiPlay
 
     ## status bar
     self._statusBar = self.CreateStatusBar(3)
@@ -132,20 +147,12 @@ class Window(wx.Frame):
     self._image.SetBackgroundColour(wx.WHITE)
     box.Add(self._image, 1, wx.EXPAND)
 
-    # ## text
-    # text = wx.StaticText(panel, label='Hello world')
-    # box.Add(text, 0, wx.ALL, 10)
-
-    # ## button
-    # buttonRun = wx.Button(panel, label='Run')
-    # buttonRun.Bind(wx.EVT_BUTTON, self.onButtonRun)
-    # box.Add(buttonRun, 0, wx.ALL, 10)
-
     ## layout
     self._panel.SetSizer(box)
     self._panel.Layout()
 
     ## register handlers
+    self.Bind(wx.EVT_CHAR_HOOK, self.onKey)
     self.Bind(wx.EVT_CLOSE, self.onClose)
 
     ## adapt app menu
@@ -207,7 +214,7 @@ class Window(wx.Frame):
   def reset(self):
     self.quitThreads()
     self.__workerThreadRunning = False
-    self._toolPlayIconPlay(False)
+    self._guiPlay(False)
     self.__newImage = None
     self.__isLoadingNewImage = False
     self.prepareRenderThread()
@@ -241,21 +248,21 @@ class Window(wx.Frame):
     if event.energy is not None:
       self.setEnergy(event.energy)
 
-  def onButtonRun(self, event):
+  def onRun(self, event):
     if self.__workerThreadRunning:
-      self._toolPlayIconPlay(False)
+      self._guiPlay(False)
       self.__workerThread.pause()
     else:
-      self._toolPlayIconPlay(True)
+      self._guiPlay(True)
       self.__workerThread.unpause()
     self.__workerThreadRunning = not self.__workerThreadRunning
 
-  def onButtonRun1(self, event):
+  def onRun1(self, event):
     self.__workerThreadRunning = False
-    self._toolPlayIconPlay(False)
+    self._guiPlay(False)
     self.__workerThread.unpause1()
   
-  def onButtonReset(self, event):
+  def onReset(self, event):
     self.reset()
 
   def onClose(self, event):

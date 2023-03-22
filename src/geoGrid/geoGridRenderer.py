@@ -22,7 +22,7 @@ class GeoGridRenderer:
       'drawLabels': False,
       'drawOriginalPolygons': False,
       'drawContinentsTolerance': 3,
-      'showNthStep': 10,
+      'showNthStep': 5,
       **viewSettings,
     }
     # prepare data (happens only once)
