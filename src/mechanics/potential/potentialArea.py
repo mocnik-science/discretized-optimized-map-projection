@@ -16,10 +16,12 @@ class PotentialArea(Potential):
 
   def energy(self, cell, neighbouringCells):
     return self._quantity(cell, neighbouringCells, energy=True) * len(neighbouringCells)
-
   def force(self, cell, neighbouringCells):
     q = self._quantity(cell, neighbouringCells, force=True)
     return [Force(self.kind, neighbouringCell, cell, q) for neighbouringCell in neighbouringCells]
+  def energyAndForce(self, cell, neighbouringCells):
+    qEnergy, qForce = self._quantity(cell, neighbouringCells)
+    return qEnergy * len(neighbouringCells),  [Force(self.kind, neighbouringCell, cell, qForce) for neighbouringCell in neighbouringCells]
 
   def _value(self, cell, neighbouringCells):
     # hexagon:   1 + 6 * 2/6 = 3

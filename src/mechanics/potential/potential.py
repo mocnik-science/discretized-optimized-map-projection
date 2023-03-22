@@ -17,6 +17,8 @@ class Potential:
     raise Exception('Needs to be implemented by inheriting class')
   def force(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
+  def energyAndForce(self, cell, neighbouringCells):
+    raise Exception('Needs to be implemented by inheriting class')
 
   def _value(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
@@ -37,10 +39,12 @@ class Potential:
       self.__D = R**(2 - self.__exponent) / self.__exponent * self._settings._forceFactor
     if energy:
       return self.__D * abs(r)**self.__exponent
-    if force:
+    elif force:
       return -self.__D * self.__exponent * abs(r)**(self.__exponent - 1) * sign(r)
-    raise Exception('Provide either energy or force')
-
+    else:
+      energy = self.__D * abs(r)**self.__exponent
+      force = -energy * self.__exponent / r
+      return energy, force
 
 
 

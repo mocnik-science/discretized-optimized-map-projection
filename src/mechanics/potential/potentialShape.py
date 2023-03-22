@@ -12,13 +12,20 @@ class PotentialShape(Potential):
 
   def energy(self, cell, neighbouringCells):
     return sum(self._quantities(cell, neighbouringCells, energy=True))
-
   def force(self, cell, neighbouringCells):
     forces = []
     for i, q in enumerate(self._quantities(cell, neighbouringCells, force=True)):
       neighbouringCell = neighbouringCells[i]
       forces.append(Force(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
     return forces
+  def energyAndForce(self, cell, neighbouringCells):
+    energies = 0
+    forces = []
+    for i, (qEnergy, qForce) in enumerate(self._quantities(cell, neighbouringCells)):
+      energies += qEnergy
+      neighbouringCell = neighbouringCells[i]
+      forces.append(Force(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), qForce))
+    return energies, forces
 
   def _values(self, cell, neighbouringCells):
     lenNeighbours = len(cell._neighbours)

@@ -1,3 +1,4 @@
+import math
 import os
 from PIL import Image, ImageDraw, ImageFont
 
@@ -7,6 +8,17 @@ from src.geometry.geo import radiusEarth
 from src.geometry.naturalEarth import NaturalEarth
 
 class GeoGridRenderer:
+  viewSettingsDefault = {
+    'selectedPotential': 'ALL',
+    'selectedVisualizationMethod': 'SUM',
+    'selectedEnergy': 'ALL',
+    'drawNeighbours': False,
+    'drawLabels': False,
+    'drawOriginalPolygons': False,
+    'drawContinentsTolerance': 3,
+    'showNthStep': 5,
+  }
+
   @staticmethod
   def render(serializedData, viewSettings={}, width=2000, height=1000, border=10, r=3, boundsExtend=1.3, projection=None, save=False):
     # handle serialized data
@@ -16,13 +28,7 @@ class GeoGridRenderer:
     step = serializedData['step']
     # view settings
     viewSettings = {
-      'selectedPotential': 'ALL',
-      'selectedVisualizationMethod': 'SUM',
-      'drawNeighbours': False,
-      'drawLabels': False,
-      'drawOriginalPolygons': False,
-      'drawContinentsTolerance': 3,
-      'showNthStep': 5,
+      **GeoGridRenderer.viewSettingsDefault,
       **viewSettings,
     }
     # prepare data (happens only once)
@@ -101,10 +107,14 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderCentres(d, lonLatToCartesian, cells, viewSettings, r, projection):
+    factor = 1e-4
     if viewSettings['drawLabels']:
       font = ImageFont.truetype('Helvetica', size=12)
     for id2, cell in cells.items():
-      GeoGridRenderer.__point(d, cell['xy'], r, fill=(255, 0, 0) if cell['isActive'] else (0, 0, 255))
+      radius = r
+      if viewSettings['selectedEnergy'] is not None and cell['isActive']:
+        radius *= .5 + max(0, min(10, 3 + math.log(cell['energy'] * factor)))
+      GeoGridRenderer.__point(d, cell['xy'], radius, fill=(255, 0, 0) if cell['isActive'] else (0, 0, 255))
       if viewSettings['drawLabels']:
         GeoGridRenderer.__text(d, cell['xy'], str(id2), font=font, fill=(0, 0, 0))
 

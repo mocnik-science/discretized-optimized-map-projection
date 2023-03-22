@@ -30,6 +30,7 @@ class GeoGridCell:
     self.x = radiusEarth * Common.deg2rad(self._centreOriginal.x)
     self.y = radiusEarth * Common.deg2rad(self._centreOriginal.y)
     self._neighboursBearings2 = None
+    self._energy = {}
 
   def initNeighbours(self, neighbours):
     if any(abs(neighbour._centreOriginal.x - self._centreOriginal.x) > 270 for neighbour in neighbours):
@@ -54,6 +55,18 @@ class GeoGridCell:
 
   def point(self):
     return Point(self.x, self.y)
+
+  def setEnergy(self, kind, energy):
+    self._energy[kind] = energy
+
+  def energy(self, potential):
+    if potential is None:
+      return None
+    elif potential == 'ALL':
+      return sum(self._energy.values())
+    elif potential in self._energy:
+      return self._energy[potential]
+    raise Exception('The energy has not yet been computed')
 
   def addForce(self, force):
     # compute effect of the force

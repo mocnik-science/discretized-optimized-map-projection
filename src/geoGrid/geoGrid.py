@@ -147,10 +147,15 @@ class GeoGrid:
   def energy(self, potential=None):
     with timer('compute energy', log=potential is None, step=self.__step):
       energy = 0
-      for potential in [potential] if potential is not None else self.__settings.potentials:
+      if self.__step <= 0:
+        for potential in [potential] if potential is not None else self.__settings.potentials:
+          for cell in self.__cells.values():
+            if cell._isActive:
+              energy += potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+      else:
         for cell in self.__cells.values():
           if cell._isActive:
-            energy += potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+            energy += cell.energy(potential if potential else 'ALL')
       return energy
 
   def step(self):
@@ -178,6 +183,12 @@ class GeoGrid:
     with timer('collect forces', step=self.__step):
       for force in forces:
         self.__cells[force.id2].addForce(force)
+    # compute energies
+    for potential in self.__settings.potentials:
+      with timer(f"compute energies: {potential.kind.lower()}", step=self.__step):
+        for cell in self.__cells.values():
+          if cell._isActive:
+            cell.setEnergy(potential.kind, potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]))
 
   def serializedDataForProjection(self):
     with timer('serialize data for projection', step=self.__step):
@@ -195,13 +206,7 @@ class GeoGrid:
     with timer('serialize data for rendering', step=self.__step):
       # view settings
       viewSettings = {
-        'selectedPotential': 'ALL',
-        'selectedVisualizationMethod': 'SUM',
-        'drawNeighbours': False,
-        'drawLabels': False,
-        'drawOriginalPolygons': False,
-        'drawContinentsTolerance': 3,
-        'showNthStep': 10,
+        **GeoGridRenderer.viewSettingsDefault,
         **viewSettings,
       }
       # init data
@@ -223,6 +228,11 @@ class GeoGrid:
         else:
           for cell in self.__cells.values():
             cells[cell._id2]['forceVectors'] = cell.forceVectors(viewSettings['selectedPotential'])
+      # energy
+      if viewSettings['selectedEnergy'] is not None:
+        for cell in self.__cells.values():
+          if cell._isActive:
+            cells[cell._id2]['energy'] = cell.energy(viewSettings['selectedEnergy'])
       # centres xy and is active
       for cell in self.__cells.values():
         cells[cell._id2]['xy'] = cell.xy()

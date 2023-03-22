@@ -75,6 +75,13 @@ class Window(wx.Frame):
     addRadioItem(viewMenu, 'sum', self.__viewSettings, key, 'SUM', self.updateViewSettings)
     addRadioItem(viewMenu, 'individually', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings)
     viewMenu.AppendSeparator()
+    # view menu: energy
+    key = 'selectedEnergy'
+    addRadioItem(viewMenu, 'hide energies', self.__viewSettings, key, None, self.updateViewSettings)
+    addRadioItem(viewMenu, 'all energies', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True)
+    for potential in self.__geoGridSettings.potentials:
+      addRadioItem(viewMenu, f"energy for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+    viewMenu.AppendSeparator()
     # view menu: draw neighbours
     key = 'drawNeighbours'
     addRadioItem(viewMenu, 'hide neighbours', self.__viewSettings, key, False, self.updateViewSettings)
