@@ -1,6 +1,8 @@
 import math
 # import numpy as np
 
+from src.geometry.common import Common
+
 class Point:
   def __init__(self, x, y):
     self.x = x
@@ -32,4 +34,4 @@ class Cartesian:
 
   @staticmethod
   def bearing(start, end): # in radiant, positively oriented, north is 0
-    return (math.atan2(end.y - start.y, end.x - start.x) + 1.5 * math.pi) % (2 * math.pi)
+    return (math.atan2(end.y - start.y, end.x - start.x) + 1.5 * Common._pi) % Common._2pi

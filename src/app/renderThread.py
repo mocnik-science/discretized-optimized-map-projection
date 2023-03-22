@@ -1,10 +1,9 @@
-from threading import *
+from threading import Thread
 import time
 import wx
 
-from src.common.timer import *
-from src.geoGrid.geoGrid import *
-from src.geoGrid.geoGridSettings import *
+from src.common.timer import timer
+from src.geoGrid.geoGridRenderer import GeoGridRenderer
 
 EVT_RENDER_THREAD_UPDATE_ID = wx.NewId()
 

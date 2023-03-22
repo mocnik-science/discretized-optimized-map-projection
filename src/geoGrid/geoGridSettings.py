@@ -1,8 +1,6 @@
-from src.geoGrid.geoGrid import *
-from src.mechanics.force import *
-from src.mechanics.potential.potentialArea import *
-from src.mechanics.potential.potentialDistance import *
-from src.mechanics.potential.potentialShape import *
+from src.mechanics.potential.potentialArea import PotentialArea
+from src.mechanics.potential.potentialDistance import PotentialDistance
+from src.mechanics.potential.potentialShape import PotentialShape
 
 # F = - G m1 m2 / r^2
 # U = F * r

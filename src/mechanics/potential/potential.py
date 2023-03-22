@@ -1,4 +1,4 @@
-from src.common.functions import *
+from src.common.functions import sign
 
 class Potential:
   kind = None

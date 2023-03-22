@@ -1,8 +1,8 @@
-import math
 import shapely
 
-from src.geometry.cartesian import *
-from src.geometry.geo import *
+from src.geometry.common import Common
+from src.geometry.cartesian import Cartesian, Point
+from src.geometry.geo import Geo, radiusEarth
 
 def translatePoint(p, dLon):
   if dLon is None:
@@ -27,8 +27,8 @@ class GeoGridCell:
     self._neighboursOriginal = dggridCell.neighbours
     self._centreOriginal = translatePoint(dggridCell.centre, dLon)
     self._polygonOriginal = translatePolygon(dggridCell.polygon, dLon)
-    self.x = math.pi / 180 * radiusEarth * self._centreOriginal.x
-    self.y = math.pi / 180 * radiusEarth * self._centreOriginal.y
+    self.x = radiusEarth * Common.deg2rad(self._centreOriginal.x)
+    self.y = radiusEarth * Common.deg2rad(self._centreOriginal.y)
     self._neighboursBearings2 = None
 
   def initNeighbours(self, neighbours):
@@ -45,7 +45,7 @@ class GeoGridCell:
         neighboursBearings2.append((i, b0, b1))
       else:
         neighboursBearings2.append((i, b0, 0))
-        neighboursBearings2.append((i, 2 * math.pi, b1))
+        neighboursBearings2.append((i, Common._2pi, b1))
       i += 1
     self._neighboursBearings2 = neighboursBearings2
 

@@ -1,7 +1,7 @@
-from src.geometry.cartesian import *
-from src.geometry.geo import *
-from src.mechanics.force import *
-from src.mechanics.potential.potential import *
+from src.geometry.cartesian import Cartesian
+from src.geometry.geo import Geo
+from src.mechanics.force import Force
+from src.mechanics.potential.potential import Potential
 
 class PotentialDistance(Potential):
   kind = 'DISTANCE'

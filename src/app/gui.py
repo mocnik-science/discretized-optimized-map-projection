@@ -1,9 +1,9 @@
 import wx
 import wx.adv
 
-from src.app.renderThread import *
-from src.app.workerThread import *
-from src.geoGrid.geoGrid import *
+from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
+from src.app.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
+from src.geoGrid.geoGridSettings import GeoGridSettings
 
 class TaskBarIcon(wx.adv.TaskBarIcon):
   def __init__(self):

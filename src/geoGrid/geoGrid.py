@@ -5,18 +5,15 @@ from scipy.optimize import minimize_scalar
 import shapely
 import shutil
 from sklearn.neighbors import BallTree
-from sklearn.metrics.pairwise import haversine_distances
 
-from src.common.functions import *
+from src.common.functions import minBy
 from src.common.timer import timer
-from src.geometry.common import *
-from src.geometry.cartesian import *
+from src.geometry.common import Common
+from src.geometry.cartesian import Cartesian
 from src.geometry.dggrid import DGGRID
-from src.geometry.geo import *
-from src.geometry.naturalEarth import NaturalEarth
-from src.geoGrid.geoGridCell import *
-from src.geoGrid.geoGridProjection import *
-from src.geoGrid.geoGridRenderer import *
+from src.geoGrid.geoGridCell import GeoGridCell
+from src.geoGrid.geoGridProjection import GeoGridProjection
+from src.geoGrid.geoGridRenderer import GeoGridRenderer
 
 class GeoGrid:
   def __init__(self, settings, callbackStatus=lambda status, energy: None):

@@ -1,8 +1,7 @@
-from src.geometry.cartesian import *
-from src.geometry.common import *
-from src.geometry.geo import *
-from src.mechanics.force import *
-from src.mechanics.potential.potential import *
+from src.geometry.cartesian import Cartesian
+from src.geometry.common import Common
+from src.mechanics.force import Force
+from src.mechanics.potential.potential import Potential
 
 class PotentialShape(Potential):
   kind = 'SHAPE'

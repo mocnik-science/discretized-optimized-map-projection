@@ -1,4 +1,4 @@
-from src.geoGrid.geoGridCell import *
+from src.geoGrid.geoGridCell import GeoGridCell
 
 # force applies to cell, in the direction of cellTo -> cell
 class Force:

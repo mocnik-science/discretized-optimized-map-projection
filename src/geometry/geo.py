@@ -26,19 +26,20 @@ class Geo:
     endY = Common.deg2rad(end.y)
     y = math.sin(endX - startX) * math.cos(endY)
     x = math.cos(startY) * math.sin(endY) - math.sin(startY) * math.cos(endY) * math.cos(endX - startX)
-    return (math.atan2(y, x) + 2 * math.pi) % (2 * math.pi)
+    return Common.normalizeAngle(math.atan2(y, x))
 
   @staticmethod
   def areaOfTriangle(triangle): # in metres
     # compute spherical excess
-    e = -math.pi
+    e = -Common._pi
     for i, j, k in [[0, 1, 2], [1, 2, 0], [2, 0, 1]]:
-      d = Geo.bearing(triangle[i], triangle[j]) - Geo.bearing(triangle[i], triangle[k])
-      if d < -math.pi:
-        d += 2 * math.pi
-      e += d
+      e += Common.normalizeAngle(Geo.bearing(triangle[i], triangle[j]) - Geo.bearing(triangle[i], triangle[k]), intervalStart=-Common._pi)
+      # d = Geo.bearing(triangle[i], triangle[j]) - Geo.bearing(triangle[i], triangle[k])
+      # if d < -Common._pi:
+      #   d += Common._2pi
+      # e += d
     # Girard's theorem
-    return e * radiusEarth**2
+    return e * radiusEarth * radiusEarth
 
   # @staticmethod
   # def destination(start, bearing, distance): # in radiants
