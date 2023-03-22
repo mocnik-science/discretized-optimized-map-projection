@@ -30,6 +30,7 @@ class WorkerThread(Thread):
     self.__shallRun1 = False
     self.__shallQuit = False
     self.__needsGUIUpdate = False
+    self.__shallUpdateGui = False
     self.start()
   
   def run(self):
@@ -43,44 +44,53 @@ class WorkerThread(Thread):
       if not self.__shallRun and not self.__shallRun1:
         # perform gui update if necessary
         if self.__needsGUIUpdate:
-          guiData = self.__guiUpdate1()
-          self.__guiUpdate2(guiData)
+          guiData = self.__updateGui1()
+          self.__updateGui2(guiData)
         # wait
         time.sleep(.01)
       else:
         # preparations
-        shallShow = self.__shallRun1 or (self.__gg.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
+        shallUpdateGui = self.__shallUpdateGui or self.__shallRun1 or (self.__gg.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
         self.__shallRun1 = False
         self.__needsGUIUpdate = True
         # step
         with t:
           self.__gg.performStep()
           serializedDataForProjection = self.__gg.serializedDataForProjection()
-          if shallShow:
-            guiData = self.__guiUpdate1()
+          if shallUpdateGui:
+            guiData = self.__updateGui1()
         # cleanup
-        self.__post(status=f"Step {self.__gg.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection)
-        if shallShow:
-          self.__guiUpdate2(guiData)
+        self.__post(status=f"Step {self.__gg.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}))
 
   def __post(self, **kwargs):
     wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
 
-  def __guiUpdate1(self):
+  def __updateGui1(self):
     serializedData = self.__gg.serializedData(self.__viewSettings)
     energy = self.__gg.energy()
     return serializedData, energy
 
-  def __guiUpdate2(self, guiData):
+  def __updateGui2(self, guiData, post=True):
     serializedData, energy = guiData
-    self.__post(serializedData=serializedData, energy=energy)
     self.__needsGUIUpdate = False
+    self.__shallUpdateGui = False
+    kwargs = {
+      'serializedData': serializedData,
+      'energy': energy,
+    }
+    if post:
+      self.__post(**kwargs)
+    else:
+      return kwargs
 
   def updateViewSettings(self, viewSettings=None):
     if viewSettings is not None:
       self.__viewSettings = viewSettings
     serializedData = self.__gg.serializedData(self.__viewSettings)
     self.__post(serializedData=serializedData)
+
+  def updateGui(self):
+    self.__shallUpdateGui = True
 
   def unpause(self):
     self.__shallRun1 = False

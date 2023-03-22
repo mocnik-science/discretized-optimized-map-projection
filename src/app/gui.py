@@ -93,16 +93,16 @@ class Window(wx.Frame):
     # view menu: draw continents
     key = 'drawContinentsTolerance'
     addRadioItem(viewMenu, 'hide continents', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings)
     addRadioItem(viewMenu, 'show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
     addRadioItem(viewMenu, 'show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: showNthStep
     key = 'showNthStep'
-    addRadioItem(viewMenu, 'update every step', self.__viewSettings, key, 1, self.updateViewSettings)
-    addRadioItem(viewMenu, 'update every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
-    addRadioItem(viewMenu, 'update every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
-    addRadioItem(viewMenu, 'update every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
+    addRadioItem(viewMenu, 'try to render every step', self.__viewSettings, key, 1, self.updateViewSettings)
+    addRadioItem(viewMenu, 'render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
+    addRadioItem(viewMenu, 'render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 
@@ -152,7 +152,6 @@ class Window(wx.Frame):
     self._panel.Layout()
 
     ## register handlers
-    self.Bind(wx.EVT_CHAR_HOOK, self.onKey)
     self.Bind(wx.EVT_CLOSE, self.onClose)
 
     ## adapt app menu
@@ -232,6 +231,8 @@ class Window(wx.Frame):
       return
     if event.im is not None:
       self.loadImage(event.im)
+      if self.__viewSettings['showNthStep']:
+        self.__workerThread.updateGui()
     if event.status is not None:
       self.setStatus2(event.status)
   def __workerThreadUpdate(self, event):
