@@ -1,12 +1,14 @@
 import time
 
+DISABLE_ALL_LOG = True
+FILTER_LOG = None
+
 class timer(object):
   __durationsByLabel = {}
   
-  def __init__(self, label='', log=True, filterLog=None, showAverage=100, **kwargs):
+  def __init__(self, label='', log=True, showAverage=100, **kwargs):
     self.__label = label
-    self.__log = log
-    self.__filterLog = filterLog
+    self.__log = log and not DISABLE_ALL_LOG
     self.__showAverage = showAverage
     self.__formatKwargs = kwargs
     self.__time = None
@@ -17,7 +19,7 @@ class timer(object):
 
   def __exit__(self, *args):
     duration = self.end()
-    if not self.__log or self.__time is None or (self.__filterLog is not None and self.__filterLog not in self.__label):
+    if not self.__log or self.__time is None or (FILTER_LOG is not None and FILTER_LOG not in self.__label):
       return
     label1 = ''
     if 'step' in self.__formatKwargs:
