@@ -1,5 +1,4 @@
 import gzip
-import numpy as np
 import os
 import pickle
 from scipy.optimize import minimize_scalar
@@ -123,7 +122,7 @@ class GeoGrid:
       cellsById1[cell._id1].append(cell._id2)
     ballTreeCells = [cell for cell in cells.values() if cell._id1 == cell._id2]
     ballTreeCellsId1s = [cellsById1[cell._id1] for cell in ballTreeCells]
-    ballTree = BallTree([(np.deg2rad(cell._centreOriginal.y), np.deg2rad(cell._centreOriginal.x)) for cell in ballTreeCells], metric='haversine')
+    ballTree = BallTree([(Common.deg2rad(cell._centreOriginal.y), Common.deg2rad(cell._centreOriginal.x)) for cell in ballTreeCells], metric='haversine')
     return {
       '__ballTree': ballTree,
       '__ballTreeCellsId1s': ballTreeCellsId1s,

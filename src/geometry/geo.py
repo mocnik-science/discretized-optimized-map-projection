@@ -1,15 +1,16 @@
 import math
-import numpy as np
+
+from src.geometry.common import Common
 
 radiusEarth = 6371007.1809
 
 class Geo:
   @staticmethod
   def distance(start, end): # in metres
-    startX = np.deg2rad(start.x)
-    startY = np.deg2rad(start.y)
-    endX = np.deg2rad(end.x)
-    endY = np.deg2rad(end.y)
+    startX = Common.deg2rad(start.x)
+    startY = Common.deg2rad(start.y)
+    endX = Common.deg2rad(end.x)
+    endY = Common.deg2rad(end.y)
     # Haversine theorem
     a = math.sin((endY - startY) / 2)**2 + math.cos(startY) * math.cos(endY) * math.sin((endX - startX) / 2)**2
     return radiusEarth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
@@ -19,10 +20,10 @@ class Geo:
 
   @staticmethod
   def bearing(start, end): # in radiant, negatively oriented, north is 0
-    startX = np.deg2rad(start.x)
-    startY = np.deg2rad(start.y)
-    endX = np.deg2rad(end.x)
-    endY = np.deg2rad(end.y)
+    startX = Common.deg2rad(start.x)
+    startY = Common.deg2rad(start.y)
+    endX = Common.deg2rad(end.x)
+    endY = Common.deg2rad(end.y)
     y = math.sin(endX - startX) * math.cos(endY)
     x = math.cos(startY) * math.sin(endY) - math.sin(startY) * math.cos(endY) * math.cos(endX - startX)
     return (math.atan2(y, x) + 2 * math.pi) % (2 * math.pi)
@@ -41,8 +42,8 @@ class Geo:
 
   # @staticmethod
   # def destination(start, bearing, distance): # in radiants
-  #   startX = np.deg2rad(start.x)
-  #   startY = np.deg2rad(start.y)
+  #   startX = Common.deg2rad(start.x)
+  #   startY = Common.deg2rad(start.y)
   #   d = distance / radiusEarth # angular distance
   #   y2 = math.asin(math.sin(startY) * math.cos(d) + math.cos(startY) * math.sin(d) * math.cos(bearing))
   #   x2 = startX + math.atan2(math.sin(bearing) * math.sin(d) * math.cos(startY), math.cos(d) - math.sin(startY) * math.sin(y2))

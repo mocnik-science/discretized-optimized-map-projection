@@ -1,5 +1,3 @@
-import numpy as np
-
 from src.common.functions import *
 from src.geometry.common import *
 from src.geometry.cartesian import *
@@ -22,7 +20,7 @@ class GeoGridProjection:
 
   def project(self, lon, lat):
     pointLonLat = Point(lon, lat)
-    dist, ind = self.__ballTree.query([np.deg2rad([lat, lon])], k=3)
+    dist, ind = self.__ballTree.query([[Common.deg2rad(lat), Common.deg2rad(lon)]], k=3)
     nearestCellData = None
     cornerCellsData = None
     for id2s in [self.__ballTreeCellsId1s[i] for i in ind[0]]:
