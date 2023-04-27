@@ -11,7 +11,7 @@ class GeoGridRenderer:
   viewSettingsDefault = {
     'selectedPotential': 'ALL',
     'selectedVisualizationMethod': 'SUM',
-    'selectedEnergy': 'ALL',
+    'selectedEnergy': None,
     'drawNeighbours': False,
     'drawLabels': False,
     'drawOriginalPolygons': False,

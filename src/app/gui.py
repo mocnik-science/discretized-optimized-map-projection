@@ -77,8 +77,8 @@ class Window(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: energy
     key = 'selectedEnergy'
-    addRadioItem(viewMenu, 'hide energies', self.__viewSettings, key, None, self.updateViewSettings)
-    addRadioItem(viewMenu, 'all energies', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'hide energies', self.__viewSettings, key, None, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'all energies', self.__viewSettings, key, 'ALL', self.updateViewSettings)
     for potential in self.__geoGridSettings.potentials:
       addRadioItem(viewMenu, f"energy for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
