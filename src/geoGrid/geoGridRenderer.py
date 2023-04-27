@@ -137,7 +137,7 @@ class GeoGridRenderer:
   @staticmethod
   def __text(d, p, text, **kwargs):
     draw, projectToImage = d
-    draw.ellipse(projectToImage(*p), text, **kwargs)
+    draw.text(projectToImage(*p), text, **kwargs)
 
   @staticmethod
   def save(im, path, resolution, step):
