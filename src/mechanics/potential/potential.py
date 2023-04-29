@@ -15,10 +15,10 @@ class Potential:
 
   def energy(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
-  def force(self, cell, neighbouringCells):
+  def forces(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
-  def energyAndForce(self, cell, neighbouringCells):
-    raise Exception('Needs to be implemented by inheriting class')
+  # def energyAndForces(self, cell, neighbouringCells):
+  #   raise Exception('Needs to be implemented by inheriting class')
 
   def _value(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')

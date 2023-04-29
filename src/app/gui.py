@@ -1,6 +1,7 @@
 import wx
 import wx.adv
 
+from src.app.guiSimulationSettings import WindowSimulationSettings
 from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
 from src.app.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
 from src.geoGrid.geoGridSettings import GeoGridSettings
@@ -25,6 +26,7 @@ class Window(wx.Frame):
     self.__newImage = None
     self.__isLoadingNewImage = False
     self.__geoGridSettings = GeoGridSettings(resolution=3)
+    # self.__simulationSettings = {}
     self.__viewSettings = {}
     wx.Frame.__init__(self, None, wx.ID_ANY, title=title, size=(900, 600))
 
@@ -37,6 +39,20 @@ class Window(wx.Frame):
       menuItem = menu.Append(newId, label, label)
       self.Bind(wx.EVT_MENU, lambda event: callback(self.__menuDict[event.Id]), menuItem)
       return menuItem
+    # def addCheckItem(menu, label, object, key, data, callback, default=False):
+    #   newId = wx.NewId()
+    #   self.__menuDict[newId] = data
+    #   menuItem = menu.Append(newId, label, label, wx.ITEM_CHECK)
+    #   if default:
+    #     menuItem.Check(True)
+    #   def cb(event):
+    #     object[key][self.__menuDict[event.Id]] = menuItem.IsChecked()
+    #     callback()
+    #   self.Bind(wx.EVT_MENU, cb, menuItem)
+    #   if key not in object:
+    #     object[key] = {}
+    #   object[key][data] = default
+    #   return menuItem
     def addRadioItem(menu, label, object, key, data, callback, default=False):
       newId = wx.NewId()
       self.__menuDict[newId] = data
@@ -60,6 +76,14 @@ class Window(wx.Frame):
     stopMenuItem = addItem(simulationMenu, 'stop\tSpace', None, self.onRun)
     addItem(simulationMenu, 'compute next step\tRight', None, self.onRun1)
     addItem(simulationMenu, 'reset\tBack', None, self.onReset)
+    simulationMenu.AppendSeparator()
+    # # simulation menu: potentials
+    # key = 'simulationSelectedPotential'
+    # for potential in self.__geoGridSettings.potentials:
+    #   addCheckItem(simulationMenu, f"consider {potential.kind.lower()}", self.__simulationSettings, key, potential.kind, self.updateSimulationSettings, default=True)
+    # simulationMenu.AppendSeparator()
+    # simulation menu: simulation settings
+    addItem(simulationMenu, 'simulation settings...\tCtrl+.', None, self.onSimulationSettings)
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
@@ -255,6 +279,9 @@ class Window(wx.Frame):
       self.setStatus(event.status)
     if event.energy is not None:
       self.setEnergy(event.energy)
+
+  def onSimulationSettings(self, event):
+    WindowSimulationSettings(self.__geoGridSettings)
 
   def onRun(self, event):
     if self.__workerThreadRunning:

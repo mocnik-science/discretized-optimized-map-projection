@@ -13,16 +13,16 @@ class PotentialDistance(Potential):
 
   def energy(self, cell, neighbouringCells):
     return sum(self._quantity(cell, neighbouringCell, energy=True) for neighbouringCell in neighbouringCells)
-  def force(self, cell, neighbouringCells):
+  def forces(self, cell, neighbouringCells):
     return [Force(self.kind, neighbouringCell, cell, self._quantity(cell, neighbouringCell, force=True)) for neighbouringCell in neighbouringCells]
-  def energyAndForce(self, cell, neighbouringCells):
-    energies = 0
-    forces = []
-    for neighbouringCell in neighbouringCells:
-      qEnergy, qForce = self._quantity(cell, neighbouringCell)
-      energies += qEnergy
-      forces.append(Force(self.kind, neighbouringCell, cell, qForce))
-    return energies, forces
+  # def energyAndForces(self, cell, neighbouringCells):
+  #   energies = 0
+  #   forces = []
+  #   for neighbouringCell in neighbouringCells:
+  #     qEnergy, qForce = self._quantity(cell, neighbouringCell)
+  #     energies += qEnergy
+  #     forces.append(Force(self.kind, neighbouringCell, cell, qForce))
+  #   return energies, forces
 
   def _value(self, cell, neighbouringCell):
     geoD = self._geoDistanceForCells(neighbouringCell, cell) * self.calibrationFactor

@@ -14,6 +14,7 @@ from src.geometry.dggrid import DGGRID
 from src.geoGrid.geoGridCell import GeoGridCell
 from src.geoGrid.geoGridProjection import GeoGridProjection
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
+from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class GeoGrid:
   def __init__(self, settings, callbackStatus=lambda status, energy: None):
@@ -148,10 +149,10 @@ class GeoGrid:
     with timer('compute energy', log=potential is None, step=self.__step):
       energy = 0
       if self.__step <= 0:
-        for potential in [potential] if potential is not None else self.__settings.potentials:
+        for (weight, potential) in [(GeoGridWeight(), potential)] if potential is not None else self.__settings.weightedPotentials():
           for cell in self.__cells.values():
             if cell._isActive:
-              energy += potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+              energy += weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
       else:
         for cell in self.__cells.values():
           if cell._isActive:
@@ -174,21 +175,23 @@ class GeoGrid:
           cell.applyForce()
     # compute forces
     forces = []
-    for potential in self.__settings.potentials:
+    for (weight, potential) in self.__settings.weightedPotentials():
       with timer(f"compute forces: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
           if cell._isActive:
-            forces += potential.force(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+            for force in potential.forces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]):
+              force.strength *= weight.forCell(cell)
+              forces.append(force)
     # collect forces
     with timer('collect forces', step=self.__step):
       for force in forces:
         self.__cells[force.id2].addForce(force)
     # compute energies
-    for potential in self.__settings.potentials:
+    for (weight, potential) in self.__settings.weightedPotentials():
       with timer(f"compute energies: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
           if cell._isActive:
-            cell.setEnergy(potential.kind, potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]))
+            cell.setEnergy(potential.kind, weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]))
 
   def serializedDataForProjection(self):
     with timer('serialize data for projection', step=self.__step):
