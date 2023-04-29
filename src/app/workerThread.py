@@ -34,8 +34,8 @@ class WorkerThread(Thread):
     self.start()
   
   def run(self):
-    self.__gg = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: self.__post(status=status, energy=energy))
-    self.__post(projection=self.__gg.projection())
+    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: self.__post(status=status, energy=energy))
+    self.__post(projection=self.__geoGrid.projection())
     # initialize
     self.updateViewSettings()
     t = timer(log=False)
@@ -50,24 +50,24 @@ class WorkerThread(Thread):
         time.sleep(.01)
       else:
         # preparations
-        shallUpdateGui = self.__shallUpdateGui or self.__shallRun1 or (self.__gg.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
+        shallUpdateGui = self.__shallUpdateGui or self.__shallRun1 or (self.__geoGrid.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
         self.__shallRun1 = False
         self.__needsGUIUpdate = True
         # step
         with t:
-          self.__gg.performStep()
-          serializedDataForProjection = self.__gg.serializedDataForProjection()
-          energy = self.__gg.energy()
+          self.__geoGrid.performStep()
+          serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
+          energy = self.__geoGrid.energy()
           if shallUpdateGui:
             guiData = self.__updateGui1()
         # cleanup
-        self.__post(status=f"Step {self.__gg.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy)
+        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy)
 
   def __post(self, **kwargs):
     wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
 
   def __updateGui1(self):
-    serializedData = self.__gg.serializedData(self.__viewSettings)
+    serializedData = self.__geoGrid.serializedData(self.__viewSettings)
     return serializedData
 
   def __updateGui2(self, serializedData, post=True):
@@ -84,7 +84,7 @@ class WorkerThread(Thread):
   def updateViewSettings(self, viewSettings=None):
     if viewSettings is not None:
       self.__viewSettings = viewSettings
-    serializedData = self.__gg.serializedData(self.__viewSettings)
+    serializedData = self.__geoGrid.serializedData(self.__viewSettings)
     self.__post(serializedData=serializedData)
 
   def updateGui(self):
