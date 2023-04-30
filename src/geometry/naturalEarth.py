@@ -2,7 +2,6 @@ import os
 import requests
 import shapefile
 import shapely
-from zipfile import ZipFile
 
 from src.common.timer import timer
 from src.geometry.geo import Geo
@@ -11,8 +10,6 @@ class NaturalEarth:
   urlNaturalEarthData = 'http://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip'
   pathNaturalEarthData = '.naturalEarthData'
   fileZipNaturalEarthData = os.path.join(pathNaturalEarthData, 'ne_110m_land.zip')
-  fileSubpathNaturalEarthData = os.path.join(pathNaturalEarthData, 'ne_110m_land')
-  fileShpNaturalEarthData = os.path.join(fileSubpathNaturalEarthData, 'ne_110m_land.shp')
   _shpData = None
   _prepData = {}
   _prepGeometries = None
@@ -32,19 +29,14 @@ class NaturalEarth:
   def _ensureNaturalEarthData(self):
     if not os.path.exists(self.pathNaturalEarthData):
       os.mkdir(self.pathNaturalEarthData)
-    if not os.path.exists(self.fileSubpathNaturalEarthData):
-      os.mkdir(self.fileSubpathNaturalEarthData)
-    if os.path.exists(self.fileShpNaturalEarthData):
-      return self.fileShpNaturalEarthData
+    if os.path.exists(self.fileZipNaturalEarthData):
+      return self.fileZipNaturalEarthData
     with open(self.fileZipNaturalEarthData, 'wb') as file:
       with requests.get(self.urlNaturalEarthData) as request:
         file.write(request.content)
-    with open(self.fileZipNaturalEarthData, 'rb') as file:
-      zipFile = ZipFile(file)
-      zipFile.extractall(path=self.fileSubpathNaturalEarthData)
-    if not os.path.exists(self.fileShpNaturalEarthData):
+    if not os.path.exists(self.fileZipNaturalEarthData):
       raise Exception('Could not download Natural Earth Data')
-    return self.fileShpNaturalEarthData
+    return self.fileZipNaturalEarthData
 
   def _data(self):
     if self._shpData is None:
