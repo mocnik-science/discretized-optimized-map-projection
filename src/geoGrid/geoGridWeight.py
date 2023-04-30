@@ -40,10 +40,10 @@ class GeoGridWeight:
 
   @staticmethod
   def _easeInOutSine(x, xStart=0, xEnd=1, yStart=0, yEnd=1):
-    x = (x - xStart) / (xEnd - xStart)
-    if x <= 0:
+    if x <= xStart:
       return yStart
-    if x >= 1:
+    if x >= xEnd:
       return yEnd
+    x = (x - xStart) / (xEnd - xStart)
     y = - (math.cos(Common._pi * x) - 1) / 2
     return yStart + y * (yEnd - yStart)
