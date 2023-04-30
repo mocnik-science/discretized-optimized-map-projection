@@ -9,7 +9,7 @@ from src.geoGrid.geoGridSettings import GeoGridSettings
 class TaskBarIcon(wx.adv.TaskBarIcon):
   def __init__(self):
     wx.adv.TaskBarIcon.__init__(self, iconType=wx.adv.TBI_DOCK)
-    self.SetIcon(wx.Icon('assets/map.png', wx.BITMAP_TYPE_PNG))
+    self.SetIcon(wx.Icon('assets/appIcon.png', wx.BITMAP_TYPE_PNG))
 
 class App(wx.App):
   def OnInit(self):
