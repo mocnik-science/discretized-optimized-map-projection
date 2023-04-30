@@ -149,6 +149,7 @@ class Window(wx.Frame):
     iconPlay1 = wx.Icon('assets/play1.png', type=wx.BITMAP_TYPE_PNG)
     iconPause = wx.Icon('assets/pause.png', type=wx.BITMAP_TYPE_PNG)
     iconReset = wx.Icon('assets/reset.png', type=wx.BITMAP_TYPE_PNG)
+    iconGear = wx.Icon('assets/gear.png', type=wx.BITMAP_TYPE_PNG)
     # functions
     def addTool(id, label, icon, callback):
       tool = toolBar.AddTool(id, label, icon)
@@ -158,6 +159,7 @@ class Window(wx.Frame):
     addTool(0, 'Run', iconPlay, self.onRun)
     addTool(1, 'Run one step', iconPlay1, self.onRun1)
     addTool(2, 'Reset', iconReset, self.onReset)
+    addTool(3, 'Reset', iconGear, self.onSimulationSettings)
     toolBar.Realize()
 
     # update functions
