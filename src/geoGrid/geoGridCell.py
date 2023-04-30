@@ -3,6 +3,7 @@ import shapely
 from src.geometry.common import Common
 from src.geometry.cartesian import Cartesian, Point
 from src.geometry.geo import Geo, radiusEarth
+from src.geometry.naturalEarth import NaturalEarth
 
 def translatePoint(p, dLon):
   if dLon is None:
@@ -31,6 +32,7 @@ class GeoGridCell:
     self.y = radiusEarth * Common.deg2rad(self._centreOriginal.y)
     self._neighboursBearings2 = None
     self._energy = {}
+    self.__dggridCell = dggridCell
 
   def initNeighbours(self, neighbours):
     if any(abs(neighbour._centreOriginal.x - self._centreOriginal.x) > 270 for neighbour in neighbours):
@@ -49,6 +51,10 @@ class GeoGridCell:
         neighboursBearings2.append((i, Common._2pi, b1))
       i += 1
     self._neighboursBearings2 = neighboursBearings2
+
+  def initAdditionalInformation(self):
+    self._distanceToLand = NaturalEarth.distanceToLand(self.__dggridCell.centre)
+    del self.__dggridCell
 
   def xy(self):
     return self.x, self.y

@@ -5,6 +5,7 @@ import shapely
 from zipfile import ZipFile
 
 from src.common.timer import timer
+from src.geometry.geo import Geo
 
 class NaturalEarth:
   urlNaturalEarthData = 'http://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip'
@@ -14,6 +15,8 @@ class NaturalEarth:
   fileShpNaturalEarthData = os.path.join(fileSubpathNaturalEarthData, 'ne_110m_land.shp')
   _shpData = None
   _prepData = {}
+  _prepGeometries = None
+  _prepForDistanceTo = None
 
   def __new__(cls):
     if not hasattr(cls, '_instance'):
@@ -81,6 +84,16 @@ class NaturalEarth:
         # self._prepData[simplifyTolerance] = [[self.__simplify(cs, simplifyTolerance) for cs in css] for css in self._prepData['full']]
     return self._prepData['full' if simplifyTolerance == 'full' else simplifyTolerance]
 
+  def _prepareGeometries(self):
+    if self._prepGeometries is None:
+      self._prepGeometries = [shapely.Polygon(exterior) for exterior in NaturalEarth.preparedData()[0]]
+    return self._prepGeometries
+
+  def _prepareForDistanceTo(self):
+    if self._prepForDistanceTo is None:
+      self._prepForDistanceTo = Geo.PreparedForDistanceTo(self._prepareGeometries())
+    return self._prepForDistanceTo
+
   @staticmethod
   def data():
     return NaturalEarth()._data()
@@ -88,3 +101,11 @@ class NaturalEarth:
   @staticmethod
   def preparedData(*args, **kwargs):
     return NaturalEarth()._preparedData(*args, **kwargs)
+
+  @staticmethod
+  def isOnLand(p):
+    return Geo.contained(p, NaturalEarth()._prepareGeometries())
+
+  @staticmethod
+  def distanceToLand(p):
+    return Geo.distanceTo(p, NaturalEarth()._prepareForDistanceTo())

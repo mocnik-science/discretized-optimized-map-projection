@@ -1,5 +1,7 @@
 import math
+import shapely
 
+from src.geometry.cartesian import Point
 from src.geometry.common import Common
 
 radiusEarth = 6371007.1809
@@ -49,3 +51,89 @@ class Geo:
   #   y2 = math.asin(math.sin(startY) * math.cos(d) + math.cos(startY) * math.sin(d) * math.cos(bearing))
   #   x2 = startX + math.atan2(math.sin(bearing) * math.sin(d) * math.cos(startY), math.cos(d) - math.sin(startY) * math.sin(y2))
   #   return Point(x2, y2)
+
+  @staticmethod
+  def contained(p, geometry):
+    for g in geometry if isinstance(geometry, list) else [geometry]:
+      if g.contains(p):
+        return True
+    return False
+
+  @staticmethod
+  # segmentation length in km
+  def segmentize(geometry, segmentation=10000):
+    maxSegmentInDegree = segmentation * 360 / (Common._pi * 2 * radiusEarth)
+    return [shapely.segmentize(g, max_segment_length=maxSegmentInDegree) for g in (geometry if isinstance(geometry, list) else [geometry])]
+
+  class PreparedForDistanceTo:
+    def __init__(self, geometry, segmentation=10000):
+      # the area is compared in the degree coordinate system, not in real area on the Earth's surface; this is only an approximation but improves running times sufficiently well
+      geometry = sorted(geometry, key=lambda g: shapely.area(g)) if isinstance(geometry, list) else [geometry]
+      self.__geometries = {
+        1: Geo.segmentize(geometry, segmentation=segmentation),
+        10: Geo.segmentize(geometry, segmentation=10 * segmentation),
+      }
+    def geometry(self, k):
+      return self.__geometries[k]
+
+  @staticmethod
+  def distanceTo(p, geometry, segmentation=10000):
+    # check whether the point is contained in the geometry
+    if Geo.contained(p, geometry.geometry(1) if isinstance(geometry, Geo.PreparedForDistanceTo) else geometry):
+      return 0
+    # prepare the data
+    gs = Geo.PreparedForDistanceTo(geometry, segmentation=segmentation) if not isinstance(geometry, Geo.PreparedForDistanceTo) else geometry
+    # compute relevant distances
+    dist = None
+    pss = []
+    segmentationMultiplier = 10
+    segmentationDiff = segmentationMultiplier * segmentation / 2
+    for g in gs.geometry(segmentationMultiplier):
+      skip = 0
+      pss.append([])
+      for p2 in g.exterior.coords[:-1]:
+        if skip > 0:
+          skip -= 1
+          pss[-1].append((p2, None))
+          continue
+        dist2 = Geo.distance(p, Point(*p2))
+        pss[-1].append((p2, dist2))
+        if dist is not None and dist2 > dist + segmentationDiff:
+          skip = math.floor(max(0, (dist2 - dist - segmentationDiff) / 10 / segmentation))
+        dist = min(dist, dist2) if dist is not None else dist2
+    # compute relevant line segments
+    lineSegments = []
+    for ps in pss:
+      currentLineSegment = None
+      for i, (p2, d) in enumerate(ps):
+        if d is not None and d <= dist + segmentationDiff:
+          if currentLineSegment is None:
+            currentLineSegment = [ps[(i - 1 + len(ps)) % len(ps)]]
+          currentLineSegment.append((p2, d))
+        elif currentLineSegment is not None:
+          lineSegments.append([*currentLineSegment, ps[(i + 1) % len(ps)]])
+          currentLineSegment = None
+    # add points to line segments
+    pointss = []
+    for lineSegment in lineSegments:
+      pointss.append([])
+      for i, (p2, d) in enumerate(lineSegment):
+        pointss[-1].append((p2, d))
+        if i < len(lineSegment) - 1:
+          p3, _ = lineSegment[i + 1]
+          for k in [j / segmentationMultiplier for j in range(1, segmentationMultiplier)]:
+            p23 = ((1 - k) * p2[0] + k * p3[0], (1 - k) * p2[1] + k * p3[1])
+            pointss[-1].append((p23, None))
+    # find nearest point on line segments
+    for points in pointss:
+      skip = 0
+      for p2, d in points:
+        if d is None and skip > 0:
+          skip -= 1
+          continue
+        dist2 = d if d is not None else Geo.distance(p, Point(*p2))
+        if dist2 > dist:
+          skip = math.floor((dist2 - dist) / segmentation)
+        else:
+          dist = dist2
+    return dist

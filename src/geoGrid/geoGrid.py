@@ -104,6 +104,9 @@ class GeoGrid:
     removeId2s = [id2 for id2 in cells if id2 not in keepId2s]
     for id2 in removeId2s:
       del cells[id2]
+    # init additional information
+    for cell in cells.values():
+      cell.initAdditionalInformation()
     # return result
     return {
       '__gridStats': gridStats,
