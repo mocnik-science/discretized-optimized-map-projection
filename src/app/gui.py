@@ -1,7 +1,9 @@
 import wx
 import wx.adv
 
+from src.app.common import APP_NAME
 from src.app.guiSimulationSettings import WindowSimulationSettings
+from src.app.guiAbout import WindowAbout
 from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
 from src.app.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
 from src.geoGrid.geoGridSettings import GeoGridSettings
@@ -14,7 +16,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 class App(wx.App):
   def OnInit(self):
     self.tskic = TaskBarIcon()
-    window = Window('Discretized Optimized Map Projection')
+    window = Window(APP_NAME)
     window.Show()
     return True
 
@@ -29,6 +31,7 @@ class Window(wx.Frame):
     # self.__simulationSettings = {}
     self.__viewSettings = {}
     self.__windowSimulationSettings = None
+    self.__windowAbout = None
     wx.Frame.__init__(self, None, wx.ID_ANY, title=title, size=(900, 600))
 
     ## menu bar
@@ -73,10 +76,10 @@ class Window(wx.Frame):
     simulationMenu = wx.Menu()
     menuBar.Append(simulationMenu, "&Simulation")
     # simulation menu: start/stop animation
-    startMenuItem = addItem(simulationMenu, 'start\tSpace', None, self.onRun)
-    stopMenuItem = addItem(simulationMenu, 'stop\tSpace', None, self.onRun)
-    addItem(simulationMenu, 'compute next step\tRight', None, self.onRun1)
-    addItem(simulationMenu, 'reset\tBack', None, self.onReset)
+    startMenuItem = addItem(simulationMenu, 'Start\tSpace', None, self.onRun)
+    stopMenuItem = addItem(simulationMenu, 'Stop\tSpace', None, self.onRun)
+    addItem(simulationMenu, 'Compute next step\tRight', None, self.onRun1)
+    addItem(simulationMenu, 'Reset\tBack', None, self.onReset)
     simulationMenu.AppendSeparator()
     # # simulation menu: potentials
     # key = 'simulationSelectedPotential'
@@ -84,63 +87,65 @@ class Window(wx.Frame):
     #   addCheckItem(simulationMenu, f"consider {potential.kind.lower()}", self.__simulationSettings, key, potential.kind, self.updateSimulationSettings, default=True)
     # simulationMenu.AppendSeparator()
     # simulation menu: simulation settings
-    addItem(simulationMenu, 'simulation settings...\tCtrl+.', None, self.onSimulationSettings)
+    addItem(simulationMenu, 'Simulation settings...\tCtrl+.', None, self.onSimulationSettings)
+    simulationMenu.AppendSeparator()
+    addItem(simulationMenu, 'About...', None, self.onAbout)
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
     # view menu: potentials
     key = 'selectedPotential'
-    addRadioItem(viewMenu, 'hide forces', self.__viewSettings, key, None, self.updateViewSettings)
-    addRadioItem(viewMenu, 'all forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings)
+    addRadioItem(viewMenu, 'All forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True)
     for potential in self.__geoGridSettings.potentials:
-      addRadioItem(viewMenu, f"force for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+      addRadioItem(viewMenu, f"Force for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: visualization method
     key = 'selectedVisualizationMethod'
-    addRadioItem(viewMenu, 'sum', self.__viewSettings, key, 'SUM', self.updateViewSettings)
-    addRadioItem(viewMenu, 'individually', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings)
+    addRadioItem(viewMenu, 'Sum', self.__viewSettings, key, 'SUM', self.updateViewSettings)
+    addRadioItem(viewMenu, 'Individually', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: energy
     key = 'selectedEnergy'
-    addRadioItem(viewMenu, 'hide energies', self.__viewSettings, key, None, self.updateViewSettings, default=True)
-    addRadioItem(viewMenu, 'all energies', self.__viewSettings, key, 'ALL', self.updateViewSettings)
+    addRadioItem(viewMenu, 'Hide energies', self.__viewSettings, key, None, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'All energies', self.__viewSettings, key, 'ALL', self.updateViewSettings)
     for potential in self.__geoGridSettings.potentials:
-      addRadioItem(viewMenu, f"energy for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+      addRadioItem(viewMenu, f"Energy for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw neighbours
     key = 'drawNeighbours'
-    addRadioItem(viewMenu, 'hide neighbours', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show neighbours', self.__viewSettings, key, True, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Hide neighbours', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show neighbours', self.__viewSettings, key, True, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw labels
     key = 'drawLabels'
-    addRadioItem(viewMenu, 'hide labels', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show labels', self.__viewSettings, key, True, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Hide labels', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show labels', self.__viewSettings, key, True, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw colours
     key = 'drawColours'
-    addRadioItem(viewMenu, 'show active state', self.__viewSettings, key, 'ACTIVE', self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show active state', self.__viewSettings, key, 'ACTIVE', self.updateViewSettings)
     for potential in self.__geoGridSettings.potentials:
-      addRadioItem(viewMenu, f"show weights for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+      addRadioItem(viewMenu, f"Show weights for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw original polygons
     key = 'drawOriginalPolygons'
-    addRadioItem(viewMenu, 'hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show initial cells', self.__viewSettings, key, True, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show initial cells', self.__viewSettings, key, True, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw continents
     key = 'drawContinentsTolerance'
-    addRadioItem(viewMenu, 'hide continents', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
-    addRadioItem(viewMenu, 'show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
+    addRadioItem(viewMenu, 'Hide continents', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show strongly simplified continents (faster)', self.__viewSettings, key, 3, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: showNthStep
     key = 'showNthStep'
-    addRadioItem(viewMenu, 'try to render every step', self.__viewSettings, key, 1, self.updateViewSettings)
-    addRadioItem(viewMenu, 'render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
-    addRadioItem(viewMenu, 'render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
-    addRadioItem(viewMenu, 'render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Try to render every step', self.__viewSettings, key, 1, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
+    addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 
@@ -289,12 +294,27 @@ class Window(wx.Frame):
     if event.energy is not None:
       self.setEnergy(event.energy)
 
+  @staticmethod
+  def isWindowDestroyed(window):
+    try:
+      window.Enabled
+    except RuntimeError:
+      return True
+    return False
+
   def onSimulationSettings(self, event):
-    if self.__windowSimulationSettings is None:
+    if self.__windowSimulationSettings is None or Window.isWindowDestroyed(self.__windowSimulationSettings):
       self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__renderThread)
     else:
       self.__windowSimulationSettings.Destroy()
       self.__windowSimulationSettings = None
+
+  def onAbout(self, event):
+    if self.__windowAbout is None or Window.isWindowDestroyed(self.__windowAbout):
+      self.__windowAbout = WindowAbout()
+    else:
+      self.__windowAbout.Destroy()
+      self.__windowAbout = None
 
   def onRun(self, event):
     if self.__workerThreadRunning:
