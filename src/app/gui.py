@@ -28,6 +28,7 @@ class Window(wx.Frame):
     self.__geoGridSettings = GeoGridSettings(resolution=3)
     # self.__simulationSettings = {}
     self.__viewSettings = {}
+    self.__windowSimulationSettings = None
     wx.Frame.__init__(self, None, wx.ID_ANY, title=title, size=(900, 600))
 
     ## menu bar
@@ -289,7 +290,11 @@ class Window(wx.Frame):
       self.setEnergy(event.energy)
 
   def onSimulationSettings(self, event):
-    WindowSimulationSettings(self.__geoGridSettings, self.__renderThread)
+    if self.__windowSimulationSettings is None:
+      self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__renderThread)
+    else:
+      self.__windowSimulationSettings.Destroy()
+      self.__windowSimulationSettings = None
 
   def onRun(self, event):
     if self.__workerThreadRunning:
