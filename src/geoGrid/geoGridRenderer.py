@@ -3,6 +3,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 from src.common.timer import timer
+from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.geometry.common import Common
 from src.geometry.geo import radiusEarth
 from src.geometry.naturalEarth import NaturalEarth
@@ -20,7 +21,7 @@ class GeoGridRenderer:
   }
 
   @staticmethod
-  def render(serializedData, viewSettings={}, width=2000, height=1000, border=10, r=3, boundsExtend=1.3, projection=None, save=False):
+  def render(serializedData, geoGridSettings, viewSettings={}, width=2000, height=1000, border=10, r=3, boundsExtend=1.3, projection=None, save=False):
     # handle serialized data
     cells = serializedData['cells']
     path = serializedData['path']
@@ -54,7 +55,7 @@ class GeoGridRenderer:
       im = Image.new('RGB', (width, height), (255, 255, 255))
       draw = ImageDraw.Draw(im)
       # render
-      argsForRendering = [[draw, projectToImage], lonLatToCartesian, cells, viewSettings, r, projection]
+      argsForRendering = [[draw, projectToImage], lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection]
       GeoGridRenderer.renderContinentalBorders(*argsForRendering)
       GeoGridRenderer.renderOriginalPolygons(*argsForRendering)
       GeoGridRenderer.renderNeighbours(*argsForRendering)
@@ -67,7 +68,7 @@ class GeoGridRenderer:
       return im
 
   @staticmethod
-  def renderContinentalBorders(d, lonLatToCartesian, cells, viewSettings, r, projection):
+  def renderContinentalBorders(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection):
     if projection is None:
       return
     if viewSettings['drawContinentsTolerance']:
@@ -79,13 +80,13 @@ class GeoGridRenderer:
         GeoGridRenderer.__polygon(d, [projection.project(*c) for c in cs], fill=(255, 255, 255))
 
   @staticmethod
-  def renderOriginalPolygons(d, lonLatToCartesian, cells, viewSettings, r, projection):
+  def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection):
     if viewSettings['drawOriginalPolygons']:
       for cell in cells.values():
         GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100))
 
   @staticmethod
-  def renderNeighbours(d, lonLatToCartesian, cells, viewSettings, r, projection):
+  def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection):
     if viewSettings['drawNeighbours']:
       for cell in cells.values():
         if 'neighboursXY' in cell:
@@ -93,7 +94,7 @@ class GeoGridRenderer:
             GeoGridRenderer.__line(d, cell['xy'], xy, fill=(220, 220, 220))
 
   @staticmethod
-  def renderForces(d, lonLatToCartesian, cells, viewSettings, r, projection):
+  def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection):
     if viewSettings['selectedPotential'] is not None:
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
@@ -106,7 +107,7 @@ class GeoGridRenderer:
             GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150))
 
   @staticmethod
-  def renderCentres(d, lonLatToCartesian, cells, viewSettings, r, projection):
+  def renderCentres(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection):
     factor = 1e-4
     if viewSettings['drawLabels']:
       font = ImageFont.truetype('Helvetica', size=12)
@@ -114,7 +115,13 @@ class GeoGridRenderer:
       radius = r
       if viewSettings['selectedEnergy'] is not None and cell['isActive']:
         radius *= .5 + max(0, min(10, 3 + math.log(cell['energy'] * factor)))
-      GeoGridRenderer.__point(d, cell['xy'], radius, fill=(255, 140, 140) if cell['isActive'] else (140, 140, 255))
+      if viewSettings['drawColours'] == 'ACTIVE':
+        fill = (255, 140, 140) if cell['isActive'] else (140, 140, 255)
+      else:
+        for w, potential in geoGridSettings.weightedPotentials():
+          if potential.kind == viewSettings['drawColours']:
+            fill = GeoGridRenderer.__blendColour(.5 * w.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
+      GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
       if viewSettings['drawLabels']:
         GeoGridRenderer.__text(d, cell['xy'], str(id2), font=font, fill=(0, 0, 0))
 
@@ -138,6 +145,10 @@ class GeoGridRenderer:
   def __text(d, p, text, **kwargs):
     draw, projectToImage = d
     draw.text(projectToImage(*p), text, **kwargs)
+
+  @staticmethod
+  def __blendColour(value, colour0, colour1):
+    return tuple(round((1 - value) * colour0[i] + value * colour1[i]) for i in range(0, 3))
 
   @staticmethod
   def save(im, path, resolution, step):

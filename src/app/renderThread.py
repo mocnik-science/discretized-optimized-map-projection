@@ -18,28 +18,33 @@ class RenderResultEvent(wx.PyEvent):
     self.status = status
 
 class RenderThread(Thread):
-  def __init__(self, notifyWindow, viewSettings):
+  def __init__(self, notifyWindow, geoGridSettings, viewSettings):
     Thread.__init__(self)
     self.__notifyWindow = notifyWindow
+    self.__geoGridSettings = geoGridSettings
     self.__viewSettings = viewSettings
     self.__projection = None
     self.__shallQuit = False
     self.__serializedData = None
+    self.__serializedDataLast = None
+    self.__shallViewUpdate = False
     self.start()
   
   def run(self):
     t = timer(log=False)
     # loop
     while not self.__shallQuit:
-      if self.__serializedData is None or self.__projection is None:
+      if not ((self.__serializedData is not None or (self.__shallViewUpdate and self.__serializedDataLast is not None)) and self.__projection is not None):
         # wait
         time.sleep(.01)
       else:
+        self.__shallViewUpdate = False
         # render
         with t:
-          im = GeoGridRenderer.render(self.__serializedData, viewSettings=self.__viewSettings, projection=self.__projection)
+          im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection)
         # cleanup
         self.__post(im=im, status=f"rendering {1000 * t.average():.0f} ms")
+        self.__serializedDataLast = self.__serializedData or self.__serializedDataLast
         self.__serializedData = None
 
   def __post(self, **kwargs):
@@ -57,6 +62,9 @@ class RenderThread(Thread):
   def updateViewSettings(self, viewSettings=None):
     if viewSettings is not None:
       self.__viewSettings = viewSettings
+
+  def updateView(self):
+    self.__shallViewUpdate = True
 
   def quit(self):
     self.__shallQuit = True

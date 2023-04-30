@@ -116,6 +116,12 @@ class Window(wx.Frame):
     addRadioItem(viewMenu, 'hide labels', self.__viewSettings, key, False, self.updateViewSettings)
     addRadioItem(viewMenu, 'show labels', self.__viewSettings, key, True, self.updateViewSettings)
     viewMenu.AppendSeparator()
+    # view menu: draw colours
+    key = 'drawColours'
+    addRadioItem(viewMenu, 'show active state', self.__viewSettings, key, 'ACTIVE', self.updateViewSettings)
+    for potential in self.__geoGridSettings.potentials:
+      addRadioItem(viewMenu, f"show weights for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+    viewMenu.AppendSeparator()
     # view menu: draw original polygons
     key = 'drawOriginalPolygons'
     addRadioItem(viewMenu, 'hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
@@ -167,7 +173,7 @@ class Window(wx.Frame):
 
     ## status bar
     self._statusBar = self.CreateStatusBar(3)
-    self._statusBar.SetStatusWidths([200, -1, 130])
+    self._statusBar.SetStatusWidths([250, -1, 130])
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
@@ -252,7 +258,7 @@ class Window(wx.Frame):
 
   def prepareRenderThread(self):
     EVT_RENDER_THREAD_UPDATE(self, self.__renderThreadUpdate)
-    self.__renderThread = RenderThread(self, self.__viewSettings)
+    self.__renderThread = RenderThread(self, self.__geoGridSettings, self.__viewSettings)
   def prepareWorkerThread(self):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
     self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
@@ -281,7 +287,7 @@ class Window(wx.Frame):
       self.setEnergy(event.energy)
 
   def onSimulationSettings(self, event):
-    WindowSimulationSettings(self.__geoGridSettings)
+    WindowSimulationSettings(self.__geoGridSettings, self.__renderThread)
 
   def onRun(self, event):
     if self.__workerThreadRunning:

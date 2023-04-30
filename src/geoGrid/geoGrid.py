@@ -243,6 +243,7 @@ class GeoGrid:
       for cell in self.__cells.values():
         cells[cell._id2]['xy'] = cell.xy()
         cells[cell._id2]['isActive'] = cell._isActive
+        cells[cell._id2]['distanceToLand'] = cell._distanceToLand
       # return
       return {
         'cells': cells,

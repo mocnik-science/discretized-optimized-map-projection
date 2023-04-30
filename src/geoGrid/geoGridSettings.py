@@ -19,15 +19,15 @@ class GeoGridSettings:
     self._typicalArea = None
     self._forceFactor = None
     self.potentials = [PotentialArea(self), PotentialDistance(self), PotentialShape(self)]
-    self._potentialsWeights = dict([(potential.kind, GeoGridWeight(weightLand=1, weightOcean=1)) for potential in self.potentials])
+    self._potentialsWeights = dict([(potential.kind, GeoGridWeight()) for potential in self.potentials])
 
   def updateGridStats(self, gridStats):
     self._typicalDistance = gridStats.typicalDistance()
     self._typicalArea = gridStats.typicalArea()
     self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance
 
-  def weightedPotentials(self):
-    return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]
+  def weightedPotentials(self, allWeights=False):
+    return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None and (allWeights or not self._potentialsWeights[potential.kind].isVanishing())]
 
   def updatePotentialsWeights(self, weights):
     self._potentialsWeights = dict(self._potentialsWeights, **weights)
