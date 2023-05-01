@@ -9,6 +9,10 @@ class Potential:
     self._settings = settings
     self.calibrationFactor = 1
     self.__D = None
+    self.emptyCache()
+
+  def emptyCache(self):
+    pass
 
   def setCalibrationFactor(self, k):
     self.calibrationFactor = k

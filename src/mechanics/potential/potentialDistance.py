@@ -11,6 +11,9 @@ class PotentialDistance(Potential):
     super().__init__(*args, **kwargs)
     self._geoDistanceCache = {}
 
+  def emptyCache(self):
+    self._geoDistanceCache = {}
+
   def energy(self, cell, neighbouringCells):
     return sum(self._quantity(cell, neighbouringCell, energy=True) for neighbouringCell in neighbouringCells)
   def forces(self, cell, neighbouringCells):

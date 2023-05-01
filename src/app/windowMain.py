@@ -1,33 +1,20 @@
 import wx
-import wx.adv
 
-from src.app.common import APP_NAME
-from src.app.guiSimulationSettings import WindowSimulationSettings
-from src.app.guiAbout import WindowAbout
 from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
+from src.app.windows import isWindowDestroyed
+from src.app.windowAbout import WindowAbout
+from src.app.windowSimulationSettings import WindowSimulationSettings
 from src.app.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
 from src.geoGrid.geoGridSettings import GeoGridSettings
 
-class TaskBarIcon(wx.adv.TaskBarIcon):
-  def __init__(self):
-    wx.adv.TaskBarIcon.__init__(self, iconType=wx.adv.TBI_DOCK)
-    self.SetIcon(wx.Icon('assets/appIcon.png', wx.BITMAP_TYPE_PNG))
-
-class App(wx.App):
-  def OnInit(self):
-    self.tskic = TaskBarIcon()
-    window = Window(APP_NAME)
-    window.Show()
-    return True
-
-class Window(wx.Frame):
+class WindowMain(wx.Frame):
   def __init__(self, title):
     self.__workerThread = None
     self.__renderThread = None
     self.__workerThreadRunning = False
     self.__newImage = None
     self.__isLoadingNewImage = False
-    self.__geoGridSettings = GeoGridSettings(resolution=3)
+    self.__geoGridSettings = GeoGridSettings()
     # self.__simulationSettings = {}
     self.__viewSettings = {}
     self.__windowSimulationSettings = None
@@ -294,23 +281,15 @@ class Window(wx.Frame):
     if event.energy is not None:
       self.setEnergy(event.energy)
 
-  @staticmethod
-  def isWindowDestroyed(window):
-    try:
-      window.Enabled
-    except RuntimeError:
-      return True
-    return False
-
   def onSimulationSettings(self, event):
-    if self.__windowSimulationSettings is None or Window.isWindowDestroyed(self.__windowSimulationSettings):
-      self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__renderThread)
+    if self.__windowSimulationSettings is None or isWindowDestroyed(self.__windowSimulationSettings):
+      self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread, self.__renderThread)
     else:
       self.__windowSimulationSettings.Destroy()
       self.__windowSimulationSettings = None
 
   def onAbout(self, event):
-    if self.__windowAbout is None or Window.isWindowDestroyed(self.__windowAbout):
+    if self.__windowAbout is None or isWindowDestroyed(self.__windowAbout):
       self.__windowAbout = WindowAbout()
     else:
       self.__windowAbout.Destroy()
@@ -336,7 +315,3 @@ class Window(wx.Frame):
   def onClose(self, event):
     self.quitThreads()
     self.Destroy()
-
-def runGui():
-  app = App(redirect=False)
-  app.MainLoop()

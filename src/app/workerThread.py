@@ -33,11 +33,14 @@ class WorkerThread(Thread):
     self.__shallUpdateGui = False
     self.start()
   
-  def run(self):
+  def fullReload(self):
     self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: self.__post(status=status, energy=energy))
     self.__post(projection=self.__geoGrid.projection())
-    # initialize
     self.updateViewSettings()
+
+  def run(self):
+    self.fullReload()
+    # initialize
     t = timer(log=False)
     # loop
     while not self.__shallQuit:

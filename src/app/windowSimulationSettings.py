@@ -4,8 +4,9 @@ from src.geometry.geo import radiusEarth
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class WindowSimulationSettings(wx.Frame):
-  def __init__(self, geoGridSettings, renderThread):
+  def __init__(self, geoGridSettings, workerThread, renderThread):
     self.__geoGridSettings = geoGridSettings
+    self.__workerThread = workerThread
     self.__renderThread = renderThread
     self.__data = {}
     wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 200))
@@ -28,53 +29,50 @@ class WindowSimulationSettings(wx.Frame):
       if element not in self.__disabled:
         self.__disabled[element] = []
       self.__disabled[element] += disabled
-    def weightNumber(box, key, callback, defaultValue=1, disabled=[], label=None):
+    def number(box, key, callback, defaultValue=1, minValue=0, maxValue=100, digits=0, increment=1, disabled=[], label=None):
       box.AddSpacer(5)
       labelStaticText = wx.StaticText(self._panel, label=label)
       box.Add(labelStaticText, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
-      weightNumberEntry = wx.SpinCtrlDouble(self._panel)
-      weightNumberEntry.SetMin(0)
-      weightNumberEntry.SetDigits(2)
-      weightNumberEntry.SetIncrement(.1)
-      weightNumberEntry.SetValue(defaultValue)
-      weightNumberEntry.SetLabel(label)
-      box.Add(weightNumberEntry, 0, wx.ALL, 5)
-      _bind(wx.EVT_SPINCTRLDOUBLE, weightNumberEntry, lambda event: event.GetValue(), key, defaultValue, callback)
+      numberEntry = wx.SpinCtrlDouble(self._panel)
+      numberEntry.SetMin(minValue)
+      numberEntry.SetMax(maxValue)
+      numberEntry.SetDigits(digits)
+      numberEntry.SetValue(defaultValue)
+      numberEntry.SetIncrement(increment)
+      numberEntry.SetLabel(label)
+      box.Add(numberEntry, 0, wx.ALL, 5)
+      _bind(wx.EVT_SPINCTRLDOUBLE, numberEntry, lambda event: event.GetValue(), key, defaultValue, callback)
       _registerDisabled(disabled, labelStaticText)
-      _registerDisabled(disabled, weightNumberEntry)
+      _registerDisabled(disabled, numberEntry)
+    def weightNumber(box, key, callback, defaultValue=1, disabled=[], label=None):
+      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=100, digits=2, increment=.1, disabled=disabled, label=label)
+    def distanceNumber(box, key, callback, defaultValue=1, disabled=[], label=None, unit=None):
+      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=radiusEarth / 1000, digits=2, increment=1, disabled=disabled, label=label)      
+      if unit is not None:
+        labelStaticTextAfter = wx.StaticText(self._panel, label=unit)
+        box.Add(labelStaticTextAfter, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
+      if unit is not None:
+        _registerDisabled(disabled, labelStaticTextAfter)
     def checkBox(box, key, callback, defaultValue=True, disabled=[], proportion=0, **kwargs):
       checkBox = wx.CheckBox(self._panel, **kwargs)
       checkBox.SetValue(defaultValue)
       box.Add(checkBox, proportion, wx.EXPAND, 5)
       _bind(wx.EVT_CHECKBOX, checkBox, lambda event: event.IsChecked(), key, defaultValue, callback)
       _registerDisabled(disabled, checkBox)
-    def distanceNumber(box, key, callback, defaultValue=1, disabled=[], label=None, unit=None):
-      box.AddSpacer(5)
-      labelStaticText = wx.StaticText(self._panel, label=label)
-      box.Add(labelStaticText, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
-      distanceNumberEntry = wx.SpinCtrlDouble(self._panel)
-      distanceNumberEntry.SetMin(0)
-      distanceNumberEntry.SetMax(radiusEarth / 1000)
-      distanceNumberEntry.SetDigits(2)
-      distanceNumberEntry.SetIncrement(1)
-      distanceNumberEntry.SetValue(defaultValue)
-      distanceNumberEntry.SetLabel(label)
-      box.Add(distanceNumberEntry, 0, wx.ALL, 5)
-      _bind(wx.EVT_SPINCTRLDOUBLE, distanceNumberEntry, lambda event: event.GetValue(), key, defaultValue, callback)
-      if unit is not None:
-        labelStaticTextAfter = wx.StaticText(self._panel, label=unit)
-        box.Add(labelStaticTextAfter, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
-      _registerDisabled(disabled, labelStaticText)
-      _registerDisabled(disabled, distanceNumberEntry)
-      if unit is not None:
-        _registerDisabled(disabled, labelStaticTextAfter)
+
+    ## content: resolution
+    box.AddSpacer(5)
+    resolutionBox = wx.BoxSizer(wx.HORIZONTAL)
+    resolutionBox.AddSpacer(10)
+    number(resolutionBox, 'resolution', lambda: self.onDataUpdate(fullReload=True), defaultValue=self.__geoGridSettings.resolution, minValue=2, maxValue=10, label='resolution:')
+    box.Add(resolutionBox, 0, wx.ALL, 0)
+    box.AddSpacer(8)
 
     ## content: weights
     for weight, potential in self.__geoGridSettings.weightedPotentials(allWeights=True):
-      box.AddSpacer(5)
       potentialBox = wx.BoxSizer(wx.HORIZONTAL)
       potentialBox.AddSpacer(10)
-      checkBox(potentialBox, potential.kind, self.onDataUpdate, defaultValue=weight.isActive(), proportion=1, label=potential.kind.lower(), size=(200, -1))
+      checkBox(potentialBox, potential.kind, self.onDataUpdate, defaultValue=weight.isActive(), proportion=1, label=potential.kind.lower() + ':', size=(200, -1))
       weightNumber(potentialBox, potential.kind + '-weight', self.onDataUpdate, defaultValue=weight.weightLand(), disabled=[potential.kind], label='land')
       potentialBox.AddSpacer(5)
       checkBox(potentialBox, potential.kind + '-ocean', self.onDataUpdate, defaultValue=weight.isWeightOceanActive(), disabled=[potential.kind])
@@ -103,10 +101,10 @@ class WindowSimulationSettings(wx.Frame):
       else:
         element.Disable()
 
-  def onDataUpdate(self):
+  def onDataUpdate(self, fullReload=False):
     # update GUI
     self.onGuiUpdate()
-    # update geoGridSettings
+    # update geoGridSettings: weights
     weights = {}
     for potential in self.__geoGridSettings.potentials:
       active = self.__data[potential.kind]
@@ -116,5 +114,11 @@ class WindowSimulationSettings(wx.Frame):
       distanceTransitionStart = self.__data[potential.kind + '-distanceTransitionStart'] * 1000
       distanceTransitionEnd = self.__data[potential.kind + '-distanceTransitionEnd'] * 1000
       weights[potential.kind] = GeoGridWeight(active=active, weightLand=weightLand, weightOceanActive=weightOceanActive, weightOcean=weightOcean, distanceTransitionStart=distanceTransitionStart, distanceTransitionEnd=distanceTransitionEnd)
-    self.__geoGridSettings.updatePotentialsWeights(weights)
-    self.__renderThread.updateView()
+      self.__geoGridSettings.updatePotentialsWeights(weights)
+    # update geoGridSettings: resolution
+    self.__geoGridSettings.updateResolution(round(self.__data['resolution']))
+    # full reload or just update the view
+    if fullReload:
+      self.__workerThread.fullReload()
+    else:
+      self.__renderThread.updateView()

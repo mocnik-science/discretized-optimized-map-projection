@@ -11,6 +11,9 @@ class PotentialShape(Potential):
   def __init__(self, *args, enforceNorth=False, **kwargs):
     super().__init__(*args, **kwargs)
     self._enforceNorth = enforceNorth
+    self.emptyCache()
+
+  def emptyCache(self):
     self._geoBearingsCache = {}
 
   def energy(self, cell, neighbouringCells):
