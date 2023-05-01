@@ -125,4 +125,4 @@ class WindowSimulationSettings(wx.Frame):
     if fullReload:
       self.__workerThread.fullReload()
     else:
-      self.__renderThread.updateView()
+      self.__workerThread.update()

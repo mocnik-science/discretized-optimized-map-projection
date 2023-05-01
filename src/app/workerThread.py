@@ -29,6 +29,7 @@ class WorkerThread(Thread):
     self.__shallRun = False
     self.__shallRun1 = False
     self.__shallQuit = False
+    self.__needsUpdate = False
     self.__needsGUIUpdate = False
     self.__shallUpdateGui = False
     self.start()
@@ -44,7 +45,7 @@ class WorkerThread(Thread):
     t = timer(log=False)
     # loop
     while not self.__shallQuit:
-      if not self.__shallRun and not self.__shallRun1:
+      if not self.__shallRun and not self.__shallRun1 and not self.__needsUpdate:
         # perform gui update if necessary
         if self.__needsGUIUpdate:
           guiData = self.__updateGui1()
@@ -53,12 +54,16 @@ class WorkerThread(Thread):
         time.sleep(.01)
       else:
         # preparations
-        shallUpdateGui = self.__shallUpdateGui or self.__shallRun1 or (self.__geoGrid.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
+        shallUpdateGui = self.__needsUpdate or self.__shallUpdateGui or self.__shallRun1 or (self.__geoGrid.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
+        self.__needsUpdate = False
         self.__shallRun1 = False
         self.__needsGUIUpdate = True
         # step
         with t:
-          self.__geoGrid.performStep()
+          if self.__shallRun or self.__shallRun1:
+            self.__geoGrid.performStep()
+          else:
+            self.__geoGrid.computeForcesAndEnergies()
           serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
           energy = self.__geoGrid.energy()
           if shallUpdateGui:
@@ -89,6 +94,9 @@ class WorkerThread(Thread):
       self.__viewSettings = viewSettings
     serializedData = self.__geoGrid.serializedData(self.__viewSettings)
     self.__post(serializedData=serializedData)
+
+  def update(self):
+    self.__needsUpdate = True
 
   def updateGui(self):
     self.__shallUpdateGui = True

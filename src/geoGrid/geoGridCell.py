@@ -94,6 +94,8 @@ class GeoGridCell:
     # apply the force
     self.x += xForcesNext
     self.y += yForcesNext
+
+  def resetForcesNext(self):
     # reset next forces
     self._forcesNext = []
     self._xForcesNext = None

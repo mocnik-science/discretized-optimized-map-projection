@@ -58,8 +58,8 @@ class GeoGrid:
     # calibrate
     with timer('calibrate'):
       self.calibrate(callbackStatus)
-    # compute the force without applying the step
-    self.performStep(_onlyComputeNextForces=True)
+    # compute next forces and energies
+    self.computeForcesAndEnergies()
 
   @staticmethod
   def createCells(resolution):
@@ -176,6 +176,13 @@ class GeoGrid:
       with timer('apply forces', step=self.__step):
         for cell in self.__cells.values():
           cell.applyForce()
+    # compute next forces and energies
+    self.computeForcesAndEnergies()
+
+  def computeForcesAndEnergies(self):
+    # reset forces
+    for cell in self.__cells.values():
+      cell.resetForcesNext()
     # compute forces
     forces = []
     for (weight, potential) in self.__settings.weightedPotentials():
