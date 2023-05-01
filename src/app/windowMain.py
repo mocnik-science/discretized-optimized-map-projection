@@ -292,7 +292,7 @@ class WindowMain(wx.Frame):
 
   def onSimulationSettings(self, event):
     if self.__windowSimulationSettings is None or isWindowDestroyed(self.__windowSimulationSettings):
-      self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread, self.__renderThread)
+      self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread)
     else:
       self.__windowSimulationSettings.Destroy()
       self.__windowSimulationSettings = None

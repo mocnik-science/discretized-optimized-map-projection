@@ -4,10 +4,9 @@ from src.geometry.geo import radiusEarth
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class WindowSimulationSettings(wx.Frame):
-  def __init__(self, geoGridSettings, workerThread, renderThread):
+  def __init__(self, geoGridSettings, workerThread):
     self.__geoGridSettings = geoGridSettings
     self.__workerThread = workerThread
-    self.__renderThread = renderThread
     self.__data = {}
     wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 200))
     self.SetMinSize((800, 200))
