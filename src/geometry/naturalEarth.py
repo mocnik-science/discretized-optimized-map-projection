@@ -71,6 +71,7 @@ class NaturalEarth:
             exteriors.append(geometries[0])
             interiors += geometries[1:]
         self._prepData['full'] = [exteriors, interiors]
+    # self._prepData['full'] = [[exterior for exterior in self._prepData['full'][0] if Geo.areaOfPolygon(shapely.Polygon(exterior)) > 6e10 and shapely.Polygon(exterior).bounds[1] >= -60], self._prepData['full'][1]]
     if simplifyTolerance != 'full' and simplifyTolerance not in self._prepData:
         self._prepData[simplifyTolerance] = self.__simplify(*self._prepData['full'], simplifyTolerance)
         # self._prepData[simplifyTolerance] = [[self.__simplify(cs, simplifyTolerance) for cs in css] for css in self._prepData['full']]
@@ -79,6 +80,7 @@ class NaturalEarth:
   def _prepareGeometries(self):
     if self._prepGeometries is None:
       self._prepGeometries = [shapely.Polygon(exterior) for exterior in NaturalEarth.preparedData()[0]]
+      self._prepGeometries = [polygon for polygon in self._prepGeometries if Geo.areaOfPolygon(polygon) > 6e10 and polygon.bounds[1] >= -60]
     return self._prepGeometries
 
   def _prepareForDistanceTo(self):
