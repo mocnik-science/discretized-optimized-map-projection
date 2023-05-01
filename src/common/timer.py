@@ -6,9 +6,9 @@ FILTER_LOG = None
 class timer(object):
   __durationsByLabel = {}
   
-  def __init__(self, label='', log=True, showAverage=100, **kwargs):
+  def __init__(self, label='', log=True, forceLog=False, showAverage=100, **kwargs):
     self.__label = label
-    self.__log = log and not DISABLE_ALL_LOG
+    self.__log = log and (not DISABLE_ALL_LOG or forceLog)
     self.__showAverage = showAverage
     self.__formatKwargs = kwargs
     self.__time = None
