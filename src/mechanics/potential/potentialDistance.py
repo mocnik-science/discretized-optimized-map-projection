@@ -9,9 +9,9 @@ class PotentialDistance(Potential):
   
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self._geoDistanceCache = {}
 
-  def emptyCache(self):
+  def emptyCacheAll(self):
+    super().emptyCacheAll()
     self._geoDistanceCache = {}
 
   def energy(self, cell, neighbouringCells):

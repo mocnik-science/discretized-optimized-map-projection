@@ -8,11 +8,13 @@ class Potential:
   def __init__(self, settings):
     self._settings = settings
     self.calibrationFactor = 1
-    self.__D = None
-    self.emptyCache()
+    self.emptyCacheAll()
 
-  def emptyCache(self):
-    pass
+  def emptyCacheAll(self):
+    self.emptyCacheDampingFactor()
+
+  def emptyCacheDampingFactor(self):
+    self.__D = None
 
   def setCalibrationFactor(self, k):
     self.calibrationFactor = k

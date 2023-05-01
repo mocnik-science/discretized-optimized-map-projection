@@ -60,11 +60,13 @@ class WindowSimulationSettings(wx.Frame):
       _bind(wx.EVT_CHECKBOX, checkBox, lambda event: event.IsChecked(), key, defaultValue, callback)
       _registerDisabled(disabled, checkBox)
 
-    ## content: resolution
+    ## content: resolution and speed
     box.AddSpacer(5)
     resolutionBox = wx.BoxSizer(wx.HORIZONTAL)
     resolutionBox.AddSpacer(10)
     number(resolutionBox, 'resolution', lambda: self.onDataUpdate(fullReload=True), defaultValue=self.__geoGridSettings.resolution, minValue=2, maxValue=10, label='resolution:')
+    resolutionBox.AddSpacer(100)
+    number(resolutionBox, 'speed', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=0.1, maxValue=20, digits=2, increment=.1, label='speed:')
     box.Add(resolutionBox, 0, wx.ALL, 0)
     box.AddSpacer(8)
 
@@ -117,6 +119,8 @@ class WindowSimulationSettings(wx.Frame):
       self.__geoGridSettings.updatePotentialsWeights(weights)
     # update geoGridSettings: resolution
     self.__geoGridSettings.updateResolution(round(self.__data['resolution']))
+    # update geoGridSettings: damping factor
+    self.__geoGridSettings.updateDampingFactor(1 - self.__data['speed'] / 100)
     # full reload or just update the view
     if fullReload:
       self.__workerThread.fullReload()
