@@ -182,8 +182,9 @@ class GeoGrid:
       with timer(f"compute forces: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
           if cell._isActive:
+            w = weight.forCell(cell)
             for force in potential.forces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]):
-              force.strength *= weight.forCell(cell)
+              force.strength *= w
               forces.append(force)
     # collect forces
     with timer('collect forces', step=self.__step):
