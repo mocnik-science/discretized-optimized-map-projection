@@ -5,6 +5,7 @@ from src.geometry.cartesian import Point
 from src.geometry.common import Common
 
 radiusEarth = 6371007.1809
+radiusEarth2 = radiusEarth * radiusEarth
 
 class Geo:
   @staticmethod
@@ -31,7 +32,7 @@ class Geo:
     return Common.normalizeAngle(math.atan2(y, x))
 
   @staticmethod
-  def areaOfTriangle(triangle): # in metres
+  def areaOfTriangle(triangle): # in square metres
     # compute spherical excess
     e = -Common._pi
     for i, j, k in [[0, 1, 2], [1, 2, 0], [2, 0, 1]]:
@@ -41,7 +42,24 @@ class Geo:
       #   d += Common._2pi
       # e += d
     # Girard's theorem
-    return e * radiusEarth * radiusEarth
+    return e * radiusEarth2
+
+  @staticmethod
+  def areaOfPolygon(polygon): # in square metres
+    # close the polygon
+    points = [Point(*cs) for cs in polygon.exterior.coords]
+    if points[0] != points[-1]:
+      points += [points[0]]
+    # extend the polygon by repeating the first and last point
+    points = [points[-2]] + points
+    # compute the number of points
+    lenPoints = len(points) - 2 # reduced by the two repeated points
+    # compute the spherical excess
+    e = (lenPoints - 2) * -Common._pi
+    for i in range(1, lenPoints + 1):
+      e += Common.normalizeAngle(Geo.bearing(points[i], points[i - 1]) - Geo.bearing(points[i], points[i + 1]))
+    # generalized Girard's theorem
+    return e * radiusEarth2
 
   # @staticmethod
   # def destination(start, bearing, distance): # in radiants
