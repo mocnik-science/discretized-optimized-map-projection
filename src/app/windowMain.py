@@ -63,10 +63,11 @@ class WindowMain(wx.Frame):
     simulationMenu = wx.Menu()
     menuBar.Append(simulationMenu, "&Simulation")
     # simulation menu: start/stop animation
-    startMenuItem = addItem(simulationMenu, 'Start\tSpace', None, self.onRun)
+    startMenuItem = addItem(simulationMenu, 'Start', None, self.onRun)
+    startStopMenuItem = addItem(simulationMenu, 'Start, and stop at threshold\tSpace', None, self.onRunStop)
     stopMenuItem = addItem(simulationMenu, 'Stop\tSpace', None, self.onRun)
     addItem(simulationMenu, 'Compute next step\tRight', None, self.onRun1)
-    addItem(simulationMenu, 'Reset\tBack', None, self.onReset)
+    resetMenuItem = addItem(simulationMenu, 'Reset\tBack', None, self.onReset)
     simulationMenu.AppendSeparator()
     # # simulation menu: potentials
     # key = 'simulationSelectedPotential'
@@ -138,7 +139,8 @@ class WindowMain(wx.Frame):
 
     ## tool bar
     # icons
-    iconPlay = wx.Icon('assets/play.png', type=wx.BITMAP_TYPE_PNG)
+    iconPlayStop = wx.Icon('assets/playStop.png', type=wx.BITMAP_TYPE_PNG)
+    # iconPlay = wx.Icon('assets/play.png', type=wx.BITMAP_TYPE_PNG)
     iconPlay1 = wx.Icon('assets/play1.png', type=wx.BITMAP_TYPE_PNG)
     iconPause = wx.Icon('assets/pause.png', type=wx.BITMAP_TYPE_PNG)
     iconReset = wx.Icon('assets/reset.png', type=wx.BITMAP_TYPE_PNG)
@@ -149,19 +151,24 @@ class WindowMain(wx.Frame):
       self.Bind(wx.EVT_TOOL, callback, tool)
     # init
     toolBar = self.CreateToolBar()
-    addTool(0, 'Run', iconPlay, self.onRun)
-    addTool(1, 'Run one step', iconPlay1, self.onRun1)
-    addTool(2, 'Reset', iconReset, self.onReset)
-    addTool(3, 'Reset', iconGear, self.onSimulationSettings)
+    addTool(0, 'RunStop', iconPlayStop, self.onRunStop)
+    # addTool(1, 'Run', iconPlay, self.onRun)
+    addTool(2, 'Run one step', iconPlay1, self.onRun1)
+    addTool(3, 'Reset', iconReset, self.onReset)
+    addTool(4, 'Simulation settings', iconGear, self.onSimulationSettings)
     toolBar.Realize()
 
     # update functions
     def guiPlay(isPlaying):
       # menu
       startMenuItem.Enable(enable=not isPlaying)
+      startStopMenuItem.Enable(enable=not isPlaying)
       stopMenuItem.Enable(enable=isPlaying)
+      resetMenuItem.Enable(enable=not isPlaying)
       # toolbar
-      toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlay)
+      toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlayStop)
+      # toolBar.SetToolNormalBitmap(1, iconPause if isPlaying else iconPlay)
+      toolBar.EnableTool(3, not isPlaying)
       toolBar.Realize()
       toolBar.Refresh()
     self._guiPlay = guiPlay
@@ -280,6 +287,8 @@ class WindowMain(wx.Frame):
       self.setStatus(event.status)
     if event.energy is not None:
       self.setEnergy(event.energy)
+    if event.stopThresholdReached == True:
+      self.onRun(None, forceStop=True)
 
   def onSimulationSettings(self, event):
     if self.__windowSimulationSettings is None or isWindowDestroyed(self.__windowSimulationSettings):
@@ -295,20 +304,31 @@ class WindowMain(wx.Frame):
       self.__windowAbout.Destroy()
       self.__windowAbout = None
 
-  def onRun(self, event):
-    if self.__workerThreadRunning:
+  def onRun(self, event, forceStop=False):
+    if self.__workerThreadRunning or forceStop:
+      self.__workerThreadRunning = False
       self._guiPlay(False)
       self.__workerThread.pause()
     else:
+      self.__workerThreadRunning = True
       self._guiPlay(True)
       self.__workerThread.unpause()
-    self.__workerThreadRunning = not self.__workerThreadRunning
 
   def onRun1(self, event):
     self.__workerThreadRunning = False
     self._guiPlay(False)
     self.__workerThread.unpause1()
-  
+
+  def onRunStop(self, event):
+    if self.__workerThreadRunning:
+      self.__workerThreadRunning = False
+      self._guiPlay(False)
+      self.__workerThread.pause()
+    else:
+      self.__workerThreadRunning = True
+      self._guiPlay(True)
+      self.__workerThread.unpauseStop()
+
   def onReset(self, event):
     self.reset()
 

@@ -29,7 +29,7 @@ class WindowSimulationSettings(wx.Frame):
       if element not in self.__disabled:
         self.__disabled[element] = []
       self.__disabled[element] += disabled
-    def number(box, key, callback, defaultValue=1, minValue=0, maxValue=100, digits=0, increment=1, disabled=[], label=None):
+    def number(box, key, callback, defaultValue=1, minValue=0, maxValue=100, digits=0, increment=1, disabled=[], label=None, unit=None):
       box.AddSpacer(5)
       labelStaticText = wx.StaticText(self._panel, label=label)
       box.Add(labelStaticText, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
@@ -44,15 +44,14 @@ class WindowSimulationSettings(wx.Frame):
       _bind(wx.EVT_SPINCTRLDOUBLE, numberEntry, lambda event: event.GetValue(), key, defaultValue, callback)
       _registerDisabled(disabled, labelStaticText)
       _registerDisabled(disabled, numberEntry)
-    def weightNumber(box, key, callback, defaultValue=1, disabled=[], label=None):
-      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=100, digits=2, increment=.1, disabled=disabled, label=label)
-    def distanceNumber(box, key, callback, defaultValue=1, disabled=[], label=None, unit=None):
-      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=radiusEarth / 1000, digits=2, increment=1, disabled=disabled, label=label)      
       if unit is not None:
         labelStaticTextAfter = wx.StaticText(self._panel, label=unit)
         box.Add(labelStaticTextAfter, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
-      if unit is not None:
         _registerDisabled(disabled, labelStaticTextAfter)
+    def weightNumber(box, key, callback, defaultValue=1, disabled=[], label=None):
+      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=100, digits=2, increment=.1, disabled=disabled, label=label)
+    def distanceNumber(box, key, callback, defaultValue=1, disabled=[], label=None, unit=None):
+      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=radiusEarth / 1000, digits=2, increment=1, disabled=disabled, label=label, unit=unit)
     def checkBox(box, key, callback, defaultValue=True, disabled=[], proportion=0, **kwargs):
       checkBox = wx.CheckBox(self._panel, **kwargs)
       checkBox.SetValue(defaultValue)
@@ -66,7 +65,9 @@ class WindowSimulationSettings(wx.Frame):
     resolutionBox.AddSpacer(10)
     number(resolutionBox, 'resolution', lambda: self.onDataUpdate(fullReload=True), defaultValue=self.__geoGridSettings.resolution, minValue=2, maxValue=10, label='resolution:')
     resolutionBox.AddSpacer(100)
-    number(resolutionBox, 'speed', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=0.1, maxValue=20, digits=2, increment=.1, label='speed:')
+    number(resolutionBox, 'speed100', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=.1, maxValue=20, digits=2, increment=.1, label='speed:')
+    resolutionBox.AddSpacer(100)
+    number(resolutionBox, 'stopThreshold100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThreshold, minValue=.01, maxValue=2, digits=2, increment=.1, label='stop threshold:', unit='%')
     box.Add(resolutionBox, 0, wx.ALL, 0)
     box.AddSpacer(8)
 
@@ -120,7 +121,9 @@ class WindowSimulationSettings(wx.Frame):
     # update geoGridSettings: resolution
     self.__geoGridSettings.updateResolution(round(self.__data['resolution']))
     # update geoGridSettings: damping factor
-    self.__geoGridSettings.updateDampingFactor(1 - self.__data['speed'] / 100)
+    self.__geoGridSettings.updateDampingFactor(1 - self.__data['speed100'] / 100)
+    # update geoGridSettings: stop threshold
+    self.__geoGridSettings.updateStopThreshold(self.__data['stopThreshold100'] / 100)
     # full reload or just update the view
     if fullReload:
       self.__workerThread.fullReload()

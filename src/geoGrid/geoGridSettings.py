@@ -12,9 +12,10 @@ from src.mechanics.potential.potentialShape import PotentialShape
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, resolution=3, dampingFactor=.99):
+  def __init__(self, resolution=3, dampingFactor=.99, stopThreshold=.001):
     self.resolution = resolution
     self._dampingFactor = dampingFactor
+    self._stopThreshold = stopThreshold
     self._typicalDistance = None
     self._typicalArea = None
     self._forceFactor = None
@@ -33,6 +34,9 @@ class GeoGridSettings:
     self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance
     for potential in self.potentials:
       potential.emptyCacheDampingFactor()
+
+  def updateStopThreshold(self, stopThreshold):
+    self._stopThreshold = stopThreshold
 
   def updateGridStats(self, gridStats):
     self._typicalDistance = gridStats.typicalDistance()

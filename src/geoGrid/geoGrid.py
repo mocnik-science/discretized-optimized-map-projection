@@ -162,6 +162,14 @@ class GeoGrid:
             energy += cell.energy(potential if potential else 'ALL')
       return energy
 
+  def maxForceStrength(self):
+    with timer('compute maximum force strength', step=self.__step):
+      forceStrength = 0
+      for cell in self.__cells.values():
+        if cell._isActive:
+          forceStrength = max(forceStrength, Cartesian.length(*cell.computeForcesNext()))
+    return forceStrength
+
   def step(self):
     return self.__step
 

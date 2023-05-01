@@ -90,7 +90,7 @@ class GeoGridCell:
 
   def applyForce(self):
     # sum up the force
-    xForcesNext, yForcesNext = self._computeForcesNext()
+    xForcesNext, yForcesNext = self.computeForcesNext()
     # apply the force
     self.x += xForcesNext
     self.y += yForcesNext
@@ -101,7 +101,7 @@ class GeoGridCell:
     self._xForcesNext = None
     self._yForcesNext = None
 
-  def _computeForcesNext(self):
+  def computeForcesNext(self):
     if self._xForcesNext is None or self._yForcesNext is None:
       self._xForcesNext = 0
       self._yForcesNext = 0
@@ -112,7 +112,7 @@ class GeoGridCell:
 
   def forceVector(self, potential, k=30):
     if potential == 'ALL':
-      xForcesNext, yForcesNext = self._computeForcesNext()
+      xForcesNext, yForcesNext = self.computeForcesNext()
       return (self.x, self.y), (self.x + k * xForcesNext, self.y + k * yForcesNext)
     xForce = 0
     yForce = 0
