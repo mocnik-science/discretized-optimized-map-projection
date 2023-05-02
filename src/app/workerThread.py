@@ -43,6 +43,7 @@ class WorkerThread(Thread):
 
   def run(self):
     self.fullReload()
+    self.__geoGridSettings.setUntouched()
     # initialize
     t = timer(log=False)
     # loop
@@ -57,22 +58,28 @@ class WorkerThread(Thread):
       else:
         # preparations
         shallUpdateGui = self.__needsUpdate or self.__shallUpdateGui or self.__shallRun1 or self.__shallRunStop or (self.__geoGrid.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
-        # step
         with t:
+          # step
           if self.__shallRun or self.__shallRun1 or self.__shallRunStop:
             self.__geoGrid.performStep()
           else:
             self.__geoGrid.computeForcesAndEnergies()
           serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
+          # compute energy
           energy = self.__geoGrid.energy()
+          # check whether the threshold has been reached
           stopThresholdReached = None
           if self.__shallRunStop:
             # maxForceStrength is in units of the coordinate system in which the cells are located: radiusEarth * deg2rad(lon), radiusEarth * deg2rad(lat)
             # maxForceStrength is divided by the typical distance (which works perfectly at the equator) to normalize
             # The normalized maxForceStrength is divided by the speed (100 * (1 - dampingFactor)), in order to compensate for varying speeds
             stopThresholdReached = self.__geoGrid.maxForceStrength() / self.__geoGridSettings._typicalDistance / (100 * (1 - self.__geoGridSettings._dampingFactor)) < self.__geoGridSettings._stopThreshold
+            if stopThresholdReached:
+              self.__geoGridSettings.setThresholdReached()
           if shallUpdateGui:
             guiData = self.__updateGui1()
+        # update transient information in the settings
+        self.__geoGridSettings.updateTransient(energy=energy, step=self.__geoGrid.step())
         # post result
         self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy, stopThresholdReached=stopThresholdReached)
         # cleanup
