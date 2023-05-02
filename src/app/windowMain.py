@@ -294,7 +294,7 @@ class WindowMain(wx.Frame):
       self.onRun(None, forceStop=True)
 
   def onLoadSimulationSettings(self, event):
-    with wx.FileDialog(self, 'Open simulation settings', wildcard='discrete optimized map projection (*.domp)|.domp', style=wx.FD_OPEN) as fileDialog:
+    with wx.FileDialog(self, 'Open simulation settings', wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_OPEN) as fileDialog:
       if fileDialog.ShowModal() == wx.ID_CANCEL:
         return
       fileName = fileDialog.GetPath()
@@ -307,7 +307,7 @@ class WindowMain(wx.Frame):
         wx.LogError('Cannot open map projection file: ' + fileName)
 
   def onSaveSimulationSettings(self, event):
-    with wx.FileDialog(self, 'Save simulation settings', defaultFile='my-projection', wildcard='discrete optimized map projection (*.domp)|.domp', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+    with wx.FileDialog(self, 'Save simulation settings', defaultFile='my-projection', wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
       if fileDialog.ShowModal() == wx.ID_CANCEL:
         return
       fileName = fileDialog.GetPath()
