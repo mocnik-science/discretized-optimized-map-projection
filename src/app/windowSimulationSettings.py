@@ -111,7 +111,7 @@ class WindowSimulationSettings(wx.Frame):
     for potential in self.__geoGridSettings.potentials:
       active = self.__data[potential.kind]
       weightLand = self.__data[potential.kind + '-weight']
-      weightOcean = self.__data[potential.kind + '-ocean-weight'] if self.__data[potential.kind + '-ocean'] else self.__data[potential.kind + '-weight']
+      weightOcean = self.__data[potential.kind + '-ocean-weight']
       weightOceanActive = self.__data[potential.kind + '-ocean']
       distanceTransitionStart = self.__data[potential.kind + '-distanceTransitionStart'] * 1000
       distanceTransitionEnd = self.__data[potential.kind + '-distanceTransitionEnd'] * 1000
