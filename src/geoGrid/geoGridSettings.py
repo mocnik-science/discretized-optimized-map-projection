@@ -1,3 +1,4 @@
+from src.app.common import APP_FILE_FORMAT
 from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.mechanics.potential.potentialArea import PotentialArea
 from src.mechanics.potential.potentialDistance import PotentialDistance
@@ -21,6 +22,24 @@ class GeoGridSettings:
     self._forceFactor = None
     self.potentials = [PotentialArea(self), PotentialDistance(self), PotentialShape(self)]
     self._potentialsWeights = dict([(potential.kind, GeoGridWeight()) for potential in self.potentials])
+
+  def toJSON(self):
+    return {
+      'fileFormat': APP_FILE_FORMAT,
+      'fileFormatVersion': '1.0',
+      'resolution': self.resolution,
+      'dampingFactor': self._dampingFactor,
+      'stopThreshold': self._stopThreshold,
+      'weights': dict((potentialKind, weight.toJSON()) for (potentialKind, weight) in self._potentialsWeights.items()),
+    }
+
+  def updateFromJSON(self, data):
+    if data['fileFormat'] != APP_FILE_FORMAT or data['fileFormatVersion'] != '1.0':
+      raise Exception('Wrong fileformat')
+    self.updateResolution(data['resolution'])
+    self.updateDampingFactor(data['dampingFactor'])
+    self.updateStopThreshold(data['stopThreshold'])
+    self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
 
   def updateResolution(self, resolution):
     if self.resolution == resolution:

@@ -12,6 +12,20 @@ class GeoGridWeight:
     self.__distanceTransitionEnd = distanceTransitionEnd
     self.__cache = {}
 
+  def toJSON(self):
+    return {
+      'active': self.__active,
+      'weightLand': self.__weightLand,
+      'weightOceanActive': self.__weightOceanActive,
+      'weightOcean': self.__weightOcean,
+      'distanceTransitionStart': self.__distanceTransitionStart,
+      'distanceTransitionEnd': self.__distanceTransitionEnd,
+    }
+
+  @staticmethod
+  def fromJSON(data):
+    return GeoGridWeight(**data)
+
   def isActive(self):
     return self.__active
   def weightLand(self):

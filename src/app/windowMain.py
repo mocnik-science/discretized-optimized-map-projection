@@ -1,3 +1,4 @@
+import json
 import wx
 
 from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
@@ -75,7 +76,9 @@ class WindowMain(wx.Frame):
     #   addCheckItem(simulationMenu, f"consider {potential.kind.lower()}", self.__simulationSettings, key, potential.kind, self.updateSimulationSettings, default=True)
     # simulationMenu.AppendSeparator()
     # simulation menu: simulation settings
-    addItem(simulationMenu, 'Simulation settings...\tCtrl+.', None, self.onSimulationSettings)
+    addItem(simulationMenu, 'Load simulation settings...\tCtrl+O', None, self.onLoadSimulationSettings)
+    addItem(simulationMenu, 'Save simulation settings...\tCtrl+S', None, self.onSaveSimulationSettings)
+    addItem(simulationMenu, 'Show simulation settings...\tCtrl+.', None, self.onShowSimulationSettings)
     simulationMenu.AppendSeparator()
     addItem(simulationMenu, 'About...', None, self.onAbout)
     # view menu
@@ -155,7 +158,7 @@ class WindowMain(wx.Frame):
     # addTool(1, 'Run', iconPlay, self.onRun)
     addTool(2, 'Run one step', iconPlay1, self.onRun1)
     addTool(3, 'Reset', iconReset, self.onReset)
-    addTool(4, 'Simulation settings', iconGear, self.onSimulationSettings)
+    addTool(4, 'Show simulation settings', iconGear, self.onShowSimulationSettings)
     toolBar.Realize()
 
     # update functions
@@ -290,7 +293,40 @@ class WindowMain(wx.Frame):
     if event.stopThresholdReached == True:
       self.onRun(None, forceStop=True)
 
-  def onSimulationSettings(self, event):
+  def onLoadSimulationSettings(self, event):
+    with wx.FileDialog(self, 'Open simulation settings', wildcard='discrete optimized map projection (*.domp)|.domp', style=wx.FD_OPEN) as fileDialog:
+      if fileDialog.ShowModal() == wx.ID_CANCEL:
+        return
+      fileName = fileDialog.GetPath()
+      try:
+        with open(fileName, 'r') as file:
+          self.__geoGridSettings.updateFromJSON(json.load(file))
+        self.__workerThread.fullReload()
+        self.reloadShowSimulationSettings()
+      except IOError:
+        wx.LogError('Cannot open map projection file: ' + fileName)
+
+  def onSaveSimulationSettings(self, event):
+    with wx.FileDialog(self, 'Save simulation settings', defaultFile='hurray', wildcard='discrete optimized map projection (*.domp)|.domp', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+      if fileDialog.ShowModal() == wx.ID_CANCEL:
+        return
+      fileName = fileDialog.GetPath()
+      try:
+        with open(fileName, 'w') as file:
+          json.dump(self.__geoGridSettings.toJSON(), file)
+      except IOError:
+        wx.LogError('Cannot save map projection to file: ' + fileName)
+
+  def reloadShowSimulationSettings(self):
+    position = None
+    if self.__windowSimulationSettings is not None and not isWindowDestroyed(self.__windowSimulationSettings):
+      position = self.__windowSimulationSettings.GetPosition()
+      self.__windowSimulationSettings.Destroy()
+    self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread)
+    if position:
+      self.__windowSimulationSettings.SetPosition(position)
+
+  def onShowSimulationSettings(self, event):
     if self.__windowSimulationSettings is None or isWindowDestroyed(self.__windowSimulationSettings):
       self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread)
     else:
