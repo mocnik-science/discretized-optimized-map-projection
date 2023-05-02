@@ -13,6 +13,7 @@ from src.geometry.cartesian import Cartesian
 from src.geometry.dggrid import DGGRID
 from src.geoGrid.geoGridCell import GeoGridCell
 from src.geoGrid.geoGridProjection import GeoGridProjection
+from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
@@ -216,6 +217,9 @@ class GeoGrid:
     with timer('serialize data for projection', step=self.__step):
       return GeoGridProjection.serializedDataForProjection(self.__cells)
 
+  def settings(self):
+    return self.__settings
+
   def projection(self):
     if self.__projection is None:
       self.__projection = GeoGridProjection(self.__ballTree, self.__ballTreeCellsId1s, self.serializedDataForProjection())
@@ -223,6 +227,9 @@ class GeoGrid:
 
   def project(self, lon, lat):
     return self.projection().project(lon, lat)
+
+  def exportProjectionTIN(self):
+    return GeoGridProjectionTIN.computeTIN(self)
 
   def serializedData(self, viewSettings={}):
     with timer('serialize data for rendering', step=self.__step):

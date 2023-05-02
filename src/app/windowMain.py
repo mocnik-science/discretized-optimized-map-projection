@@ -80,6 +80,8 @@ class WindowMain(wx.Frame):
     addItem(simulationMenu, 'Save simulation settings...\tCtrl+S', None, self.onSaveSimulationSettings)
     addItem(simulationMenu, 'Show simulation settings...\tCtrl+.', None, self.onShowSimulationSettings)
     simulationMenu.AppendSeparator()
+    addItem(simulationMenu, 'Save TIN projection for PROJ...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
+    simulationMenu.AppendSeparator()
     addItem(simulationMenu, 'About...', None, self.onAbout)
     # view menu
     viewMenu = wx.Menu()
@@ -292,6 +294,17 @@ class WindowMain(wx.Frame):
       self.setEnergy(event.energy)
     if event.stopThresholdReached == True:
       self.onRun(None, forceStop=True)
+
+  def onSaveProjectionTIN(self, event):
+    with wx.FileDialog(self, 'Save TIN projection', defaultFile='my-projection', wildcard='TIN file (*.json)|.json', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+      if fileDialog.ShowModal() == wx.ID_CANCEL:
+        return
+      fileName = fileDialog.GetPath()
+      try:
+        with open(fileName, 'w') as file:
+          json.dump(self.__workerThread.exportProjectionTIN(), file)
+      except IOError:
+        wx.LogError('Cannot save map projection to TIN file: ' + fileName)
 
   def onLoadSimulationSettings(self, event):
     with wx.FileDialog(self, 'Open simulation settings', wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_OPEN) as fileDialog:
