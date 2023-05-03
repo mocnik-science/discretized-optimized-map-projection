@@ -6,16 +6,34 @@ from src.app.common import APP_NAME, APP_URL
 class GeoGridProjectionTIN:
   @staticmethod
   def computeTIN(geoGrid):
+    # collect vertices and triangles
+    id2ToIndex = {}
+    vertices = []
+    triangles = []
+    for id2, cell in geoGrid.cells().items():
+      id2ToIndex[id2] = len(vertices)
+      vertices.append([cell._centreOriginal.x, cell._centreOriginal.y, cell.x, cell.y])
+    for id2, cell in geoGrid.cells().items():
+      nLast = None
+      for n in cell._neighbours + [cell._neighbours[0]]:
+        if n not in id2ToIndex:
+          continue
+        if nLast is not None and nLast != n:
+          triangle = sorted([id2ToIndex[id2], id2ToIndex[nLast], id2ToIndex[n]])
+          if triangle not in triangles:
+            triangles.append(triangle)
+        nLast = n
+    # result
     return {
       'file_type': 'triangulation_file',
-      'format_version': '1.0',
+      'format_version': '1.1',
       'name': 'Individual Discretized Optimized Map Projection',
       'version': '1.0',
       'publication_date': datetime.now(timezone.utc).isoformat()[:-13] + 'Z',
       'license': 'Creative Commons Attribution 4.0 International',
       'description': json.dumps(geoGrid.settings().toJSON(includeTransient=True)),
       'authority': {
-        'name': f'produced by {APP_NAME}',
+        'name': f'produced by {APP_NAME}'.replace('\n', ' '),
         'url': APP_URL,
       },
       'links': [
@@ -39,6 +57,6 @@ class GeoGridProjectionTIN:
       'transformed_components': ['horizontal'],
       'vertices_columns': ['source_x', 'source_y', 'target_x', 'target_y'],
       'triangles_columns': ['idx_vertex1', 'idx_vertex2', 'idx_vertex3'],
-      'triangles': [],
-      'vertices': [],
+      'vertices': vertices,
+      'triangles': triangles,
     }

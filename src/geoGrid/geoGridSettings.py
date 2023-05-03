@@ -28,10 +28,10 @@ class GeoGridSettings:
     transient = {}
     if includeTransient:
       transient = {
+        'step': self._step,
         'untouched': self._untouched,
         'thresholdReached': self._thresholdReached,
         'energy': self._energy,
-        'step': self._step,
       }
     return {
       'fileFormat': APP_FILE_FORMAT,

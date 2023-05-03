@@ -62,6 +62,12 @@ class GeoGrid:
     # compute next forces and energies
     self.computeForcesAndEnergies()
 
+  def settings(self):
+    return self.__settings
+
+  def cells(self):
+    return self.__cells
+
   @staticmethod
   def createCells(resolution):
     dggrid = DGGRID(executable='DGGRID/build/src/apps/dggrid/dggrid')
@@ -217,9 +223,6 @@ class GeoGrid:
     with timer('serialize data for projection', step=self.__step):
       return GeoGridProjection.serializedDataForProjection(self.__cells)
 
-  def settings(self):
-    return self.__settings
-
   def projection(self):
     if self.__projection is None:
       self.__projection = GeoGridProjection(self.__ballTree, self.__ballTreeCellsId1s, self.serializedDataForProjection())
@@ -278,6 +281,3 @@ class GeoGrid:
   def render(self, viewSettings={}, **kwargs):
     serializedData = self.serializedData(viewSettings)
     return GeoGridRenderer.render(serializedData, projection=self.projection(), **kwargs)
-
-  def data(self):
-    return self.__cells
