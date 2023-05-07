@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from src.app.common import APP_FILE_FORMAT
 from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.mechanics.potential.potentialArea import PotentialArea
@@ -41,6 +44,17 @@ class GeoGridSettings:
       'stopThreshold': self._stopThreshold,
       'weights': dict((potentialKind, weight.toJSON()) for (potentialKind, weight) in self._potentialsWeights.items()),
       **transient,
+    }
+
+  def info(self, includeTransient=False):
+    settingsJson = self.toJSON(includeTransient=includeTransient)
+    hash = hashlib.sha1(json.dumps(settingsJson).encode()).hexdigest()[:7]
+    return {
+      'jsonSettings': settingsJson,
+      'hash': hash,
+      'dompCRS': 'DOMP:' + hash,
+      'filenameSettings': 'domp-' + hash + '-projection.domp',
+      'filenameTIN': 'domp-' + hash + '-tin.json',
     }
 
   def _updated(self, initial=False):

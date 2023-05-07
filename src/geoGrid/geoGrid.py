@@ -231,8 +231,8 @@ class GeoGrid:
   def project(self, lon, lat):
     return self.projection().project(lon, lat)
 
-  def exportProjectionTIN(self):
-    return GeoGridProjectionTIN.computeTIN(self)
+  def exportProjectionTIN(self, info):
+    return GeoGridProjectionTIN.computeTIN(self, info)
 
   def serializedData(self, viewSettings={}):
     with timer('serialize data for rendering', step=self.__step):

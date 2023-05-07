@@ -1,11 +1,14 @@
 import json
+import os
 import wx
 
+from src.app.common import APP_FILES_PATH
 from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
 from src.app.windows import isWindowDestroyed
 from src.app.windowAbout import WindowAbout
 from src.app.windowSimulationSettings import WindowSimulationSettings
 from src.app.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
+from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.geoGrid.geoGridSettings import GeoGridSettings
 
 class WindowMain(wx.Frame):
@@ -60,29 +63,34 @@ class WindowMain(wx.Frame):
       return menuItem
     # init
     menuBar = wx.MenuBar()
+    # projection menu
+    projectionMenu = wx.Menu()
+    menuBar.Append(projectionMenu, "&Projection")
+    # projection menu: projection
+    addItem(projectionMenu, 'Save and install TIN projection to PROJ/QGIS...\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall)
+    addItem(projectionMenu, 'Save TIN projection for PROJ...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
+    addItem(projectionMenu, 'Install TIN projection to PROJ/QGIS...', None, self.onSaveProjectionTINToDefault)
+    projectionMenu.AppendSeparator()
+    addItem(projectionMenu, 'About...', None, self.onAbout)
     # simulation menu
     simulationMenu = wx.Menu()
     menuBar.Append(simulationMenu, "&Simulation")
+    # simulation menu: simulation settings
+    addItem(simulationMenu, 'Load simulation settings...\tCtrl+O', None, self.onLoadSimulationSettings)
+    addItem(simulationMenu, 'Save simulation settings...\tCtrl+S', None, self.onSaveSimulationSettings)
+    addItem(simulationMenu, 'Show simulation settings...\tCtrl+.', None, self.onShowSimulationSettings)
+    simulationMenu.AppendSeparator()
     # simulation menu: start/stop animation
     startMenuItem = addItem(simulationMenu, 'Start', None, self.onRun)
     startStopMenuItem = addItem(simulationMenu, 'Start, and stop at threshold\tSpace', None, self.onRunStop)
     stopMenuItem = addItem(simulationMenu, 'Stop\tSpace', None, self.onRun)
     addItem(simulationMenu, 'Compute next step\tRight', None, self.onRun1)
     resetMenuItem = addItem(simulationMenu, 'Reset\tBack', None, self.onReset)
-    simulationMenu.AppendSeparator()
+    # simulationMenu.AppendSeparator()
     # # simulation menu: potentials
     # key = 'simulationSelectedPotential'
     # for potential in self.__geoGridSettings.potentials:
     #   addCheckItem(simulationMenu, f"consider {potential.kind.lower()}", self.__simulationSettings, key, potential.kind, self.updateSimulationSettings, default=True)
-    # simulationMenu.AppendSeparator()
-    # simulation menu: simulation settings
-    addItem(simulationMenu, 'Load simulation settings...\tCtrl+O', None, self.onLoadSimulationSettings)
-    addItem(simulationMenu, 'Save simulation settings...\tCtrl+S', None, self.onSaveSimulationSettings)
-    addItem(simulationMenu, 'Show simulation settings...\tCtrl+.', None, self.onShowSimulationSettings)
-    simulationMenu.AppendSeparator()
-    addItem(simulationMenu, 'Save TIN projection for PROJ...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
-    simulationMenu.AppendSeparator()
-    addItem(simulationMenu, 'About...', None, self.onAbout)
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
@@ -295,40 +303,66 @@ class WindowMain(wx.Frame):
     if event.stopThresholdReached == True:
       self.onRun(None, forceStop=True)
 
-  def onSaveProjectionTIN(self, event):
-    with wx.FileDialog(self, 'Save TIN projection', defaultFile='my-projection', wildcard='TIN file (*.json)|.json', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
-      if fileDialog.ShowModal() == wx.ID_CANCEL:
-        return
-      fileName = fileDialog.GetPath()
-      try:
-        with open(fileName, 'w') as file:
-          json.dump(self.__workerThread.exportProjectionTIN(), file)
-      except IOError:
-        wx.LogError('Cannot save map projection to TIN file: ' + fileName)
+  def onSaveProjectionTINToDefaultAndInstall(self, event):
+    info = self.onSaveProjectionTINToDefault(event)
+    dataTIN = WindowMain._readFromFile(info['filenameTIN'], 'settings file')
+    if dataTIN is not None:
+      GeoGridProjectionTIN.installTIN(info, dataTIN)
+
+  def onSaveProjectionTINToDefault(self, event):
+    return self.onSaveProjectionTIN(event, useDefaultDirectory=True)
+
+  def onSaveProjectionTIN(self, event, useDefaultDirectory=False):
+    def save(info):
+      WindowMain._saveToFile(info['filenameTIN'], self.__workerThread.exportProjectionTIN(info), 'map projection to TIN file')
+      WindowMain._saveToFile(info['filenameSettings'], info['jsonSettings'], 'map projection to settings file')
+      return info
+    info = self.__geoGridSettings.info()
+    if useDefaultDirectory:
+      os.makedirs(APP_FILES_PATH, exist_ok=True)
+      info['filenameTIN'] = APP_FILES_PATH + info['filenameTIN']
+      info['filenameSettings'] = APP_FILES_PATH + info['filenameSettings']
+      return save(info)
+    else:
+      with wx.FileDialog(self, 'Save TIN projection', defaultFile=info['filenameTIN'], wildcard='TIN file (*.json)|.json', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+        if fileDialog.ShowModal() == wx.ID_CANCEL:
+          return
+        info['filenameTIN'] = fileDialog.GetPath()
+        info['filenameSettings'] = info['filenameTIN'].replace('-tin.json', '').replace('.json', '') + '-projection.domp'
+        return save(info)
 
   def onLoadSimulationSettings(self, event):
     with wx.FileDialog(self, 'Open simulation settings', wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_OPEN) as fileDialog:
       if fileDialog.ShowModal() == wx.ID_CANCEL:
         return
-      fileName = fileDialog.GetPath()
-      try:
-        with open(fileName, 'r') as file:
-          self.__geoGridSettings.updateFromJSON(json.load(file))
+      dataSettings = WindowMain._readFromFile(fileDialog.GetPath(), 'settings file')
+      if dataSettings is not None:
+        self.__geoGridSettings.updateFromJSON(dataSettings)
         self.__workerThread.fullReload()
         self.reloadShowSimulationSettings()
-      except IOError:
-        wx.LogError('Cannot open map projection file: ' + fileName)
 
   def onSaveSimulationSettings(self, event):
-    with wx.FileDialog(self, 'Save simulation settings', defaultFile='my-projection', wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+    info = self.__geoGridSettings.info()
+    with wx.FileDialog(self, 'Save simulation settings', defaultFile=info['filenameSettings'], wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
       if fileDialog.ShowModal() == wx.ID_CANCEL:
         return
-      fileName = fileDialog.GetPath()
-      try:
-        with open(fileName, 'w') as file:
-          json.dump(self.__geoGridSettings.toJSON(), file)
-      except IOError:
-        wx.LogError('Cannot save map projection to file: ' + fileName)
+      WindowMain._saveToFile(fileDialog.GetPath(), info['jsonSettings'], 'map projection to DOMP file')
+
+  @staticmethod
+  def _readFromFile(filename, label='file'):
+    try:
+      with open(filename, 'r') as file:
+        return json.load(file)
+    except IOError:
+      wx.LogError('Cannot open ' + label + ': ' + filename)
+      return None
+  @staticmethod
+  def _saveToFile(filename, data, label='data to file'):
+    try:
+      with open(filename, 'w') as file:
+        json.dump(data, file)
+    except IOError:
+      wx.LogError('Cannot save ' + label + ': ' + filename)
 
   def reloadShowSimulationSettings(self):
     position = None

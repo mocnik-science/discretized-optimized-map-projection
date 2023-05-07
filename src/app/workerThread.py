@@ -113,8 +113,8 @@ class WorkerThread(Thread):
     serializedData = self.__geoGrid.serializedData(self.__viewSettings)
     self.__post(serializedData=serializedData)
 
-  def exportProjectionTIN(self):
-    return self.__geoGrid.exportProjectionTIN()
+  def exportProjectionTIN(self, info):
+    return self.__geoGrid.exportProjectionTIN(info)
 
   def update(self):
     self.__needsUpdate = True

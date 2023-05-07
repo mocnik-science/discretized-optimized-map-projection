@@ -5,7 +5,7 @@ from src.app.common import APP_NAME, APP_URL
 
 class GeoGridProjectionTIN:
   @staticmethod
-  def computeTIN(geoGrid):
+  def computeTIN(geoGrid, info):
     # collect vertices and triangles
     id2ToIndex = {}
     vertices = []
@@ -15,6 +15,8 @@ class GeoGridProjectionTIN:
       vertices.append([cell._centreOriginal.x, cell._centreOriginal.y, cell.x, cell.y])
     for id2, cell in geoGrid.cells().items():
       nLast = None
+      if len(cell._neighbours) != (6 if cell._isHexagon else 5):
+        continue
       for n in cell._neighbours + [cell._neighbours[0]]:
         if n not in id2ToIndex:
           continue
@@ -23,15 +25,17 @@ class GeoGridProjectionTIN:
           if triangle not in triangles:
             triangles.append(triangle)
         nLast = n
+    # settings
+    settingsJson = json.dumps(geoGrid.settings().toJSON(includeTransient=True))
     # result
     return {
       'file_type': 'triangulation_file',
       'format_version': '1.1',
-      'name': 'Individual Discretized Optimized Map Projection',
+      'name': 'Discretized Optimized Map Projection #' + info['hash'],
       'version': '1.0',
       'publication_date': datetime.now(timezone.utc).isoformat()[:-13] + 'Z',
       'license': 'Creative Commons Attribution 4.0 International',
-      'description': json.dumps(geoGrid.settings().toJSON(includeTransient=True)),
+      'description': settingsJson,
       'authority': {
         'name': f'produced by {APP_NAME}'.replace('\n', ' '),
         'url': APP_URL,
@@ -43,6 +47,12 @@ class GeoGridProjectionTIN:
           'type': 'text/html',
           'title': 'GitHub source',
         },
+        {
+          'href': info['filenameSettings'],
+          'rel': 'metadata',
+          'type': 'text/json',
+          'title': 'settings',
+        },
       ],
       'extent': {
         'type': 'bbox',
@@ -52,7 +62,7 @@ class GeoGridProjectionTIN:
         },
       },
       'input_crs': 'EPSG:4326',
-      'output_crs': 'Individual Discretized Optimized Map Projection',
+      'output_crs': info['dompCRS'],
       'fallback_strategy': 'nearest_side',
       'transformed_components': ['horizontal'],
       'vertices_columns': ['source_x', 'source_y', 'target_x', 'target_y'],
@@ -60,3 +70,7 @@ class GeoGridProjectionTIN:
       'vertices': vertices,
       'triangles': triangles,
     }
+
+  @staticmethod
+  def installTIN(info, data):
+    pass
