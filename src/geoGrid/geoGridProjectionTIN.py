@@ -1,9 +1,8 @@
 from datetime import datetime, timezone
 import json
-import sqlite3
-import traceback
 
 from src.app.common import APP_NAME, APP_URL
+from src.common.database import Database
 from src.common.paths import projDb, srsDb
 
 class GeoGridProjectionTIN:
@@ -77,133 +76,162 @@ class GeoGridProjectionTIN:
       'triangles': triangles,
     }
 
+  INSTALLED_PROJ = 'INSTALLED_PROJ'
+  INSTALLED_QGIS = 'INSTALLED_QGIS'
+  INSTALLED_FULL = 'INSTALLED_FULL'
+  INSTALLED_PARTLY = 'INSTALLED_PARTLY'
+  INSTALLED_NOT = 'INSTALLED_NOT'
+
+  @staticmethod
+  def isTINInstalled(appSettings, data=None, hash=None):
+    hash = hash or json.loads(data['description'])['info']['hash']
+    def determineStatus(tests):
+      if len(tests) == 0:
+        return GeoGridProjectionTIN.INSTALLED_NOT
+      elif all(tests):
+        return GeoGridProjectionTIN.INSTALLED_FULL
+      return GeoGridProjectionTIN.INSTALLED_PARTLY
+    installed = {}
+    with Database(projDb(appSettings)) as db:
+      projDbInstallled = [] if not db else [
+        db.exists('conversion_table', {'auth_name': 'DOMP', 'code': f"{hash}-conv"}),
+        db.exists('projected_crs', {'auth_name': 'DOMP', 'code': hash}),
+        db.exists('usage', {'auth_name': 'DOMP', 'code': f"{hash}_USAGE"}),
+        db.exists('other_transformation', {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}"}),
+        db.exists('usage', {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}_USAGE"}),
+      ]
+      installed[GeoGridProjectionTIN.INSTALLED_PROJ] = determineStatus(projDbInstallled)
+    with Database(srsDb(appSettings)) as db:
+      srsDbInstallled = [] if not db else [
+        db.exists('tbl_projection', {'acronym': 'domp'}),
+        db.exists('tbl_srs', {'auth_name': 'DOMP', 'auth_id': hash}),
+      ]
+      installed[GeoGridProjectionTIN.INSTALLED_QGIS] = determineStatus(srsDbInstallled)
+    return installed
+
+  def collectTINInstalled(appSettings):
+    installedHashes = set()
+    with Database(projDb(appSettings)) as db:
+      if db is not None:
+        for code, in db.select('conversion_table', ['code'], {'auth_name': 'DOMP'}):
+          if str(code).endswith('-conv'):
+            installedHashes.add(code.replace('-conv', ''))
+        for code, in db.select('projected_crs', ['code'], {'auth_name': 'DOMP'}):
+          installedHashes.add(str(code))
+        for code, in db.select('usage', ['code'], {'auth_name': 'DOMP'}):
+          if str(code).startswith('WGS84_TO_DOMP-') and str(code).endswith('_USAGE'):
+            installedHashes.add(code.replace('WGS84_TO_DOMP-', '').replace('_USAGE', ''))
+          elif str(code).endswith('_USAGE'):
+            installedHashes.add(code.replace('_USAGE', ''))
+        for code, in db.select('other_transformation', ['target_crs_code'], {'target_crs_auth_name': 'DOMP'}):
+          installedHashes.add(str(code))
+    with Database(srsDb(appSettings)) as db:
+      if db is not None:
+        for code, in db.select('tbl_srs', ['auth_id'], {'auth_name': 'DOMP'}):
+          installedHashes.add(str(code))
+    return dict((hash, GeoGridProjectionTIN.isTINInstalled(appSettings, hash=hash)) for hash in installedHashes)
+
+  @staticmethod
+  def uninstallTIN(appSettings, data=None, hash=None):
+    hash = hash or json.loads(data['description'])['info']['hash']
+    with Database(projDb(appSettings)) as db:
+      if db is not None:
+        db.delete('conversion_table', {'auth_name': 'DOMP', 'code': f"{hash}-conv"})
+        db.delete('projected_crs', {'auth_name': 'DOMP', 'code': hash})
+        db.delete('usage', {'auth_name': 'DOMP', 'code': f"{hash}_USAGE"})
+        db.delete('other_transformation', {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}"})
+        db.delete('usage', {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}_USAGE"})
+        db.commit()
+    with Database(srsDb(appSettings)) as db:
+      if db is not None:
+        db.delete('tbl_srs', {'auth_name': 'DOMP', 'auth_id': hash})
+        db.commit()
+
+  @staticmethod
+  def uninstallAllTIN(appSettings):
+    with Database(projDb(appSettings)) as db:
+      if db is not None:
+        db.delete('conversion_table', {'auth_name': 'DOMP'})
+        db.delete('projected_crs', {'auth_name': 'DOMP'})
+        db.delete('usage', {'auth_name': 'DOMP'})
+        db.delete('other_transformation', {'target_crs_auth_name': 'DOMP'})
+        db.delete('usage', {'code': Database.like('WGS84_TO_DOMP-%')})
+        db.commit()
+    with Database(srsDb(appSettings)) as db:
+      if db is not None:
+        db.delete('tbl_projection', {'acronym': 'domp'})
+        db.delete('tbl_srs', {'auth_name': 'DOMP'})
+        db.commit()
+
   @staticmethod
   def installTIN(appSettings, filenameTIN, data):
-    info = json.loads(data['description'])['info']
-    filenameProjDb = projDb(appSettings)
+    hash = json.loads(data['description'])['info']['hash']
+    # delete potentially existing
+    GeoGridProjectionTIN.uninstallTIN(appSettings, hash=hash)
+    # insert new
     try:
-      if not filenameProjDb:
-        return None
-      else:
-        connection = sqlite3.connect(filenameProjDb)
-        cursor = connection.cursor()
-        cursor.execute(f'''
-          INSERT INTO conversion_table (
-            auth_name, code, name,
-            description,
-            method_auth_name, method_code,
-            param1_auth_name, param1_code, param1_value, param1_uom_auth_name, param1_uom_code,
-            param2_auth_name, param2_code, param2_value, param2_uom_auth_name, param2_uom_code,
-            param3_auth_name, param3_code, param3_value, param3_uom_auth_name, param3_uom_code,
-            param4_auth_name, param4_code, param4_value, param4_uom_auth_name, param4_uom_code,
-            deprecated
-          ) VALUES (
-            'DOMP', '{info['hash']}-conv', 'Wrong conversion for the Discretized Optimized Map Projection #{info['hash']}',
-            'Wrong conversion for the Discretized Optimized Map Projection #{info['hash']}',
-            'EPSG', '1024',
-            'EPSG', '8801', '0.0', 'EPSG', '9102',
-            'EPSG', '8802', '0.0', 'EPSG', '9102',
-            'EPSG', '8806', '0.0', 'EPSG', '9001',
-            'EPSG', '8807', '0.0', 'EPSG', '9001',
-            0
-          );
-        ''')
-        cursor.execute(f'''
-          INSERT INTO projected_crs (
-            auth_name, code, name,
-            description,
-            coordinate_system_auth_name, coordinate_system_code,
-            geodetic_crs_auth_name, geodetic_crs_code,
-            conversion_auth_name, conversion_code,
-            deprecated
-          ) VALUES (
-            'DOMP', '{info['hash']}', 'Discretized Optimized Map Projection #{info['hash']}',
-            'Discretized Optimized Map Projection #{info['hash']}',
-            'EPSG', '4499',
-            'EPSG', '4030',
-            'DOMP', '{info['hash']}-conv',
-            0
-          );
-        ''')
-        cursor.execute(f'''
-          INSERT INTO usage (
-            auth_name, code,
-            object_table_name, object_auth_name, object_code,
-            extent_auth_name, extent_code,
-            scope_auth_name, scope_code
-          ) VALUES (
-            'DOMP', '{info['hash']}_USAGE',
-            'projected_crs', 'DOMP', '{info['hash']}',
-            'EPSG', '1262',
-            'EPSG', '1098'
-          );
-        ''')
-        cursor.execute(f'''
-          INSERT INTO other_transformation (
-            auth_name, code, name,
-            description,
-            method_auth_name, method_code, method_name,
-            source_crs_auth_name, source_crs_code,
-            target_crs_auth_name, target_crs_code,
-            accuracy,
-            deprecated
-          ) VALUES (
-            'PROJ', 'WGS84_TO_DOMP-{info['hash']}', 'WGS84 to DOMP-{info['hash']}',
-            'Transformation for the Discretized Optimized Map Projection #{info['hash']}',
-            'PROJ', 'PROJString', '+proj=pipeline +step +proj=axisswap +order=2,1 +step +proj=tinshift +file="{filenameTIN}"',
-            'EPSG', '4326',
-            'DOMP', '{info['hash']}',
-            0.01,
-            0
-          );
-        ''')
-        cursor.execute(f'''
-          INSERT INTO usage (
-            auth_name, code,
-            object_table_name, object_auth_name, object_code,
-            extent_auth_name, extent_code,
-            scope_auth_name, scope_code
-          ) VALUES (
-            'PROJ', 'WGS84_TO_DOMP-{info['hash']}_USAGE',
-            'other_transformation', 'PROJ', 'WGS84_TO_DOMP-{info['hash']}',
-            'EPSG', '1262',
-            'EPSG', '1098'
-          );
-        ''')
-        connection.commit()
-      filenameSrsDb = srsDb(appSettings)
-      if filenameSrsDb:
-        connection = sqlite3.connect(filenameSrsDb)
-        cursor = connection.cursor()
-        cursor.execute(f'''
-          INSERT INTO tbl_projection (
-            acronym, name
-          ) VALUES (
-            'domp', 'Discretized Optimized Map Projection'
-          );
-        ''')
-        cursor.execute(f'''
-          INSERT INTO tbl_srs (
-            description,
-            projection_acronym, ellipsoid_acronym,
-            parameters,
-            srid,
-            auth_name, auth_id,
-            is_geo,
-            deprecated
-          ) VALUES (
-            'Discretized Optimized Map Projection #{info['hash']}',
-            'domp', 'WGS84',
-            '+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs',
-            '{info['hash']}',
-            'DOMP', '{info['hash']}',
-            0,
-            0
-          );
-        ''')
-        connection.commit()
-        connection.close()
+      with Database(projDb(appSettings)) as db:
+        if db is None:
+          return None
+        db.insert('conversion_table', {
+          'auth_name': 'DOMP', 'code': f"{hash}-conv",
+          'name': f"Wrong conversion for the Discretized Optimized Map Projection #{hash}",
+          'description': f"Wrong conversion for the Discretized Optimized Map Projection #{hash}",
+          'method_auth_name': 'EPSG', 'method_code': '1024',
+          'param1_auth_name': 'EPSG', 'param1_code': '8801', 'param1_value': '0.0', 'param1_uom_auth_name': 'EPSG', 'param1_uom_code': '9102',
+          'param2_auth_name': 'EPSG', 'param2_code': '8802', 'param2_value': '0.0', 'param2_uom_auth_name': 'EPSG', 'param2_uom_code': '9102',
+          'param3_auth_name': 'EPSG', 'param3_code': '8806', 'param3_value': '0.0', 'param3_uom_auth_name': 'EPSG', 'param3_uom_code': '9001',
+          'param4_auth_name': 'EPSG', 'param4_code': '8807', 'param4_value': '0.0', 'param4_uom_auth_name': 'EPSG', 'param4_uom_code': '9001',
+          'deprecated': 0,
+        })
+        db.insert('projected_crs', {
+          'auth_name': 'DOMP', 'code': hash, 'name': f"Discretized Optimized Map Projection #{hash}",
+          'description': f"Discretized Optimized Map Projection #{hash}",
+          'coordinate_system_auth_name': 'EPSG', 'coordinate_system_code': '4499',
+          'geodetic_crs_auth_name': 'EPSG', 'geodetic_crs_code': '4030',
+          'conversion_auth_name': 'DOMP', 'conversion_code': f"{hash}-conv",
+          'deprecated': 0,
+        })
+        db.insert('usage', {
+          'auth_name': 'DOMP', 'code': f"{hash}_USAGE",
+          'object_table_name': 'projected_crs', 'object_auth_name': 'DOMP', 'object_code': hash,
+          'extent_auth_name': 'EPSG', 'extent_code': '1262',
+          'scope_auth_name': 'EPSG', 'scope_code': '1098',
+        })
+        db.insert('other_transformation', {
+          'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}", 'name': f"WGS84 to DOMP-{hash}",
+          'description': f"Transformation for the Discretized Optimized Map Projection #{hash}",
+          'method_auth_name': 'PROJ', 'method_code': 'PROJString', 'method_name': f"+proj=pipeline +step +proj=axisswap +order=2,1 +step +proj=tinshift +file='{filenameTIN}'",
+          'source_crs_auth_name': 'EPSG', 'source_crs_code': '4326',
+          'target_crs_auth_name': 'DOMP', 'target_crs_code': hash,
+          'accuracy': 0.01,
+          'deprecated': 0,
+        })
+        db.insert('usage', {
+          'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}_USAGE",
+          'object_table_name': 'other_transformation', 'object_auth_name': 'PROJ', 'object_code': f"WGS84_TO_DOMP-{hash}",
+          'extent_auth_name': 'EPSG', 'extent_code': '1262',
+          'scope_auth_name': 'EPSG', 'scope_code': '1098',
+        })
+        db.commit()
+      with Database(srsDb(appSettings)) as db:
+        if db is not None:
+          db.insert('tbl_projection', {
+            'acronym': 'domp',
+            'name': 'Discretized Optimized Map Projection',
+          }, ignoreIfExists=True)
+          db.insert('tbl_srs', {
+              'description': f"Discretized Optimized Map Projection #{hash}",
+              'projection_acronym': 'domp', 'ellipsoid_acronym': 'WGS84',
+              'parameters': '+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs',
+              'srid': hash,
+              'auth_name': 'DOMP', 'auth_id': hash,
+              'is_geo': 0,
+              'deprecated': 0,
+          }, ifNotExists={
+              'auth_name': 'DOMP', 'auth_id': hash,
+          })
+          db.commit()
+      return True
     except:
-      traceback.print_exc()
       return False
-    return True
