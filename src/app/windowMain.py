@@ -24,7 +24,7 @@ class WindowMain(wx.Frame):
       self.__geoGridSettings.updateFromJSON(self.__appSettings['geoGridSettings'])
     # self.__simulationSettings = {}
     self.__viewSettings = {}
-    self.__WindowProj = None
+    self.__windowProj = None
     self.__windowSimulationSettings = None
     self.__windowAbout = None
     wx.Frame.__init__(self, None, wx.ID_ANY, title=APP_NAME, size=(900, 600))
@@ -310,11 +310,11 @@ class WindowMain(wx.Frame):
       self.onRun(None, forceStop=True)
 
   def onShowProj(self, event):
-    if self.__WindowProj is None or isWindowDestroyed(self.__WindowProj):
-      self.__WindowProj = WindowProj(self.__appSettings, self.__geoGridSettings, self.__workerThread)
+    if self.__windowProj is None or isWindowDestroyed(self.__windowProj):
+      self.__windowProj = WindowProj(self.__appSettings, self.__geoGridSettings, self.__workerThread)
     else:
-      self.__WindowProj.Destroy()
-      self.__WindowProj = None
+      self.__windowProj.Destroy()
+      self.__windowProj = None
 
   def onSaveProjectionTINToDefaultAndInstall(self, event):
     info = self.onSaveProjectionTINToDefault(event)
@@ -433,4 +433,10 @@ class WindowMain(wx.Frame):
 
   def onClose(self, event):
     self.quitThreads()
+    if self.__windowProj and not isWindowDestroyed(self.__windowProj):
+      self.__windowProj.Destroy()
+    if self.__windowSimulationSettings and not isWindowDestroyed(self.__windowSimulationSettings):
+      self.__windowSimulationSettings.Destroy()
+    if self.__windowAbout and not isWindowDestroyed(self.__windowAbout):
+      self.__windowAbout.Destroy()
     self.Destroy()
