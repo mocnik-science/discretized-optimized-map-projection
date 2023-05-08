@@ -1,29 +1,33 @@
 import json
-import os
 import wx
 
-from src.app.common import APP_FILES_PATH
+from src.app.common import APP_NAME, APP_FILES_PATH
 from src.app.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
 from src.app.windows import isWindowDestroyed
 from src.app.windowAbout import WindowAbout
+from src.app.windowProj import WindowProj
 from src.app.windowSimulationSettings import WindowSimulationSettings
 from src.app.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
 from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.geoGrid.geoGridSettings import GeoGridSettings
 
 class WindowMain(wx.Frame):
-  def __init__(self, title):
+  def __init__(self, appSettings):
+    self.__appSettings = appSettings
     self.__workerThread = None
     self.__renderThread = None
     self.__workerThreadRunning = False
     self.__newImage = None
     self.__isLoadingNewImage = False
     self.__geoGridSettings = GeoGridSettings()
+    if 'geoGridSettings' in self.__appSettings and self.__appSettings['geoGridSettings'] is not None:
+      self.__geoGridSettings.updateFromJSON(self.__appSettings['geoGridSettings'])
     # self.__simulationSettings = {}
     self.__viewSettings = {}
+    self.__WindowProj = None
     self.__windowSimulationSettings = None
     self.__windowAbout = None
-    wx.Frame.__init__(self, None, wx.ID_ANY, title=title, size=(900, 600))
+    wx.Frame.__init__(self, None, wx.ID_ANY, title=APP_NAME, size=(900, 600))
 
     ## menu bar
     # functions
@@ -67,9 +71,11 @@ class WindowMain(wx.Frame):
     projectionMenu = wx.Menu()
     menuBar.Append(projectionMenu, "&Projection")
     # projection menu: projection
-    addItem(projectionMenu, 'Save and install TIN projection to PROJ/QGIS...\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall)
-    addItem(projectionMenu, 'Save TIN projection for PROJ...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
-    addItem(projectionMenu, 'Install TIN projection to PROJ/QGIS...', None, self.onSaveProjectionTINToDefault)
+    addItem(projectionMenu, 'Show projections installed to PROJ/QGIS...\tCtrl+P', None, self.onShowProj)
+    projectionMenu.AppendSeparator()
+    addItem(projectionMenu, 'Save and install projection to PROJ/QGIS...\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall)
+    addItem(projectionMenu, 'Save projection for PROJ...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
+    addItem(projectionMenu, 'Install projection to PROJ/QGIS...', None, self.onSaveProjectionTINToDefault)
     projectionMenu.AppendSeparator()
     addItem(projectionMenu, 'About...', None, self.onAbout)
     # simulation menu
@@ -84,8 +90,8 @@ class WindowMain(wx.Frame):
     startMenuItem = addItem(simulationMenu, 'Start', None, self.onRun)
     startStopMenuItem = addItem(simulationMenu, 'Start, and stop at threshold\tSpace', None, self.onRunStop)
     stopMenuItem = addItem(simulationMenu, 'Stop\tSpace', None, self.onRun)
-    addItem(simulationMenu, 'Compute next step\tRight', None, self.onRun1)
-    resetMenuItem = addItem(simulationMenu, 'Reset\tBack', None, self.onReset)
+    addItem(simulationMenu, 'Compute next step\tCtrl+Right', None, self.onRun1)
+    resetMenuItem = addItem(simulationMenu, 'Reset\tCtrl+Back', None, self.onReset)
     # simulationMenu.AppendSeparator()
     # # simulation menu: potentials
     # key = 'simulationSelectedPotential'
@@ -303,11 +309,22 @@ class WindowMain(wx.Frame):
     if event.stopThresholdReached == True:
       self.onRun(None, forceStop=True)
 
+  def onShowProj(self, event):
+    if self.__WindowProj is None or isWindowDestroyed(self.__WindowProj):
+      self.__WindowProj = WindowProj(self.__appSettings, self.__geoGridSettings, self.__workerThread)
+    else:
+      self.__WindowProj.Destroy()
+      self.__WindowProj = None
+
   def onSaveProjectionTINToDefaultAndInstall(self, event):
     info = self.onSaveProjectionTINToDefault(event)
     dataTIN = WindowMain._readFromFile(info['filenameTIN'], 'settings file')
     if dataTIN is not None:
-      GeoGridProjectionTIN.installTIN(info, dataTIN)
+      installResult = GeoGridProjectionTIN.installTIN(self.__appSettings, info['filenameTIN'], dataTIN)
+      if installResult is None:
+        wx.LogError('Cannot find PROJ file or QGIS app')
+      if installResult == False:
+        wx.LogError('Error when installing the projection')
 
   def onSaveProjectionTINToDefault(self, event):
     return self.onSaveProjectionTIN(event, useDefaultDirectory=True)
@@ -319,7 +336,6 @@ class WindowMain(wx.Frame):
       return info
     info = self.__geoGridSettings.info()
     if useDefaultDirectory:
-      os.makedirs(APP_FILES_PATH, exist_ok=True)
       info['filenameTIN'] = APP_FILES_PATH + info['filenameTIN']
       info['filenameSettings'] = APP_FILES_PATH + info['filenameSettings']
       return save(info)
@@ -369,13 +385,13 @@ class WindowMain(wx.Frame):
     if self.__windowSimulationSettings is not None and not isWindowDestroyed(self.__windowSimulationSettings):
       position = self.__windowSimulationSettings.GetPosition()
       self.__windowSimulationSettings.Destroy()
-    self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread)
+    self.__windowSimulationSettings = WindowSimulationSettings(self.__appSettings, self.__geoGridSettings, self.__workerThread)
     if position:
       self.__windowSimulationSettings.SetPosition(position)
 
   def onShowSimulationSettings(self, event):
     if self.__windowSimulationSettings is None or isWindowDestroyed(self.__windowSimulationSettings):
-      self.__windowSimulationSettings = WindowSimulationSettings(self.__geoGridSettings, self.__workerThread)
+      self.__windowSimulationSettings = WindowSimulationSettings(self.__appSettings, self.__geoGridSettings, self.__workerThread)
     else:
       self.__windowSimulationSettings.Destroy()
       self.__windowSimulationSettings = None

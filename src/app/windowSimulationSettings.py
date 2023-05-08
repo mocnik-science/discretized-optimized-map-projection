@@ -4,7 +4,8 @@ from src.geometry.geo import radiusEarth
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class WindowSimulationSettings(wx.Frame):
-  def __init__(self, geoGridSettings, workerThread):
+  def __init__(self, appSettings, geoGridSettings, workerThread):
+    self.__appSettings = appSettings
     self.__geoGridSettings = geoGridSettings
     self.__workerThread = workerThread
     self.__data = {}
@@ -106,6 +107,25 @@ class WindowSimulationSettings(wx.Frame):
   def onDataUpdate(self, fullReload=False):
     # update GUI
     self.onGuiUpdate()
+    # update the app settings I
+    keys = [
+      'resolution',
+      'speed100',
+      'stopThreshold100',
+    ]
+    for potential in self.__geoGridSettings.potentials:
+      keys += [
+        potential.kind,
+        potential.kind + '-weight',
+        potential.kind + '-ocean-weight',
+        potential.kind + '-ocean',
+        potential.kind + '-distanceTransitionStart',
+        potential.kind + '-distanceTransitionEnd',
+      ]
+    hasChanged = False
+    for key in keys:
+      if key not in self.__appSettings or self.__appSettings[key] != self.__data[key]:
+        hasChanged = True
     # update geoGridSettings: weights
     weights = {}
     for potential in self.__geoGridSettings.potentials:
@@ -123,6 +143,10 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings.updateDampingFactor(1 - self.__data['speed100'] / 100)
     # update geoGridSettings: stop threshold
     self.__geoGridSettings.updateStopThreshold(self.__data['stopThreshold100'] / 100)
+    # update the app settings II
+    if hasChanged:
+      self.__appSettings['geoGridSettings'] = self.__geoGridSettings.toJSON()
+      self.__appSettings.sync()
     # full reload or just update the view
     if fullReload:
       self.__workerThread.fullReload()

@@ -90,7 +90,8 @@ class GeoGridSettings:
   def updateDampingFactor(self, dampingFactor):
     self._updated()
     self._dampingFactor = dampingFactor
-    self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance
+    if self._typicalDistance is not None:
+      self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance
     for potential in self.potentials:
       potential.emptyCacheDampingFactor()
 
