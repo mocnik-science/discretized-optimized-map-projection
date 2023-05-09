@@ -1,10 +1,10 @@
 import wx
 import wx.grid
 
-from src.common.paths import guessProjQGIS
-from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.common.finder import Finder
 from src.common.gui import AdvancedGrid, ButtonRenderer
+from src.common.paths import guessProjQGIS
+from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 
 class WindowProj(wx.Frame):
   def __init__(self, appSettings, windowMain):
