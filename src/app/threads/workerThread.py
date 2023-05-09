@@ -11,7 +11,7 @@ def EVT_WORKER_THREAD_UPDATE(win, f):
   win.Connect(-1, -1, EVT_WORKER_THREAD_UPDATE_ID, f)
 
 class WorkerResultEvent(wx.PyEvent):
-  def __init__(self, projection=None, serializedData=None, serializedDataForProjection=None, status=None, energy=None, stopThresholdReached=None):
+  def __init__(self, projection=None, serializedData=None, serializedDataForProjection=None, status=None, energy=None, stopThresholdReached=None, stepData=None):
     wx.PyEvent.__init__(self)
     self.SetEventType(EVT_WORKER_THREAD_UPDATE_ID)
     self.projection = projection
@@ -20,13 +20,14 @@ class WorkerResultEvent(wx.PyEvent):
     self.status = status
     self.energy = energy
     self.stopThresholdReached = stopThresholdReached
+    self.stepData = stepData
 
 class WorkerThread(Thread):
   def __init__(self, notifyWindow, geoGridSettings, viewSettings):
     Thread.__init__(self)
     self.__notifyWindow = notifyWindow
     self.__geoGridSettings = geoGridSettings
-    self.__viewSettings = viewSettings
+    self.__viewSettings = {**viewSettings}
     self.__shallRun = False
     self.__shallRun1 = False
     self.__shallRunStop = False
@@ -34,6 +35,8 @@ class WorkerThread(Thread):
     self.__needsUpdate = False
     self.__needsGUIUpdate = False
     self.__shallUpdateGui = False
+    self.__waitForRendering = False
+    self.__enforceSendingStepData = False
     self.start()
   
   def fullReload(self):
@@ -48,19 +51,19 @@ class WorkerThread(Thread):
     t = timer(log=False)
     # loop
     while not self.__shallQuit:
-      if not self.__shallRun and not self.__shallRun1 and not self.__shallRunStop and not self.__needsUpdate:
+      if self.__waitForRendering or (not self.__shallRun and not self.__shallRun1 and not self.__shallRunStop and not self.__needsUpdate):
         # perform gui update if necessary
         if self.__needsGUIUpdate:
-          guiData = self.__updateGui1()
-          self.__updateGui2(guiData)
+          self.__updateGui2(self.__updateGui1())
         # wait
         time.sleep(.01)
       else:
         # preparations
-        shallUpdateGui = self.__needsUpdate or self.__shallUpdateGui or self.__shallRun1 or self.__shallRunStop or (self.__geoGrid.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0
+        shallUpdateGui = self.__needsUpdate or self.__shallUpdateGui or self.__shallRun1 or self.__shallRunStop or (self.__geoGrid.step() + 1) % (self.__viewSettings['showNthStep'] if 'showNthStep' in self.__viewSettings else 1) == 0 or self.__viewSettings['captureVideo']
+        shallPerformStep = self.__shallRun or self.__shallRun1 or self.__shallRunStop
         with t:
           # step
-          if self.__shallRun or self.__shallRun1 or self.__shallRunStop:
+          if shallPerformStep:
             self.__geoGrid.performStep()
           else:
             self.__geoGrid.computeForcesAndEnergies()
@@ -81,8 +84,14 @@ class WorkerThread(Thread):
         # update transient information in the settings
         self.__geoGridSettings.updateTransient(energy=energy, step=self.__geoGrid.step())
         # post result
-        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy, stopThresholdReached=stopThresholdReached)
+        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy, stopThresholdReached=stopThresholdReached, stepData={
+          'step': self.__geoGrid.step(),
+          'energy': energy,
+        } if (shallPerformStep or self.__enforceSendingStepData) and self.__viewSettings['captureVideo'] else None)
         # cleanup
+        if self.__viewSettings['captureVideo'] and not self.__enforceSendingStepData:
+          self.__waitForRendering = True
+        self.__enforceSendingStepData = False
         self.__needsUpdate = False
         self.__shallRun1 = False
         if stopThresholdReached:
@@ -93,8 +102,7 @@ class WorkerThread(Thread):
     wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
 
   def __updateGui1(self):
-    serializedData = self.__geoGrid.serializedData(self.__viewSettings)
-    return serializedData
+    return self.__geoGrid.serializedData(self.__viewSettings)
 
   def __updateGui2(self, serializedData, post=True):
     self.__needsGUIUpdate = False
@@ -108,10 +116,14 @@ class WorkerThread(Thread):
       return kwargs
 
   def updateViewSettings(self, viewSettings=None):
-    if viewSettings is not None:
-      self.__viewSettings = viewSettings
-    serializedData = self.__geoGrid.serializedData(self.__viewSettings)
-    self.__post(serializedData=serializedData)
+    if viewSettings is None:
+      self.__updateGui2(self.__updateGui1())
+      return
+    if not self.__viewSettings['captureVideo'] and viewSettings['captureVideo']:
+      self.__enforceSendingStepData = True
+      self.__needsUpdate = True
+    self.__viewSettings = {**viewSettings}
+    self.__needsGUIUpdate = not self.__needsUpdate
 
   def exportProjectionTIN(self, info):
     return self.__geoGrid.exportProjectionTIN(info)
@@ -121,6 +133,9 @@ class WorkerThread(Thread):
 
   def updateGui(self):
     self.__shallUpdateGui = True
+
+  def frameSaved(self):
+    self.__waitForRendering = False
 
   def pause(self):
     self.__shallRun = False

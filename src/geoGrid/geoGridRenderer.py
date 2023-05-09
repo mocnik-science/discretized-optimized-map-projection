@@ -20,7 +20,7 @@ class GeoGridRenderer:
   }
 
   @staticmethod
-  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSize=(2000, 1400), border=10, r=3, boundsExtend=1.3, projection=None, save=False):
+  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSize=(1920, 1080), border=10, r=3, boundsExtend=1.3, projection=None, save=False):
     # handle serialized data
     cells = serializedData['cells']
     path = serializedData['path']

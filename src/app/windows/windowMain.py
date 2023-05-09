@@ -59,8 +59,9 @@ class WindowMain(wx.Frame):
       if default:
         menuItem.Check(True)
       def cb(event):
+        objectPrevious = {**object}
         object[key] = self.__menuDict[event.Id]
-        callback()
+        callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
       if key not in object or default:
         object[key] = data
@@ -154,6 +155,11 @@ class WindowMain(wx.Frame):
     addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
     addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
     addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
+    viewMenu.AppendSeparator()
+    # view menu: capture video
+    key = 'captureVideo'
+    addRadioItem(viewMenu, 'Show only', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Capture video', self.__viewSettings, key, True, self.updateViewSettings)
     # finalize
     self.SetMenuBar(menuBar)
 
@@ -229,7 +235,9 @@ class WindowMain(wx.Frame):
       self.__renderThread.updateSize(self._image.GetSize())
     event.Skip()
 
-  def updateViewSettings(self):
+  def updateViewSettings(self, viewSettingsPrevious):
+    if viewSettingsPrevious['captureVideo'] and not self.__viewSettings['captureVideo']:
+      self.__renderThread.renderVideo()
     if self.__workerThread:
       self.__workerThread.updateViewSettings(self.__viewSettings)
     if self.__renderThread:
@@ -302,6 +310,8 @@ class WindowMain(wx.Frame):
       self.loadImage(event.im)
       if self.__viewSettings['showNthStep']:
         self.__workerThread.updateGui()
+    if event.frameSaved:
+      self.__workerThread.frameSaved()
     if event.status is not None:
       self.setStatus2(event.status)
   def __workerThreadUpdate(self, event):
@@ -312,7 +322,7 @@ class WindowMain(wx.Frame):
     if event.serializedDataForProjection is not None:
       self.__renderThread.updateSerializedDataForProjection(event.serializedDataForProjection)
     if event.serializedData is not None:
-      self.__renderThread.render(event.serializedData)
+      self.__renderThread.render(event.serializedData, stepData=event.stepData)
     if event.status is not None:
       self.setStatus(event.status)
     if event.energy is not None:
