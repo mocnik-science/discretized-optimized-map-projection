@@ -73,9 +73,9 @@ class WindowMain(wx.Frame):
     # projection menu: projection
     addItem(projectionMenu, 'Show projections installed to PROJ/QGIS...\tCtrl+P', None, self.onShowProj)
     projectionMenu.AppendSeparator()
-    addItem(projectionMenu, 'Save and install projection to PROJ/QGIS...\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall)
-    addItem(projectionMenu, 'Save projection for PROJ...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
-    addItem(projectionMenu, 'Install projection to PROJ/QGIS...', None, self.onSaveProjectionTINToDefault)
+    addItem(projectionMenu, 'Save and install projection to PROJ/QGIS\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall)
+    addItem(projectionMenu, 'Save projection for PROJ/QGIS...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
+    addItem(projectionMenu, 'Save projection for PROJ/QGIS to default directory', None, self.onSaveProjectionTINToDefault)
     projectionMenu.AppendSeparator()
     addItem(projectionMenu, 'About...', None, self.onAbout)
     # simulation menu
@@ -311,25 +311,27 @@ class WindowMain(wx.Frame):
 
   def onShowProj(self, event):
     if self.__windowProj is None or isWindowDestroyed(self.__windowProj):
-      self.__windowProj = WindowProj(self.__appSettings, self.__geoGridSettings, self.__workerThread)
+      self.__windowProj = WindowProj(self.__appSettings, self)
     else:
       self.__windowProj.Destroy()
       self.__windowProj = None
 
-  def onSaveProjectionTINToDefaultAndInstall(self, event):
+  def onSaveProjectionTINToDefaultAndInstall(self, event=None):
     info = self.onSaveProjectionTINToDefault(event)
-    dataTIN = WindowMain._readFromFile(info['filenameTIN'], 'settings file')
+    dataTIN = WindowMain._readFromFile(info['filenameTIN'], 'TIN file')
     if dataTIN is not None:
-      installResult = GeoGridProjectionTIN.installTIN(self.__appSettings, info['filenameTIN'], dataTIN)
+      installResult = GeoGridProjectionTIN.installTIN(self.__appSettings, info['filenameTIN'], data=dataTIN)
       if installResult is None:
         wx.LogError('Cannot find PROJ file or QGIS app')
       if installResult == False:
         wx.LogError('Error when installing the projection')
+    if self.__windowProj is not None and not isWindowDestroyed(self.__windowProj):
+      self.__windowProj.onUpdateList()
 
-  def onSaveProjectionTINToDefault(self, event):
+  def onSaveProjectionTINToDefault(self, event=None):
     return self.onSaveProjectionTIN(event, useDefaultDirectory=True)
 
-  def onSaveProjectionTIN(self, event, useDefaultDirectory=False):
+  def onSaveProjectionTIN(self, event=None, useDefaultDirectory=False):
     def save(info):
       WindowMain._saveToFile(info['filenameTIN'], self.__workerThread.exportProjectionTIN(info), 'map projection to TIN file')
       WindowMain._saveToFile(info['filenameSettings'], info['jsonSettings'], 'map projection to settings file')
@@ -338,14 +340,16 @@ class WindowMain(wx.Frame):
     if useDefaultDirectory:
       info['filenameTIN'] = APP_FILES_PATH + info['filenameTIN']
       info['filenameSettings'] = APP_FILES_PATH + info['filenameSettings']
-      return save(info)
     else:
       with wx.FileDialog(self, 'Save TIN projection', defaultFile=info['filenameTIN'], wildcard='TIN file (*.json)|.json', style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
         if fileDialog.ShowModal() == wx.ID_CANCEL:
           return
         info['filenameTIN'] = fileDialog.GetPath()
         info['filenameSettings'] = info['filenameTIN'].replace('-tin.json', '').replace('.json', '') + '-projection.domp'
-        return save(info)
+    save(info)
+    if self.__windowProj is not None and not isWindowDestroyed(self.__windowProj):
+      self.__windowProj.onUpdateList()
+    return info
 
   def onLoadSimulationSettings(self, event):
     with wx.FileDialog(self, 'Open simulation settings', wildcard='discretized optimized map projection (*.domp)|.domp', style=wx.FD_OPEN) as fileDialog:

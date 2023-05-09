@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 import json
+import os
 
-from src.app.common import APP_NAME, APP_URL
+from src.app.common import APP_NAME, APP_URL, APP_FILES_PATH
 from src.common.database import Database
 from src.common.paths import projDb, srsDb
 
@@ -76,6 +77,22 @@ class GeoGridProjectionTIN:
       'triangles': triangles,
     }
 
+  @staticmethod
+  def getFilenameTIN(appSettings, data=None, hash=None):
+    hash = hash or json.loads(data['description'])['info']['hash']
+    with Database(projDb(appSettings)) as db:
+      if db is not None:
+        methods = db.select('other_transformation', ['method_name'], {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}"})
+        if len(methods) > 0:
+          method, = methods[0]
+          key = '+file='
+          if key in method:
+            filenameTIN = method[method.index(key) + len(key):]
+            if os.path.exists(filenameTIN):
+              return filenameTIN
+      return None
+
+  INSTALLED_FILE = 'INSTALLED_FILE'
   INSTALLED_PROJ = 'INSTALLED_PROJ'
   INSTALLED_QGIS = 'INSTALLED_QGIS'
   INSTALLED_FULL = 'INSTALLED_FULL'
@@ -86,50 +103,66 @@ class GeoGridProjectionTIN:
   def isTINInstalled(appSettings, data=None, hash=None):
     hash = hash or json.loads(data['description'])['info']['hash']
     def determineStatus(tests):
-      if len(tests) == 0:
+      if not any(tests) or len(tests) == 0:
         return GeoGridProjectionTIN.INSTALLED_NOT
       elif all(tests):
         return GeoGridProjectionTIN.INSTALLED_FULL
       return GeoGridProjectionTIN.INSTALLED_PARTLY
     installed = {}
+    ## file
+    installed[GeoGridProjectionTIN.INSTALLED_FILE] = GeoGridProjectionTIN.INSTALLED_FULL if GeoGridProjectionTIN.getFilenameTIN(appSettings, data=data, hash=hash) is not None else GeoGridProjectionTIN.INSTALLED_NOT
+    ## PROJ
     with Database(projDb(appSettings)) as db:
-      projDbInstallled = [] if not db else [
+      projDbInstalled = [] if not db else [
         db.exists('conversion_table', {'auth_name': 'DOMP', 'code': f"{hash}-conv"}),
         db.exists('projected_crs', {'auth_name': 'DOMP', 'code': hash}),
         db.exists('usage', {'auth_name': 'DOMP', 'code': f"{hash}_USAGE"}),
         db.exists('other_transformation', {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}"}),
         db.exists('usage', {'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}_USAGE"}),
       ]
-      installed[GeoGridProjectionTIN.INSTALLED_PROJ] = determineStatus(projDbInstallled)
+      installed[GeoGridProjectionTIN.INSTALLED_PROJ] = determineStatus(projDbInstalled)
+    ## QGIS
     with Database(srsDb(appSettings)) as db:
       srsDbInstallled = [] if not db else [
-        db.exists('tbl_projection', {'acronym': 'domp'}),
+        # db.exists('tbl_projection', {'acronym': 'domp'}),
         db.exists('tbl_srs', {'auth_name': 'DOMP', 'auth_id': hash}),
       ]
       installed[GeoGridProjectionTIN.INSTALLED_QGIS] = determineStatus(srsDbInstallled)
     return installed
 
   def collectTINInstalled(appSettings):
-    installedHashes = set()
+    collectedHashes = {}
+    def collect(hash, filenameTIN=None):
+      if not hash in collectedHashes or filenameTIN is not None:
+        collectedHashes[hash] = filenameTIN
     with Database(projDb(appSettings)) as db:
       if db is not None:
         for code, in db.select('conversion_table', ['code'], {'auth_name': 'DOMP'}):
           if str(code).endswith('-conv'):
-            installedHashes.add(code.replace('-conv', ''))
+            collect(code.replace('-conv', ''))
         for code, in db.select('projected_crs', ['code'], {'auth_name': 'DOMP'}):
-          installedHashes.add(str(code))
+          collect(str(code))
         for code, in db.select('usage', ['code'], {'auth_name': 'DOMP'}):
           if str(code).startswith('WGS84_TO_DOMP-') and str(code).endswith('_USAGE'):
-            installedHashes.add(code.replace('WGS84_TO_DOMP-', '').replace('_USAGE', ''))
+            collect(code.replace('WGS84_TO_DOMP-', '').replace('_USAGE', ''))
           elif str(code).endswith('_USAGE'):
-            installedHashes.add(code.replace('_USAGE', ''))
+            collect(code.replace('_USAGE', ''))
         for code, in db.select('other_transformation', ['target_crs_code'], {'target_crs_auth_name': 'DOMP'}):
-          installedHashes.add(str(code))
+          collect(str(code))
     with Database(srsDb(appSettings)) as db:
       if db is not None:
         for code, in db.select('tbl_srs', ['auth_id'], {'auth_name': 'DOMP'}):
-          installedHashes.add(str(code))
-    return dict((hash, GeoGridProjectionTIN.isTINInstalled(appSettings, hash=hash)) for hash in installedHashes)
+          collect(str(code))
+    for filename in os.listdir(APP_FILES_PATH):
+      if filename.endswith('-tin.json'):
+        try:
+          filename = os.path.join(APP_FILES_PATH, filename)
+          with open(filename, 'r') as file:
+            content = json.load(file)
+            collect(json.loads(content['description'])['info']['hash'], filename)
+        except:
+          pass
+    return dict((hash, (filenameTIN or GeoGridProjectionTIN.getFilenameTIN(appSettings, hash=hash), GeoGridProjectionTIN.isTINInstalled(appSettings, hash=hash))) for hash, filenameTIN in collectedHashes.items())
 
   @staticmethod
   def uninstallTIN(appSettings, data=None, hash=None):
@@ -164,8 +197,8 @@ class GeoGridProjectionTIN:
         db.commit()
 
   @staticmethod
-  def installTIN(appSettings, filenameTIN, data):
-    hash = json.loads(data['description'])['info']['hash']
+  def installTIN(appSettings, filenameTIN, data=None, hash=None):
+    hash = hash or json.loads(data['description'])['info']['hash']
     # delete potentially existing
     GeoGridProjectionTIN.uninstallTIN(appSettings, hash=hash)
     # insert new
@@ -201,7 +234,7 @@ class GeoGridProjectionTIN:
         db.insert('other_transformation', {
           'auth_name': 'PROJ', 'code': f"WGS84_TO_DOMP-{hash}", 'name': f"WGS84 to DOMP-{hash}",
           'description': f"Transformation for the Discretized Optimized Map Projection #{hash}",
-          'method_auth_name': 'PROJ', 'method_code': 'PROJString', 'method_name': f"+proj=pipeline +step +proj=axisswap +order=2,1 +step +proj=tinshift +file='{filenameTIN}'",
+          'method_auth_name': 'PROJ', 'method_code': 'PROJString', 'method_name': f"+proj=pipeline +step +proj=axisswap +order=2,1 +step +proj=tinshift +file={filenameTIN}",
           'source_crs_auth_name': 'EPSG', 'source_crs_code': '4326',
           'target_crs_auth_name': 'DOMP', 'target_crs_code': hash,
           'accuracy': 0.01,
