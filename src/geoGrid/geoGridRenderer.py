@@ -114,20 +114,21 @@ class GeoGridRenderer:
   def renderCentres(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection):
     factor = 1e-4
     if viewSettings['drawLabels']:
-      font = ImageFont.truetype('Helvetica', size=12)
+      font = ImageFont.truetype('Helvetica', size=14)
     for id2, cell in cells.items():
       radius = r
       if viewSettings['selectedEnergy'] is not None and cell['isActive']:
         radius *= .5 + max(0, min(10, 3 + math.log(cell['energy'] * factor)))
-      if viewSettings['drawColours'] == 'ACTIVE':
-        fill = (255, 140, 140) if cell['isActive'] else (140, 140, 255)
-      else:
-        for w, potential in geoGridSettings.weightedPotentials():
-          if potential.kind == viewSettings['drawColours']:
-            fill = GeoGridRenderer.__blendColour(.5 * w.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
-      GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
+      if viewSettings['drawCentres'] is not None:
+        if viewSettings['drawCentres'] == 'ACTIVE':
+          fill = (255, 140, 140) if cell['isActive'] else (140, 140, 255)
+        else:
+          for w, potential in geoGridSettings.weightedPotentials():
+            if potential.kind == viewSettings['drawCentres']:
+              fill = GeoGridRenderer.__blendColour(.5 * w.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
+        GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
       if viewSettings['drawLabels']:
-        GeoGridRenderer.__text(d, cell['xy'], str(id2), font=font, fill=(0, 0, 0))
+        GeoGridRenderer.__text(d, tuple(map(sum, zip(cell['xy'], lonLatToCartesian((.6, -.3))))), str(id2), font=font, fill=(0, 0, 0), anchor='mm' if viewSettings['drawCentres'] is None else 'la', align='center' if viewSettings['drawCentres'] is None else 'left')
 
   @staticmethod
   def __point(d, p, r, **kwargs):

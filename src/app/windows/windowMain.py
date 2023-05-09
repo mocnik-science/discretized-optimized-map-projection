@@ -129,9 +129,10 @@ class WindowMain(wx.Frame):
     addRadioItem(viewMenu, 'Hide labels', self.__viewSettings, key, False, self.updateViewSettings)
     addRadioItem(viewMenu, 'Show labels', self.__viewSettings, key, True, self.updateViewSettings)
     viewMenu.AppendSeparator()
-    # view menu: draw colours
-    key = 'drawColours'
-    addRadioItem(viewMenu, 'Show active state', self.__viewSettings, key, 'ACTIVE', self.updateViewSettings)
+    # view menu: draw centres
+    key = 'drawCentres'
+    addRadioItem(viewMenu, 'Hide cell centres', self.__viewSettings, key, None, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show active state', self.__viewSettings, key, 'ACTIVE', self.updateViewSettings, default=True)
     for potential in self.__geoGridSettings.potentials:
       addRadioItem(viewMenu, f"Show weights for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
