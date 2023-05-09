@@ -3,9 +3,7 @@ import json
 
 from src.app.common import APP_FILE_FORMAT
 from src.geoGrid.geoGridWeight import GeoGridWeight
-from src.mechanics.potential.potentialArea import PotentialArea
-from src.mechanics.potential.potentialDistance import PotentialDistance
-from src.mechanics.potential.potentialShape import PotentialShape
+from src.mechanics.potential.potentials import potentials
 
 # F = - G m1 m2 / r^2
 # U = F * r
@@ -23,7 +21,7 @@ class GeoGridSettings:
     self._typicalDistance = None
     self._typicalArea = None
     self._forceFactor = None
-    self.potentials = [PotentialArea(self), PotentialDistance(self), PotentialShape(self)]
+    self.potentials = [potential(self) for potential in potentials]
     self._potentialsWeights = dict([(potential.kind, GeoGridWeight()) for potential in self.potentials])
     self._updated(initial=True)
 
