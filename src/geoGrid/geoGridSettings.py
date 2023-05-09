@@ -22,7 +22,7 @@ class GeoGridSettings:
     self._typicalArea = None
     self._forceFactor = None
     self.potentials = [potential(self) for potential in potentials]
-    self._potentialsWeights = dict([(potential.kind, GeoGridWeight()) for potential in self.potentials])
+    self._potentialsWeights = dict([(potential.kind, potential.defaultWeight or GeoGridWeight()) for potential in self.potentials])
     self._updated(initial=True)
 
   def toJSON(self, includeTransient=False):

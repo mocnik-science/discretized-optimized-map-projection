@@ -1,4 +1,5 @@
 from src.geometry.cartesian import Cartesian
+from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.mechanics.force import Force
 from src.mechanics.potential.potential import Potential
 
@@ -12,6 +13,7 @@ from src.mechanics.potential.potential import Potential
 
 class PotentialArea(Potential):
   kind = 'AREA'
+  defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=True, weightOcean=0.5, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
 
   def energy(self, cell, neighbouringCells):

@@ -2,6 +2,7 @@ from src.common.functions import sign
 
 class Potential:
   kind = None
+  defaultWeight = None
   calibrationPossible = False
   __exponent = 2
 

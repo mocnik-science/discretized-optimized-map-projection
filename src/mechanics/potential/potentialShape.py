@@ -1,11 +1,13 @@
 from src.geometry.cartesian import Cartesian, Point
 from src.geometry.common import Common
 from src.geometry.geo import Geo
+from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.mechanics.force import Force
 from src.mechanics.potential.potential import Potential
 
 class PotentialShape(Potential):
   kind = 'SHAPE'
+  defaultWeight = GeoGridWeight(active=True, weightLand=.7, weightOceanActive=True, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
   
   def __init__(self, *args, enforceNorth=False, **kwargs):
