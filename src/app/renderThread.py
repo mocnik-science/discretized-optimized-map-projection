@@ -27,6 +27,7 @@ class RenderThread(Thread):
     self.__shallQuit = False
     self.__serializedData = None
     self.__serializedDataLast = None
+    self.__size = None
     self.__shallViewUpdate = False
     self.start()
   
@@ -41,7 +42,7 @@ class RenderThread(Thread):
         self.__shallViewUpdate = False
         # render
         with t:
-          im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection)
+          im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=self.__size)
         # cleanup
         self.__post(im=im, status=f"rendering {1000 * t.average():.0f} ms")
         self.__serializedDataLast = self.__serializedData or self.__serializedDataLast
@@ -58,6 +59,10 @@ class RenderThread(Thread):
 
   def render(self, serializedData):
     self.__serializedData = serializedData
+
+  def updateSize(self, size):
+    self.__size = size
+    self.__shallViewUpdate = True
 
   def updateViewSettings(self, viewSettings=None):
     if viewSettings is not None:

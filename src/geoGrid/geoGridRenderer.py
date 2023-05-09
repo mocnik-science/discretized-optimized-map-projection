@@ -3,7 +3,6 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 from src.common.timer import timer
-from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.geometry.common import Common
 from src.geometry.geo import radiusEarth
 from src.geometry.naturalEarth import NaturalEarth
@@ -21,7 +20,7 @@ class GeoGridRenderer:
   }
 
   @staticmethod
-  def render(serializedData, geoGridSettings, viewSettings={}, width=2000, height=1000, border=10, r=3, boundsExtend=1.3, projection=None, save=False):
+  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSize=(2000, 1400), border=10, r=3, boundsExtend=1.3, projection=None, save=False):
     # handle serialized data
     cells = serializedData['cells']
     path = serializedData['path']
@@ -32,6 +31,11 @@ class GeoGridRenderer:
       **GeoGridRenderer.viewSettingsDefault,
       **viewSettings,
     }
+    # prepare size
+    maxWidth, maxHeight = maxSize
+    width, height = size or maxSize
+    width = min(2 * width, maxWidth)
+    height = min(2 * height, maxHeight)
     # prepare data (happens only once)
     if viewSettings['drawContinentsTolerance']:
       NaturalEarth.preparedData()

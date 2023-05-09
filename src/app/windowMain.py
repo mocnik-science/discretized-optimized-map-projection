@@ -203,6 +203,7 @@ class WindowMain(wx.Frame):
     ## image
     self._image = wx.StaticBitmap(self._panel)
     self._image.SetBackgroundColour(wx.WHITE)
+    self._image.SetScaleMode(wx.StaticBitmap.Scale_AspectFill)
     box.Add(self._image, 1, wx.EXPAND)
 
     ## layout
@@ -210,6 +211,7 @@ class WindowMain(wx.Frame):
     self._panel.Layout()
 
     ## register handlers
+    self.Bind(wx.EVT_SIZE, self.onResize)
     self.Bind(wx.EVT_CLOSE, self.onClose)
 
     ## adapt app menu
@@ -221,9 +223,16 @@ class WindowMain(wx.Frame):
     ## reset
     wx.CallLater(10, self.reset)
 
+  def onResize(self, event):
+    if self.__renderThread:
+      self.__renderThread.updateSize(self._image.GetSize())
+    event.Skip()
+
   def updateViewSettings(self):
-    self.__workerThread.updateViewSettings(self.__viewSettings)
-    self.__renderThread.updateViewSettings(self.__viewSettings)
+    if self.__workerThread:
+      self.__workerThread.updateViewSettings(self.__viewSettings)
+    if self.__renderThread:
+      self.__renderThread.updateViewSettings(self.__viewSettings)
 
   def loadImage(self, image):
     self.__newImage = image
@@ -280,6 +289,7 @@ class WindowMain(wx.Frame):
   def prepareRenderThread(self):
     EVT_RENDER_THREAD_UPDATE(self, self.__renderThreadUpdate)
     self.__renderThread = RenderThread(self, self.__geoGridSettings, self.__viewSettings)
+    self.__renderThread.updateSize(self._image.GetSize())
   def prepareWorkerThread(self):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
     self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
