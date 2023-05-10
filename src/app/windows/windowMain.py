@@ -210,7 +210,7 @@ class WindowMain(wx.Frame):
     ## image
     self._image = wx.StaticBitmap(self._panel)
     self._image.SetBackgroundColour(wx.WHITE)
-    self._image.SetScaleMode(wx.StaticBitmap.Scale_AspectFill)
+    self._image.SetScaleMode(wx.StaticBitmap.Scale_AspectFit)
     box.Add(self._image, 1, wx.EXPAND)
 
     ## layout
@@ -232,7 +232,7 @@ class WindowMain(wx.Frame):
 
   def onResize(self, event):
     if self.__renderThread:
-      self.__renderThread.updateSize(self._image.GetSize())
+      self.__renderThread.updateSize(self._panel.GetSize())
     event.Skip()
 
   def updateViewSettings(self, viewSettingsPrevious):
@@ -274,7 +274,7 @@ class WindowMain(wx.Frame):
 
   def setEnergy(self, energy):
     try:
-      self._statusBar.SetStatusText(f"energy = {energy:.2E}", 2)
+      self._statusBar.SetStatusText(f"energy = {energy:.2e}", 2)
     except:
       pass
 

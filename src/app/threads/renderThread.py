@@ -50,11 +50,10 @@ class RenderThread(Thread):
         frameSaved = False
         # render
         with t:
-          im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080) if self.__viewSettings['captureVideo'] else self.__size)
-          if self.__stepData:
-            os.makedirs(os.path.join(APP_VIDEO_PATH, self.__randomHash), exist_ok=True)
-            im.save(os.path.join(APP_VIDEO_PATH, self.__randomHash, f"frame-{self.__stepData['step']:08d}.png"))
-            self.__stepData = None
+          im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080) if self.__viewSettings['captureVideo'] else self.__size, stepData=self.__stepData)
+          if self.__stepData and self.__stepData['save']:
+            GeoGridRenderer.save(im, hash=self.__randomHash, step=self.__stepData['step'])
+            self.__stepData['save'] = False
             frameSaved = True
         # cleanup
         self.__post(im=im, status=f"rendering {1000 * t.average():.0f} ms", frameSaved=frameSaved)
