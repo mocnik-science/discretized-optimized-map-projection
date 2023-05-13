@@ -6,7 +6,7 @@ from src.mechanics.potential.potential import Potential
 
 class PotentialDistance(Potential):
   kind = 'DISTANCE'
-  defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=True, weightOcean=0.5, distanceTransitionStart=100000, distanceTransitionEnd=800000)
+  defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=True, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
   
   def __init__(self, *args, **kwargs):
