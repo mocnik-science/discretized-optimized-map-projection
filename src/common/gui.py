@@ -61,7 +61,7 @@ class ButtonRenderer(wx.grid.GridCellRenderer):
     self.__label = label
     self.__callback = callback
     self.__disabled = disabled
-    self.__isLast = isLast
+    # self.__isLast = isLast
     self._down = False
     self._click_handled = False
 
