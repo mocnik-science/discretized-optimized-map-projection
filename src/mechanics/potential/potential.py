@@ -42,13 +42,13 @@ class Potential:
     if self.__D is None:
       self.__D = self._settings._typicalDistance * 2**(self.__exponent - 1)
     if energy:
-      return -self.__D / (self.__exponent + 1) * abs(r)**(self.__exponent + 1)
+      return self.__D / (self.__exponent + 1) * abs(r)**(self.__exponent + 1)
     elif force:
       return -self.__D * abs(r)**self.__exponent * sign(r)
     else:
-      k = -self.__D * abs(r)**self.__exponent
+      k = self.__D * abs(r)**self.__exponent
       energy = k / (self.__exponent + 1) * abs(r)
-      force = k * sign(r)
+      force = -k * sign(r)
       return energy, force
 
 
