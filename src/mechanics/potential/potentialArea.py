@@ -1,3 +1,6 @@
+import math
+
+from src.common.functions import sign
 from src.geometry.cartesian import Cartesian
 from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.mechanics.force import Force
@@ -26,8 +29,10 @@ class PotentialArea(Potential):
   #   return qEnergy * len(neighbouringCells),  [Force(self.kind, neighbouringCell, cell, qForce) for neighbouringCell in neighbouringCells]
 
   def _value(self, cell, neighbouringCells):
+    # cell area and partly area of the neighbouring cells
     # hexagon:   1 + 6 * 2/6 = 3
     # pentagon:  5/6 + 5 * 2/6 = 15/6 = 2.5
-    geoA = self._settings._typicalArea * (3 if cell._isHexagon else 2.5) * self.calibrationFactor
+    geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea * self.calibrationFactor
     cartesianA = Cartesian.area(neighbouringCells)
-    return cartesianA / geoA - 1
+    sqrtGeoA = math.sqrt(geoA)
+    return (math.sqrt(cartesianA) - sqrtGeoA) / sqrtGeoA

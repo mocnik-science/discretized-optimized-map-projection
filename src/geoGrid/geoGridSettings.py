@@ -14,13 +14,12 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, resolution=3, dampingFactor=.99, stopThreshold=.001):
+  def __init__(self, resolution=3, dampingFactor=.98, stopThreshold=.001):
     self.resolution = resolution
     self._dampingFactor = dampingFactor
     self._stopThreshold = stopThreshold
     self._typicalDistance = None
     self._typicalArea = None
-    self._forceFactor = None
     self.potentials = [potential(self) for potential in potentials]
     self._potentialsWeights = dict([(potential.kind, potential.defaultWeight or GeoGridWeight()) for potential in self.potentials])
     self._updated(initial=True)
@@ -88,8 +87,6 @@ class GeoGridSettings:
   def updateDampingFactor(self, dampingFactor):
     self._updated()
     self._dampingFactor = dampingFactor
-    if self._typicalDistance is not None:
-      self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance
     for potential in self.potentials:
       potential.emptyCacheDampingFactor()
 
@@ -101,7 +98,6 @@ class GeoGridSettings:
     self._updated()
     self._typicalDistance = gridStats.typicalDistance()
     self._typicalArea = gridStats.typicalArea()
-    self._forceFactor = (1 - self._dampingFactor) * self._typicalDistance
 
   def updatePotentialsWeights(self, weights):
     self._updated()

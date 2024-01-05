@@ -9,7 +9,7 @@ class DGGRIDCell:
     self.polygon = None
     self.neighbours = None
     self._isHexagon = None
-  
+
   def isHexagon(self):
     if self._isHexagon is not None:
       return self._isHexagon
@@ -41,7 +41,7 @@ class DGGRID:
     self.__executable = executable
     self.__tmpWorkingDir = tmpWorkingDir
     self.__removeTmpWorkingDirAfterUse = removeTmpWorkingDirAfterUse
-  
+
   def __run(self, parameters):
     metaFile = 'info.meta'
     if not os.path.exists(self.__tmpWorkingDir):

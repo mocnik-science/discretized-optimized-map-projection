@@ -9,7 +9,7 @@ class PotentialShape(Potential):
   kind = 'SHAPE'
   defaultWeight = GeoGridWeight(active=True, weightLand=.7, weightOceanActive=True, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
-  
+
   def __init__(self, *args, enforceNorth=False, **kwargs):
     super().__init__(*args, **kwargs)
     self._enforceNorth = enforceNorth
@@ -43,7 +43,7 @@ class PotentialShape(Potential):
     # compute average difference
     avgDiff = 0 if self._enforceNorth else sum([Common.normalizeAngle(bearings[i] - stepBearingIdeal[i], intervalStart=-Common._pi) for i in range(0, lenNeighbours)]) / lenNeighbours
     # quantities
-    return [Common.normalizeAngle(bearing - (stepBearingIdeal[i] + avgDiff), intervalStart=-Common._pi) for i, bearing in enumerate(bearings)]
+    return [1 / (2 * Common._pi) * Common.normalizeAngle(bearing - (stepBearingIdeal[i] + avgDiff), intervalStart=-Common._pi) for i, bearing in enumerate(bearings)]
 
   def _geoBearingsForCell(self, cell, neighbouringCells):
     key = cell._id2

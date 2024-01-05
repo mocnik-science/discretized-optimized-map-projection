@@ -206,7 +206,7 @@ class GeoGrid:
           if cell._isActive:
             w = weight.forCell(cell)
             for force in potential.forces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]):
-              force.strength *= w
+              force.strength *= (1 - self.__settings._dampingFactor) * w
               forces.append(force)
     # collect forces
     with timer('collect forces', step=self.__step):

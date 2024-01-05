@@ -4,7 +4,7 @@ class Potential:
   kind = None
   defaultWeight = None
   calibrationPossible = False
-  __exponent = 2
+  __exponent = 1
 
   def __init__(self, settings):
     self._settings = settings
@@ -38,12 +38,31 @@ class Potential:
     return [self.__quantity(r, **kwargs) for r in self._values(*args)]
   def __quantity(self, r, energy=False, force=False):
     # D – spring constant
+    #     chosen such that the force at r = 1/2 is -delta/2 (where delta is the typical distance)
+    if self.__D is None:
+      self.__D = self._settings._typicalDistance * 2**(self.__exponent - 1)
+    if energy:
+      return -self.__D / (self.__exponent + 1) * abs(r)**(self.__exponent + 1)
+    elif force:
+      return -self.__D * abs(r)**self.__exponent * sign(r)
+    else:
+      k = -self.__D * abs(r)**self.__exponent
+      energy = k / (self.__exponent + 1) * abs(r)
+      force = k * sign(r)
+      return energy, force
+
+
+
+
+
+
+    # D – spring constant
     #     chosen such that the force at r = R is -r (where r is the multiple of the typical distance)
     #     R = D * exponent * R**(exponent - 1)
     #     => D = R**(2 - exponent) / exponent
     if self.__D is None:
       R = .5
-      self.__D = R**(2 - self.__exponent) / self.__exponent * self._settings._forceFactor
+      self.__D = R**(2 - self.__exponent) / self.__exponent * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
     if energy:
       return self.__D * abs(r)**self.__exponent
     elif force:
@@ -66,7 +85,7 @@ class Potential:
     m = 1
     M = 1
     R = .5
-    gamma = R**3 / (m * M) * self._settings._forceFactor
+    gamma = R**3 / (m * M) * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
     sgn = sign(r)
     r = abs(r)
     if energy:
@@ -80,6 +99,6 @@ class Potential:
       else:
         return -gamma * m * M / r**2 * sgn
     # if energy:
-    #   return -1 / r**exponent * self._forceFactor
+    #   return -1 / r**exponent * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
     # if force:
-    #   return -exponent / r**(exponent + 1) * self._forceFactor
+    #   return -exponent / r**(exponent + 1) * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
