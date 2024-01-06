@@ -22,6 +22,7 @@ class GeoGrid:
   def __init__(self, settings, callbackStatus=lambda status, energy, calibration=None: None, initialCrs=None):
     # save settings
     self.__settings = settings
+    self.__callbackStatus = callbackStatus
     # init
     self.__gridStats = None
     self.__cells = None
@@ -33,12 +34,12 @@ class GeoGrid:
     # load data
     filename = 'cells-{resolution}.pickle.gzip'.format(resolution=self.__settings.resolution)
     if os.path.exists(filename):
-      callbackStatus('loading cells and indices from proxy file ...', None)
+      self.__callbackStatus('loading cells and indices from proxy file ...', None)
       with timer('load data from proxy file'):
         with gzip.open(filename, 'rb') as f:
           data = pickle.load(f)
     else:
-      callbackStatus('creating cells and indices, and save them to proxy file ...', None)
+      self.__callbackStatus('creating cells and indices, and save them to proxy file ...', None)
       with timer('create cells'):
         dataCells = self.createCells(resolution=self.__settings.resolution)
       with timer('compute ball tree'):
@@ -66,7 +67,7 @@ class GeoGrid:
     # calibrate
     if initialCrs is None:
       with timer('calibrate'):
-        self.calibrate(callbackStatus)
+        self.calibrate()
     # compute next forces and energies
     self.computeForcesAndEnergies()
 
@@ -147,11 +148,11 @@ class GeoGrid:
       '__ballTreeCellsId1s': ballTreeCellsId1s,
     }
 
-  def calibrate(self, callbackStatus):
+  def calibrate(self):
     energy = 0
     for potential in self.__settings.potentials:
       if potential.calibrationPossible:
-        callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
+        self.__callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
         def computeEnergy(k):
           potential.setCalibrationFactor(abs(k))
           _, outerEnergy = self.energy(potential=potential)
@@ -166,7 +167,7 @@ class GeoGrid:
     for potential in self.__settings.potentials:
       if potential.calibrationPossible:
         statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
-    callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
+    self.__callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
 
   def energy(self, potential=None):
     with timer('compute energy', log=potential is None, step=self.__step):
