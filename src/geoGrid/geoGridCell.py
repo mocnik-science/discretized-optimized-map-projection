@@ -23,6 +23,7 @@ class GeoGridCell:
     self._xForcesNext = None
     self._yForcesNext = None
     self._isActive = False
+    self._selfAndAllNeighboursAreActive = False
     self._isHexagon = dggridCell.isHexagon()
     self._neighbours = dggridCell.neighbours
     self._neighboursOriginal = dggridCell.neighbours
@@ -55,6 +56,9 @@ class GeoGridCell:
   def initAdditionalInformation(self):
     self._distanceToLand = NaturalEarth.distanceToLand(self.__dggridCell.centre)
     del self.__dggridCell
+
+  def initTransformer(self, transformer):
+    self.x, self.y = transformer.transform(self._centreOriginal.x, self._centreOriginal.y)
 
   def xy(self):
     return self.x, self.y

@@ -96,13 +96,13 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
-    if viewSettings['drawOriginalPolygons']:
+    if viewSettings['drawOriginalPolygons'] and viewSettings['crs'] is None:
       for cell in cells.values():
         GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100))
 
   @staticmethod
   def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
-    if viewSettings['drawNeighbours']:
+    if viewSettings['drawNeighbours'] and viewSettings['crs'] is None:
       for cell in cells.values():
         if 'neighboursXY' in cell:
           for xy in cell['neighboursXY']:
@@ -110,7 +110,7 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
-    if viewSettings['selectedPotential'] is not None:
+    if viewSettings['selectedPotential'] is not None and viewSettings['crs'] is None:
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
           p1, p2 = cell['forceVector']
@@ -127,17 +127,21 @@ class GeoGridRenderer:
     if viewSettings['drawLabels']:
       font = ImageFont.truetype('Helvetica', size=14)
     for id2, cell in cells.items():
+      if viewSettings['crs'] is not None and not cell['isActive']:
+        continue
       radius = r
       if viewSettings['selectedEnergy'] is not None and cell['isActive']:
-        radius *= .5 + max(0, min(10, 3 + math.log(cell['energy'] * factor)))
+        radius *= .5 + max(0, min(10, 3 + math.log((cell['energy'] + 1e-10) * factor)))
       if viewSettings['drawCentres'] is not None:
+        fill = None
         if viewSettings['drawCentres'] == 'ACTIVE':
           fill = (255, 140, 140) if cell['isActive'] else (140, 140, 255)
         else:
-          for w, potential in geoGridSettings.weightedPotentials():
-            if potential.kind == viewSettings['drawCentres']:
-              fill = GeoGridRenderer.__blendColour(.5 * w.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
-        GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
+          for weight, potential in geoGridSettings.weightedPotentials():
+            if not weight.isVanishing() and potential.kind == viewSettings['drawCentres']:
+              fill = GeoGridRenderer.__blendColour(.5 * weight.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
+        if fill is not None:
+          GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
       if viewSettings['drawLabels']:
         GeoGridRenderer.__text(d, tuple(map(sum, zip(cell['xy'], lonLatToCartesian((.6, -.3))))), str(id2), font=font, fill=(0, 0, 0), anchor='mm' if viewSettings['drawCentres'] is None else 'la', align='center' if viewSettings['drawCentres'] is None else 'left')
 

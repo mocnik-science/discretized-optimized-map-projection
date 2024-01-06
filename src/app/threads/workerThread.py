@@ -11,23 +11,25 @@ def EVT_WORKER_THREAD_UPDATE(win, f):
   win.Connect(-1, -1, EVT_WORKER_THREAD_UPDATE_ID, f)
 
 class WorkerResultEvent(wx.PyEvent):
-  def __init__(self, projection=None, serializedData=None, serializedDataForProjection=None, status=None, energy=None, stopThresholdReached=None, stepData=None):
+  def __init__(self, projection=None, serializedData=None, serializedDataForProjection=None, status=None, energy=None, calibration=None, stopThresholdReached=None, stepData=None):
     wx.PyEvent.__init__(self)
     self.SetEventType(EVT_WORKER_THREAD_UPDATE_ID)
     self.projection = projection
     self.serializedData = serializedData
     self.serializedDataForProjection = serializedDataForProjection
     self.status = status
+    self.calibration = calibration
     self.energy = energy
     self.stopThresholdReached = stopThresholdReached
     self.stepData = stepData
 
 class WorkerThread(Thread):
-  def __init__(self, notifyWindow, geoGridSettings, viewSettings):
+  def __init__(self, notifyWindow, geoGridSettings, viewSettings, initialCrs=None):
     Thread.__init__(self)
     self.__notifyWindow = notifyWindow
     self.__geoGridSettings = geoGridSettings
     self.__viewSettings = {**viewSettings}
+    self.__initialCrs = initialCrs
     self.__shallRun = False
     self.__shallRun1 = False
     self.__shallRunStop = False
@@ -40,7 +42,7 @@ class WorkerThread(Thread):
     self.start()
   
   def fullReload(self):
-    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy: self.__post(status=status, energy=energy))
+    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy, calibration=None: self.__post(status=status, energy=energy, calibration=calibration), initialCrs=self.__initialCrs)
     self.__post(projection=self.__geoGrid.projection())
     self.updateViewSettings()
 
@@ -51,7 +53,7 @@ class WorkerThread(Thread):
     t = timer(log=False)
     # loop
     while not self.__shallQuit:
-      if self.__waitForRendering or (not self.__shallRun and not self.__shallRun1 and not self.__shallRunStop and not self.__needsUpdate):
+      if self.__waitForRendering or not (self.__shallRun or self.__shallRun1 or self.__shallRunStop or self.__needsUpdate):
         # perform gui update if necessary
         if self.__needsGUIUpdate:
           self.__updateGui2(self.__updateGui1())

@@ -72,7 +72,7 @@ class WindowSimulationSettings(wx.Frame):
     box.AddSpacer(8)
 
     ## content: weights
-    for weight, potential in self.__geoGridSettings.weightedPotentials(allWeights=True):
+    for weight, potential in self.__geoGridSettings.weightedPotentials():
       potentialBox = wx.BoxSizer(wx.HORIZONTAL)
       potentialBox.AddSpacer(10)
       checkBox(potentialBox, potential.kind, self.onDataUpdate, defaultValue=weight.isActive(), proportion=1, label=potential.kind.lower() + ':', size=(200, -1))

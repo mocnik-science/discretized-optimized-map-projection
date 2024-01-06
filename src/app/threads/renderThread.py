@@ -42,7 +42,7 @@ class RenderThread(Thread):
     t = timer(log=False)
     # loop
     while not self.__shallQuit:
-      if not ((self.__serializedData is not None or (self.__shallViewUpdate and self.__serializedDataLast is not None)) and self.__projection is not None):
+      if (self.__serializedData is None and not (self.__shallViewUpdate and self.__serializedDataLast is not None)) or self.__projection is None:
         # wait
         time.sleep(.01)
       else:

@@ -35,4 +35,6 @@ class PotentialArea(Potential):
     geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea * self.calibrationFactor
     cartesianA = Cartesian.area(neighbouringCells)
     sqrtGeoA = math.sqrt(geoA)
+    if cartesianA < 0 or sqrtGeoA <= 0:
+      return 0
     return (math.sqrt(cartesianA) - sqrtGeoA) / sqrtGeoA

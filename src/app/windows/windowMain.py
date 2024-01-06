@@ -23,7 +23,9 @@ class WindowMain(wx.Frame):
     if 'geoGridSettings' in self.__appSettings and self.__appSettings['geoGridSettings'] is not None:
       self.__geoGridSettings.updateFromJSON(self.__appSettings['geoGridSettings'])
     # self.__simulationSettings = {}
-    self.__viewSettings = {}
+    self.__viewSettings = {
+      'crs': None,
+    }
     self.__windowProj = None
     self.__windowSimulationSettings = None
     self.__windowAbout = None
@@ -91,27 +93,27 @@ class WindowMain(wx.Frame):
     startMenuItem = addItem(simulationMenu, 'Start', None, self.onRun)
     startStopMenuItem = addItem(simulationMenu, 'Start, and stop at threshold\tSpace', None, self.onRunStop)
     stopMenuItem = addItem(simulationMenu, 'Stop\tSpace', None, self.onRun)
-    addItem(simulationMenu, 'Compute next step\tCtrl+Right', None, self.onRun1)
-    resetMenuItem = addItem(simulationMenu, 'Reset\tCtrl+Back', None, self.onReset)
-    # simulationMenu.AppendSeparator()
-    # # simulation menu: potentials
-    # key = 'simulationSelectedPotential'
-    # for potential in self.__geoGridSettings.potentials:
-    #   addCheckItem(simulationMenu, f"consider {potential.kind.lower()}", self.__simulationSettings, key, potential.kind, self.updateSimulationSettings, default=True)
+    computeNextStepMenuItem = addItem(simulationMenu, 'Compute next step\tCtrl+Right', None, self.onRun1)
+    resetMenuItems = []
+    resetMenuItems.append(addItem(simulationMenu, 'Reset to simulation\tCtrl+Back', None, self.onReset))
+    simulationMenu.AppendSeparator()
+    resetMenuItems.append(addItem(simulationMenu, 'Show Mercator projection', None, lambda *args, **kwargs: self.onReset(*args, crs='EPSG:3395', **kwargs)))
+
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
+    menuItemsNotForOnlyShowForCRS = []
     # view menu: potentials
     key = 'selectedPotential'
-    addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings)
-    addRadioItem(viewMenu, 'All forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True)
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'All forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True))
     for potential in self.__geoGridSettings.potentials:
-      addRadioItem(viewMenu, f"Force for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+      menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, f"Force for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: visualization method
     key = 'selectedVisualizationMethod'
-    addRadioItem(viewMenu, 'Sum', self.__viewSettings, key, 'SUM', self.updateViewSettings)
-    addRadioItem(viewMenu, 'Individually', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings)
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Sum of forces', self.__viewSettings, key, 'SUM', self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Individual force', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: energy
     key = 'selectedEnergy'
@@ -122,8 +124,8 @@ class WindowMain(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: draw neighbours
     key = 'drawNeighbours'
-    addRadioItem(viewMenu, 'Hide neighbours', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'Show neighbours', self.__viewSettings, key, True, self.updateViewSettings)
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide neighbours', self.__viewSettings, key, False, self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Show neighbours', self.__viewSettings, key, True, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: draw labels
     key = 'drawLabels'
@@ -139,8 +141,8 @@ class WindowMain(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: draw original polygons
     key = 'drawOriginalPolygons'
-    addRadioItem(viewMenu, 'Hide initial cells', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'Show initial cells', self.__viewSettings, key, True, self.updateViewSettings)
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide initial cells', self.__viewSettings, key, False, self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Show initial cells', self.__viewSettings, key, True, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: draw continents
     key = 'drawContinentsTolerance'
@@ -151,15 +153,15 @@ class WindowMain(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: showNthStep
     key = 'showNthStep'
-    addRadioItem(viewMenu, 'Try to render every step', self.__viewSettings, key, 1, self.updateViewSettings)
-    addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True)
-    addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings)
-    addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings)
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Try to render every step', self.__viewSettings, key, 1, self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: capture video
     key = 'captureVideo'
-    addRadioItem(viewMenu, 'Show only', self.__viewSettings, key, False, self.updateViewSettings)
-    addRadioItem(viewMenu, 'Capture video', self.__viewSettings, key, True, self.updateViewSettings)
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Show only', self.__viewSettings, key, False, self.updateViewSettings))
+    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Capture video', self.__viewSettings, key, True, self.updateViewSettings))
     # finalize
     self.SetMenuBar(menuBar)
 
@@ -180,28 +182,34 @@ class WindowMain(wx.Frame):
     addTool(0, 'RunStop', iconPlayStop, self.onRunStop)
     # addTool(1, 'Run', iconPlay, self.onRun)
     addTool(2, 'Run one step', iconPlay1, self.onRun1)
-    addTool(3, 'Reset', iconReset, self.onReset)
+    addTool(3, 'Reset to simulation', iconReset, self.onReset)
     addTool(4, 'Show simulation settings', iconGear, self.onShowSimulationSettings)
     toolBar.Realize()
 
     # update functions
     def guiPlay(isPlaying):
       # menu
-      startMenuItem.Enable(enable=not isPlaying)
-      startStopMenuItem.Enable(enable=not isPlaying)
-      stopMenuItem.Enable(enable=isPlaying)
-      resetMenuItem.Enable(enable=not isPlaying)
+      startMenuItem.Enable(enable=not isPlaying and self.__viewSettings['crs'] is None)
+      startStopMenuItem.Enable(enable=not isPlaying and self.__viewSettings['crs'] is None)
+      stopMenuItem.Enable(enable=isPlaying and self.__viewSettings['crs'] is None)
+      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__viewSettings['crs'] is None)
+      for resetMenuItem in resetMenuItems:
+        resetMenuItem.Enable(enable=not isPlaying)
+      for menuItem in menuItemsNotForOnlyShowForCRS:
+        menuItem.Enable(enable=self.__viewSettings['crs'] is None)
       # toolbar
       toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlayStop)
       # toolBar.SetToolNormalBitmap(1, iconPause if isPlaying else iconPlay)
+      toolBar.EnableTool(0, self.__viewSettings['crs'] is None)
+      toolBar.EnableTool(2, not isPlaying and self.__viewSettings['crs'] is None)
       toolBar.EnableTool(3, not isPlaying)
       toolBar.Realize()
       toolBar.Refresh()
     self._guiPlay = guiPlay
 
     ## status bar
-    self._statusBar = self.CreateStatusBar(3)
-    self._statusBar.SetStatusWidths([250, -1, 130])
+    self._statusBar = self.CreateStatusBar(4)
+    self._statusBar.SetStatusWidths([250, 200, -1, 180])
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
@@ -271,10 +279,15 @@ class WindowMain(wx.Frame):
       self._statusBar.SetStatusText(text, 1)
     except:
       pass
-
+  def setCalibration(self, text):
+    try:
+      self._statusBar.SetStatusText(text, 2)
+    except:
+      pass
   def setEnergy(self, energy):
     try:
-      self._statusBar.SetStatusText(f"energy = {energy:.2e}", 2)
+      innerEnergy, outerEnergy = energy
+      self._statusBar.SetStatusText(f"energy = {innerEnergy:.2e} ({outerEnergy:.2e})", 3)
     except:
       pass
 
@@ -286,22 +299,23 @@ class WindowMain(wx.Frame):
       self.__renderThread.quit()
     self.__renderThread = None
 
-  def reset(self):
+  def reset(self, crs=None):
     self.quitThreads()
     self.__workerThreadRunning = False
     self._guiPlay(False)
     self.__newImage = None
     self.__isLoadingNewImage = False
     self.prepareRenderThread()
-    self.prepareWorkerThread()
+    self.prepareWorkerThread(initialCrs=crs)
 
   def prepareRenderThread(self):
     EVT_RENDER_THREAD_UPDATE(self, self.__renderThreadUpdate)
     self.__renderThread = RenderThread(self, self.__geoGridSettings, self.__viewSettings)
     self.__renderThread.updateSize(self._image.GetSize())
-  def prepareWorkerThread(self):
+  def prepareWorkerThread(self, initialCrs=None):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
-    self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
+    self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings, initialCrs=initialCrs)
+    self.__workerThread.update()
   
   def __renderThreadUpdate(self, event):
     if self.__renderThread is None:
@@ -325,6 +339,8 @@ class WindowMain(wx.Frame):
       self.__renderThread.render(event.serializedData, stepData=event.stepData)
     if event.status is not None:
       self.setStatus(event.status)
+    if event.calibration is not None:
+      self.setCalibration(event.status)
     if event.energy is not None:
       self.setEnergy(event.energy)
     if event.stopThresholdReached == True:
@@ -453,8 +469,9 @@ class WindowMain(wx.Frame):
       self._guiPlay(True)
       self.__workerThread.unpauseStop()
 
-  def onReset(self, event):
-    self.reset()
+  def onReset(self, event, crs=None):
+    self.__viewSettings['crs'] = crs
+    self.reset(crs)
 
   def onClose(self, event):
     self.quitThreads()

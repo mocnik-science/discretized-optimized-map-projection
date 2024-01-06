@@ -1,6 +1,7 @@
 import gzip
 import os
 import pickle
+from pyproj import CRS, Transformer
 from scipy.optimize import minimize_scalar
 import shapely
 import shutil
@@ -18,7 +19,7 @@ from src.geoGrid.geoGridRenderer import GeoGridRenderer
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class GeoGrid:
-  def __init__(self, settings, callbackStatus=lambda status, energy: None):
+  def __init__(self, settings, callbackStatus=lambda status, energy, calibration=None: None, initialCrs=None):
     # save settings
     self.__settings = settings
     # init
@@ -56,9 +57,16 @@ class GeoGrid:
       shutil.rmtree(self.__pathTmp)
     # update the settings
     self.__settings.updateGridStats(self.__gridStats)
+    # project to initial crs
+    if initialCrs is not None:
+      with timer('apply forces'):
+        transformer = Transformer.from_crs(CRS('EPSG:4326'), CRS(initialCrs), always_xy=True)
+        for cell in self.__cells.values():
+          cell.initTransformer(transformer)
     # calibrate
-    with timer('calibrate'):
-      self.calibrate(callbackStatus)
+    if initialCrs is None:
+      with timer('calibrate'):
+        self.calibrate(callbackStatus)
     # compute next forces and energies
     self.computeForcesAndEnergies()
 
@@ -107,6 +115,9 @@ class GeoGrid:
         cell._isActive = True
         keepId2s.append(cell._id2)
         keepId2s += cell._neighbours
+    for cell in cells.values():
+      if cell._isActive and all([cells[neighbour]._isActive for neighbour in cell._neighbours]):
+        cell._selfAndAllNeighboursAreActive = True
     # remove cells not to keep
     removeId2s = [id2 for id2 in cells if id2 not in keepId2s]
     for id2 in removeId2s:
@@ -143,31 +154,42 @@ class GeoGrid:
         callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
         def computeEnergy(k):
           potential.setCalibrationFactor(abs(k))
-          return self.energy(potential=potential)
+          _, outerEnergy = self.energy(potential=potential)
+          return outerEnergy
         result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
         potential.setCalibrationFactor(abs(result.x))
         energy += result.fun
       else:
-        energy += self.energy(potential=potential)
+        _, outerEnergy = self.energy(potential=potential)
+        energy += outerEnergy
     statusPotentials = []
     for potential in self.__settings.potentials:
       if potential.calibrationPossible:
         statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
-    callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy)
+    callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
 
   def energy(self, potential=None):
     with timer('compute energy', log=potential is None, step=self.__step):
-      energy = 0
+      innerEnergy = 0
+      outerEnergy = 0
       if self.__step <= 0:
         for (weight, potential) in [(GeoGridWeight(), potential)] if potential is not None else self.__settings.weightedPotentials():
+          if weight.isVanishing():
+            continue
           for cell in self.__cells.values():
             if cell._isActive:
-              energy += weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+              energy = weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+              if cell._selfAndAllNeighboursAreActive:
+                innerEnergy += energy
+              outerEnergy += energy
       else:
         for cell in self.__cells.values():
           if cell._isActive:
-            energy += cell.energy(potential if potential else 'ALL')
-      return energy
+            energy = cell.energy(potential if potential else 'ALL')
+            if cell._selfAndAllNeighboursAreActive:
+              innerEnergy += energy
+            outerEnergy += energy
+      return innerEnergy, outerEnergy
 
   def maxForceStrength(self):
     with timer('compute maximum force strength', step=self.__step):
@@ -202,6 +224,8 @@ class GeoGrid:
     forces = []
     for (weight, potential) in self.__settings.weightedPotentials():
       with timer(f"compute forces: {potential.kind.lower()}", step=self.__step):
+        if weight.isVanishing():
+          continue
         for cell in self.__cells.values():
           if cell._isActive:
             w = weight.forCell(cell)
@@ -217,7 +241,7 @@ class GeoGrid:
       with timer(f"compute energies: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
           if cell._isActive:
-            cell.setEnergy(potential.kind, weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]))
+            cell.setEnergy(potential.kind, weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]) if not weight.isVanishing() else 0)
 
   def serializedDataForProjection(self):
     with timer('serialize data for projection', step=self.__step):

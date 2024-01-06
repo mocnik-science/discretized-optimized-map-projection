@@ -31,7 +31,8 @@ class GeoGridSettings:
         'step': self._step,
         'untouched': self._untouched,
         'thresholdReached': self._thresholdReached,
-        'energy': self._energy,
+        'innerEnergy': self._energy[0],
+        'outerEnergy': self._energy[1],
       }
     return {
       'fileFormat': APP_FILE_FORMAT,
@@ -103,8 +104,8 @@ class GeoGridSettings:
     self._updated()
     self._potentialsWeights = dict(self._potentialsWeights, **weights)
 
-  def weightedPotentials(self, allWeights=False):
-    return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None and (allWeights or not self._potentialsWeights[potential.kind].isVanishing())]
+  def weightedPotentials(self):
+    return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]
 
   ## transient information
 
