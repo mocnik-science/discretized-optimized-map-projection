@@ -19,7 +19,7 @@ from src.geoGrid.geoGridRenderer import GeoGridRenderer
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class GeoGrid:
-  def __init__(self, settings, callbackStatus=lambda status, energy, calibration=None: None, initialCrs=None):
+  def __init__(self, settings, callbackStatus=lambda status, energy, calibration=None: None):
     # save settings
     self.__settings = settings
     self.__callbackStatus = callbackStatus
@@ -59,13 +59,13 @@ class GeoGrid:
     # update the settings
     self.__settings.updateGridStats(self.__gridStats)
     # project to initial crs
-    if initialCrs is not None:
+    if self.__settings.initialCRS is not None:
       with timer('apply forces'):
-        transformer = Transformer.from_crs(CRS('EPSG:4326'), CRS(initialCrs), always_xy=True)
+        transformer = Transformer.from_crs(CRS('EPSG:4326'), CRS(self.__settings.initialCRS), always_xy=True)
         for cell in self.__cells.values():
           cell.initTransformer(transformer)
     # calibrate
-    if initialCrs is None:
+    if self.__settings.initialCRS is None:
       with timer('calibrate'):
         self.calibrate()
     # compute next forces and energies

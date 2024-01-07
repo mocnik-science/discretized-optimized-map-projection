@@ -24,12 +24,11 @@ class WorkerResultEvent(wx.PyEvent):
     self.stepData = stepData
 
 class WorkerThread(Thread):
-  def __init__(self, notifyWindow, geoGridSettings, viewSettings, initialCrs=None):
+  def __init__(self, notifyWindow, geoGridSettings, viewSettings):
     Thread.__init__(self)
     self.__notifyWindow = notifyWindow
     self.__geoGridSettings = geoGridSettings
     self.__viewSettings = {**viewSettings}
-    self.__initialCrs = initialCrs
     self.__shallRun = False
     self.__shallRun1 = False
     self.__shallRunStop = False
@@ -42,7 +41,7 @@ class WorkerThread(Thread):
     self.start()
   
   def fullReload(self):
-    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy, calibration=None: self.__post(status=status, energy=energy, calibration=calibration), initialCrs=self.__initialCrs)
+    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy, calibration=None: self.__post(status=status, energy=energy, calibration=calibration))
     self.__post(projection=self.__geoGrid.projection())
     self.updateViewSettings()
 

@@ -24,9 +24,7 @@ class WindowMain(wx.Frame):
     if 'geoGridSettings' in self.__appSettings and self.__appSettings['geoGridSettings'] is not None:
       self.__geoGridSettings.updateFromJSON(self.__appSettings['geoGridSettings'])
     # self.__simulationSettings = {}
-    self.__viewSettings = {
-      'crs': None,
-    }
+    self.__viewSettings = {}
     self.__windowProj = None
     self.__windowSimulationSettings = None
     self.__windowAbout = None
@@ -194,19 +192,19 @@ class WindowMain(wx.Frame):
     # update functions
     def guiPlay(isPlaying):
       # menu
-      startMenuItem.Enable(enable=not isPlaying and self.__viewSettings['crs'] is None)
-      startStopMenuItem.Enable(enable=not isPlaying and self.__viewSettings['crs'] is None)
-      stopMenuItem.Enable(enable=isPlaying and self.__viewSettings['crs'] is None)
-      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__viewSettings['crs'] is None)
+      startMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.initialCRS is None)
+      startStopMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.initialCRS is None)
+      stopMenuItem.Enable(enable=isPlaying and self.__geoGridSettings.initialCRS is None)
+      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.initialCRS is None)
       for resetMenuItem in resetMenuItems:
         resetMenuItem.Enable(enable=not isPlaying)
       for menuItem in menuItemsNotForOnlyShowForCRS:
-        menuItem.Enable(enable=self.__viewSettings['crs'] is None)
+        menuItem.Enable(enable=self.__geoGridSettings.initialCRS is None)
       # toolbar
       toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlayStop)
       # toolBar.SetToolNormalBitmap(1, iconPause if isPlaying else iconPlay)
-      toolBar.EnableTool(0, self.__viewSettings['crs'] is None)
-      toolBar.EnableTool(2, not isPlaying and self.__viewSettings['crs'] is None)
+      toolBar.EnableTool(0, self.__geoGridSettings.initialCRS is None)
+      toolBar.EnableTool(2, not isPlaying and self.__geoGridSettings.initialCRS is None)
       toolBar.EnableTool(3, not isPlaying)
       toolBar.Realize()
       toolBar.Refresh()
@@ -310,22 +308,22 @@ class WindowMain(wx.Frame):
       self.__renderThread.quit()
     self.__renderThread = None
 
-  def reset(self, crs=None):
+  def reset(self):
     self.quitThreads()
     self.__workerThreadRunning = False
     self._guiPlay(False)
     self.__newImage = None
     self.__isLoadingNewImage = False
     self.prepareRenderThread()
-    self.prepareWorkerThread(initialCrs=crs)
+    self.prepareWorkerThread()
 
   def prepareRenderThread(self):
     EVT_RENDER_THREAD_UPDATE(self, self.__renderThreadUpdate)
     self.__renderThread = RenderThread(self, self.__geoGridSettings, self.__viewSettings)
     self.__renderThread.updateSize(self._image.GetSize())
-  def prepareWorkerThread(self, initialCrs=None):
+  def prepareWorkerThread(self):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
-    self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings, initialCrs=initialCrs)
+    self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
     self.__workerThread.update()
   
   def __renderThreadUpdate(self, event):
@@ -481,8 +479,8 @@ class WindowMain(wx.Frame):
       self.__workerThread.unpauseStop()
 
   def onReset(self, event, crs=None):
-    self.__viewSettings['crs'] = crs
-    self.reset(crs)
+    self.__geoGridSettings.initialCRS = crs
+    self.reset()
 
   def onClose(self, event):
     self.quitThreads()
