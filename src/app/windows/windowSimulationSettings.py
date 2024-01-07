@@ -79,7 +79,7 @@ class WindowSimulationSettings(wx.Frame):
     for weight, potential in self.__geoGridSettings.weightedPotentials():
       potentialBox = wx.BoxSizer(wx.HORIZONTAL)
       potentialBox.AddSpacer(10)
-      checkBox(potentialBox, potential.kind, self.onDataUpdate, defaultValue=weight.isActive(), proportion=1, label=potential.kind.lower() + ':', size=(200, -1))
+      checkBox(potentialBox, potential.kind, self.onDataUpdate, defaultValue=weight.isActive(), proportion=1, label=potential.kind.lower().replace('_', ' ') + ':', size=(200, -1))
       weightNumber(potentialBox, potential.kind + '-weight', self.onDataUpdate, defaultValue=weight.weightLand(), disabled=[potential.kind], label='land')
       potentialBox.AddSpacer(5)
       checkBox(potentialBox, potential.kind + '-ocean', self.onDataUpdate, defaultValue=weight.isWeightOceanActive(), disabled=[potential.kind])
