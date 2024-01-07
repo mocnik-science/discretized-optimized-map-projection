@@ -150,7 +150,8 @@ class GeoGridRenderer:
     if viewSettings['captureVideo'] and stepData:
       font = ImageFont.truetype('Helvetica', size=40)
       GeoGridRenderer.__text(d, (30, viewSettings['heightOverall'] - 20), f"Step {stepData['step']}", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='ls', align='left')
-      GeoGridRenderer.__text(d, (viewSettings['widthOverall'] - 30, viewSettings['heightOverall'] - 20), f"energy = {stepData['energy']:.2e}", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='rs', align='right')
+      innerEnergy, outerEnergy = stepData['energy']
+      GeoGridRenderer.__text(d, (viewSettings['widthOverall'] - 30, viewSettings['heightOverall'] - 20), f"energy = {innerEnergy:.2e} ({outerEnergy:.2e})", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='rs', align='right')
 
   @staticmethod
   def __point(d, p, r, imageCoordinates=False, **kwargs):
