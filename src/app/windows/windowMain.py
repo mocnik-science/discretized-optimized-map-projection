@@ -349,7 +349,7 @@ class WindowMain(wx.Frame):
     if event.status is not None:
       self.setStatus(event.status)
     if event.calibration is not None:
-      self.setCalibration(event.status)
+      self.setCalibration(event.calibration)
     if event.energy is not None:
       self.setEnergy(event.energy)
     if event.stopThresholdReached == True:
