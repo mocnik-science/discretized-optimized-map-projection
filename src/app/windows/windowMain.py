@@ -1,4 +1,5 @@
 import json
+import os
 import wx
 
 from src.app.common import APP_NAME, APP_FILES_PATH
@@ -40,20 +41,19 @@ class WindowMain(wx.Frame):
       menuItem = menu.Append(newId, label, label)
       self.Bind(wx.EVT_MENU, lambda event: callback(self.__menuDict[event.Id]), menuItem)
       return menuItem
-    # def addCheckItem(menu, label, object, key, data, callback, default=False):
-    #   newId = wx.NewId()
-    #   self.__menuDict[newId] = data
-    #   menuItem = menu.Append(newId, label, label, wx.ITEM_CHECK)
-    #   if default:
-    #     menuItem.Check(True)
-    #   def cb(event):
-    #     object[key][self.__menuDict[event.Id]] = menuItem.IsChecked()
-    #     callback()
-    #   self.Bind(wx.EVT_MENU, cb, menuItem)
-    #   if key not in object:
-    #     object[key] = {}
-    #   object[key][data] = default
-    #   return menuItem
+    def addCheckItem(menu, label, object, key, callback, default=False):
+      newId = wx.NewId()
+      menuItem = menu.Append(newId, label, label, wx.ITEM_CHECK)
+      if default:
+        menuItem.Check(True)
+      def cb(event):
+        objectPrevious = {**object}
+        object[key] = menuItem.IsChecked()
+        callback(objectPrevious)
+      self.Bind(wx.EVT_MENU, cb, menuItem)
+      if key not in object:
+        object[key] = default
+      return menuItem
     def addRadioItem(menu, label, object, key, data, callback, default=False):
       newId = wx.NewId()
       self.__menuDict[newId] = data
@@ -158,11 +158,9 @@ class WindowMain(wx.Frame):
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings))
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings))
     viewMenu.AppendSeparator()
-    # view menu: capture video
-    key = 'captureVideo'
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Show only', self.__viewSettings, key, False, self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Capture video', self.__viewSettings, key, True, self.updateViewSettings))
-    # finalize
+    # view menu: capture
+    menuItemsNotForOnlyShowForCRS.append(addCheckItem(viewMenu, 'Capture video (unselect to save)', self.__viewSettings, 'captureVideo', self.updateViewSettings))
+    addItem(viewMenu, 'Capture screenshot', None, self.onSaveScreenshot)
     self.SetMenuBar(menuBar)
 
     ## tool bar
@@ -245,11 +243,14 @@ class WindowMain(wx.Frame):
 
   def updateViewSettings(self, viewSettingsPrevious):
     if viewSettingsPrevious['captureVideo'] and not self.__viewSettings['captureVideo']:
-      self.__renderThread.renderVideo()
+      self.__renderThread.renderVideo(self)
     if self.__workerThread:
       self.__workerThread.updateViewSettings(self.__viewSettings)
     if self.__renderThread:
       self.__renderThread.updateViewSettings(self.__viewSettings)
+
+  def onSaveScreenshot(self, event):
+    self.__renderThread.saveScreenshot(self)
 
   def loadImage(self, image):
     self.__newImage = image

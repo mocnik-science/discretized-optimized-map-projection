@@ -2,7 +2,7 @@ import math
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-from src.app.common import APP_VIDEO_PATH
+from src.app.common import APP_CAPTURE_PATH
 from src.common.timer import timer
 from src.geometry.common import Common
 from src.geometry.geo import radiusEarth
@@ -180,7 +180,7 @@ class GeoGridRenderer:
 
   @staticmethod
   def save(im, hash, step):
-    path = os.path.join(APP_VIDEO_PATH, hash)
+    path = os.path.join(APP_CAPTURE_PATH, hash)
     pathAndFilename = os.path.join(path, f"frame-{step:08d}.png")
     os.makedirs(path, exist_ok=True)
     if not os.path.exists(pathAndFilename):
