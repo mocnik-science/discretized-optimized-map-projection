@@ -104,6 +104,7 @@ class RenderThread(Thread):
       'innerEnergy': f"{innerEnergy:.0f}",
       'outerEnergy': f"{outerEnergy:.0f}",
       'hash': info['hash'],
+      'initialCRS': settings['initialCRS'],
       'resolution': str(settings['resolution']),
       'dampingFactor': str(settings['dampingFactor']),
       'stopThreshold': str(settings['stopThreshold']),
