@@ -8,6 +8,7 @@ class Potential:
   calibrationPossible = False
   __exponent = 1
   __geoBearingsCache = {}
+  __geoDistanceCache = {}
 
   def __init__(self, settings):
     self._settings = settings
@@ -16,16 +17,30 @@ class Potential:
 
   def emptyCacheAll(self):
     self.emptyCacheDampingFactor()
-    self.emptyCacheForStep()
+    self.__geoBearingsCache = {}
+    self.__geoDistanceCache = {}
 
   def emptyCacheDampingFactor(self):
     self.__D = None
 
   def emptyCacheForStep(self):
-    self.__geoBearingsCache = {}
+    pass
 
   def setCalibrationFactor(self, k):
     self.calibrationFactor = k
+
+  def _geoBearingsForCell(self, cell, neighbouringCells):
+    key = cell._id2
+    if key not in self.__geoBearingsCache:
+      # the y axis of the Cartesian coordinate system is inverted, thus the ‘-’ in the formula below
+      self.__geoBearingsCache[key] = [Common.normalizeAngle(-Geo.bearing(cell._centreOriginal, neighbouringCell._centreOriginal)) for neighbouringCell in neighbouringCells]
+    return self.__geoBearingsCache[key]
+
+  def _geoDistanceForCells(self, cell1, cell2):
+    key = (cell1._id2, cell2._id2)
+    if key not in self.__geoDistanceCache:
+      self.__geoDistanceCache[key] = Geo.distance(cell1._centreOriginal, cell2._centreOriginal)
+    return self.__geoDistanceCache[key]
 
   def energy(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
@@ -34,9 +49,9 @@ class Potential:
   # def energyAndForces(self, cell, neighbouringCells):
   #   raise Exception('Needs to be implemented by inheriting class')
 
-  def _value(self, cell, neighbouringCells):
+  def _value(self, cell, *args):
     raise Exception('Needs to be implemented by inheriting class')
-  def _values(self, cell, neighbouringCells):
+  def _values(self, cell, *args):
     raise Exception('Needs to be implemented by inheriting class')
 
   def _quantity(self, *args, **kwargs):
@@ -101,10 +116,3 @@ class Potential:
     # #   return -1 / r**exponent * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
     # # if force:
     # #   return -exponent / r**(exponent + 1) * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
-
-  def _geoBearingsForCell(self, cell, neighbouringCells):
-    key = cell._id2
-    if key not in self.__geoBearingsCache:
-      # the y axis of the Cartesian coordinate system is inverted, thus the ‘-’ in the formula below
-      self.__geoBearingsCache[key] = [Common.normalizeAngle(-Geo.bearing(cell._centreOriginal, neighbouringCell._centreOriginal)) for neighbouringCell in neighbouringCells]
-    return self.__geoBearingsCache[key]
