@@ -155,25 +155,26 @@ class GeoGrid:
         self.__callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
         def computeEnergy(k):
           potential.setCalibrationFactor(abs(k))
-          _, outerEnergy = self.energy(potential=potential)
+          _, outerEnergy = self.energy(potential=potential, calibration=True)
           return outerEnergy
         result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
         potential.setCalibrationFactor(abs(result.x))
         energy += result.fun
       else:
-        _, outerEnergy = self.energy(potential=potential)
+        _, outerEnergy = self.energy(potential=potential, calibration=True)
         energy += outerEnergy
     statusPotentials = []
     for potential in self.__settings.potentials:
       if potential.calibrationPossible:
         statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
-    self.__callbackStatus(f"calibrated: {', '.join(statusPotentials)}", energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
+    if len(statusPotentials) > 0:
+      self.__callbackStatus(None, energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
 
-  def energy(self, potential=None):
+  def energy(self, potential=None, calibration=False):
     with timer('compute energy', log=potential is None, step=self.__step):
       innerEnergy = 0
       outerEnergy = 0
-      if self.__step <= 0:
+      if self.__step <= 0 or calibration:
         for (weight, potential) in [(GeoGridWeight(), potential)] if potential is not None else self.__settings.weightedPotentials():
           if weight.isVanishing():
             continue
@@ -214,6 +215,8 @@ class GeoGrid:
       with timer('apply forces', step=self.__step):
         for cell in self.__cells.values():
           cell.applyForce()
+    # calibrate
+    self.calibrate()
     # compute next forces and energies
     self.computeForcesAndEnergies()
 

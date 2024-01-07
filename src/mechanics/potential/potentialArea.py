@@ -32,9 +32,9 @@ class PotentialArea(Potential):
     # cell area and partly area of the neighbouring cells
     # hexagon:   1 + 6 * 2/6 = 3
     # pentagon:  5/6 + 5 * 2/6 = 15/6 = 2.5
-    geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea * self.calibrationFactor
-    cartesianA = Cartesian.area(neighbouringCells)
-    sqrtGeoA = math.sqrt(geoA)
-    if cartesianA < 0 or sqrtGeoA <= 0:
+    cartesianA = Cartesian.area(neighbouringCells) * self.calibrationFactor**2
+    if cartesianA < 0:
       return 0
+    geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
+    sqrtGeoA = math.sqrt(geoA)
     return (math.sqrt(cartesianA) - sqrtGeoA) / sqrtGeoA
