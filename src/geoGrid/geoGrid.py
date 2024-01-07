@@ -16,7 +16,6 @@ from src.geoGrid.geoGridCell import GeoGridCell
 from src.geoGrid.geoGridProjection import GeoGridProjection
 from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
-from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class GeoGrid:
   def __init__(self, settings, callbackStatus=lambda status, energy, calibration=None: None):
@@ -185,14 +184,14 @@ class GeoGrid:
           if weight.isVanishing():
             continue
           for cell in self.__cells.values():
-            if cell._isActive:
+            if cell._isActive and cell.within(lat=self.__settings.limitLatForEnergy):
               energy = weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
               if cell._selfAndAllNeighboursAreActive:
                 innerEnergy += energy
               outerEnergy += energy
       else:
         for cell in self.__cells.values():
-          if cell._isActive:
+          if cell._isActive and cell.within(lat=self.__settings.limitLatForEnergy):
             energy = cell.energy(kindOfPotential if kindOfPotential else 'ALL')
             if cell._selfAndAllNeighboursAreActive:
               innerEnergy += energy

@@ -118,6 +118,7 @@ class RenderThread(Thread):
       'resolution': str(settings['resolution']),
       'dampingFactor': str(settings['dampingFactor']),
       'stopThreshold': str(settings['stopThreshold']),
+      'limitLatForEnergy': str(settings['limitLatForEnergy']),
       'weights': '"' + json.dumps(settings['weights']) + '"',
     }
     dataRow = f"{','.join(data.values())}\n"

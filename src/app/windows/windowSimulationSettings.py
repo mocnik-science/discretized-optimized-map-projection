@@ -9,9 +9,9 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings = geoGridSettings
     self.__workerThread = workerThread
     self.__data = {}
-    wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 210))
-    self.SetMinSize((800, 210))
-    self.SetMaxSize((800, 210))
+    wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 310))
+    self.SetMinSize((800, 310))
+    self.SetMaxSize((800, 310))
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
@@ -61,14 +61,18 @@ class WindowSimulationSettings(wx.Frame):
 
     ## content: resolution and speed
     box.AddSpacer(5)
-    resolutionBox = wx.BoxSizer(wx.HORIZONTAL)
-    resolutionBox.AddSpacer(10)
-    number(resolutionBox, 'resolution', lambda: self.onDataUpdate(fullReload=True), defaultValue=self.__geoGridSettings.resolution, minValue=2, maxValue=10, label='resolution:')
-    resolutionBox.AddSpacer(100)
-    number(resolutionBox, 'speed100', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=.1, maxValue=20, digits=2, increment=.1, label='speed:')
-    resolutionBox.AddSpacer(100)
-    number(resolutionBox, 'stopThreshold100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThreshold, minValue=.01, maxValue=2, digits=2, increment=.1, label='stop threshold:', unit='%')
-    box.Add(resolutionBox, 0, wx.ALL, 0)
+    generalSettingsBox1 = wx.BoxSizer(wx.HORIZONTAL)
+    generalSettingsBox1.AddSpacer(10)
+    number(generalSettingsBox1, 'resolution', lambda: self.onDataUpdate(fullReload=True), defaultValue=self.__geoGridSettings.resolution, minValue=2, maxValue=10, label='resolution:')
+    generalSettingsBox1.AddSpacer(100)
+    number(generalSettingsBox1, 'limitLatForEnergy', self.onDataUpdate, defaultValue=self.__geoGridSettings.limitLatForEnergy, minValue=45, maxValue=90, digits=0, increment=1, label='limit latitude (energy computation):', unit='°N/S')
+    box.Add(generalSettingsBox1, 0, wx.ALL, 0)
+    generalSettingsBox2 = wx.BoxSizer(wx.HORIZONTAL)
+    generalSettingsBox2.AddSpacer(10)
+    number(generalSettingsBox2, 'speed100', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=.1, maxValue=20, digits=2, increment=.1, label='speed:')
+    generalSettingsBox2.AddSpacer(100)
+    number(generalSettingsBox2, 'stopThreshold100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThreshold, minValue=.01, maxValue=2, digits=2, increment=.1, label='stop threshold:', unit='%')
+    box.Add(generalSettingsBox2, 0, wx.ALL, 0)
     box.AddSpacer(8)
 
     ## content: weights
@@ -112,6 +116,7 @@ class WindowSimulationSettings(wx.Frame):
       'resolution',
       'speed100',
       'stopThreshold100',
+      'limitLatForEnergy',
     ]
     for potential in self.__geoGridSettings.potentials:
       keys += [
@@ -143,6 +148,8 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings.updateDampingFactor(1 - self.__data['speed100'] / 100)
     # update geoGridSettings: stop threshold
     self.__geoGridSettings.updateStopThreshold(self.__data['stopThreshold100'] / 100)
+    # update geoGridSettings: limit latitude for energy
+    self.__geoGridSettings.updateLimitLatForEnergy(self.__data['limitLatForEnergy'])
     # update the app settings II
     if hasChanged:
       self.__appSettings['geoGridSettings'] = self.__geoGridSettings.toJSON()

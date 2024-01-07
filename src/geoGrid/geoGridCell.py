@@ -66,6 +66,9 @@ class GeoGridCell:
   def point(self):
     return Point(self.x, self.y)
 
+  def within(self, lat=None):
+    return lat is None or (-lat <= self._centreOriginal.y and self._centreOriginal.y <= lat)
+
   def setEnergy(self, kindOfPotential, energy):
     self._energy[kindOfPotential] = energy
 

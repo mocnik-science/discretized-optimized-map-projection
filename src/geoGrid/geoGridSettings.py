@@ -14,11 +14,12 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialCRS=None, resolution=3, dampingFactor=.98, stopThreshold=.001):
+  def __init__(self, initialCRS=None, resolution=3, dampingFactor=.98, stopThreshold=.001, limitLatForEnergy=90):
     self.initialCRS = initialCRS
     self.resolution = resolution
     self._dampingFactor = dampingFactor
     self._stopThreshold = stopThreshold
+    self.limitLatForEnergy = limitLatForEnergy
     self._typicalDistance = None
     self._typicalArea = None
     self.potentials = [potential(self) for potential in potentials]
@@ -42,6 +43,7 @@ class GeoGridSettings:
       'resolution': self.resolution,
       'dampingFactor': self._dampingFactor,
       'stopThreshold': self._stopThreshold,
+      'limitLatForEnergy': self.limitLatForEnergy,
       'weights': dict((potentialKind, weight.toJSON()) for (potentialKind, weight) in self._potentialsWeights.items()),
       **transient,
     }
@@ -74,10 +76,16 @@ class GeoGridSettings:
     self._updated()
     if data['fileFormat'] != APP_FILE_FORMAT or data['fileFormatVersion'] != '1.0':
       raise Exception('Wrong fileformat')
+    self.updateInitialCRS(data['initialCRS'])
     self.updateResolution(data['resolution'])
     self.updateDampingFactor(data['dampingFactor'])
     self.updateStopThreshold(data['stopThreshold'])
+    self.updateLimitLatForEnergy(data['limitLatForEnergy'])
     self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
+
+  # def updateInitialCRS(self, initialCRS):
+  #   self._updated()
+  #   self.initialCRS = initialCRS
 
   def updateResolution(self, resolution):
     self._updated()
@@ -96,6 +104,10 @@ class GeoGridSettings:
   def updateStopThreshold(self, stopThreshold):
     self._updated()
     self._stopThreshold = stopThreshold
+
+  def updateLimitLatForEnergy(self, limitLatForEnergy):
+    self._updated()
+    self.limitLatForEnergy = limitLatForEnergy
 
   def updateGridStats(self, gridStats):
     self._updated()

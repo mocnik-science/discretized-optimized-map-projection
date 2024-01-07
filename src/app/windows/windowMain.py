@@ -316,6 +316,7 @@ class WindowMain(wx.Frame):
     self.__isLoadingNewImage = False
     self.prepareRenderThread()
     self.prepareWorkerThread()
+    self.reloadShowSimulationSettings()
 
   def prepareRenderThread(self):
     EVT_RENDER_THREAD_UPDATE(self, self.__renderThreadUpdate)
@@ -405,7 +406,7 @@ class WindowMain(wx.Frame):
       if dataSettings is not None:
         self.__geoGridSettings.updateFromJSON(dataSettings)
         self.__workerThread.fullReload()
-        self.reloadShowSimulationSettings()
+        self.reloadShowSimulationSettings(show=True)
 
   def onSaveSimulationSettings(self, event):
     info = self.__geoGridSettings.info()
@@ -430,14 +431,15 @@ class WindowMain(wx.Frame):
     except IOError:
       wx.LogError('Cannot save ' + label + ': ' + filename)
 
-  def reloadShowSimulationSettings(self):
+  def reloadShowSimulationSettings(self, show=False):
     position = None
     if self.__windowSimulationSettings is not None and not isWindowDestroyed(self.__windowSimulationSettings):
       position = self.__windowSimulationSettings.GetPosition()
       self.__windowSimulationSettings.Destroy()
-    self.__windowSimulationSettings = WindowSimulationSettings(self.__appSettings, self.__geoGridSettings, self.__workerThread)
-    if position:
-      self.__windowSimulationSettings.SetPosition(position)
+    if position or show:
+      self.__windowSimulationSettings = WindowSimulationSettings(self.__appSettings, self.__geoGridSettings, self.__workerThread)
+      if position:
+        self.__windowSimulationSettings.SetPosition(position)
 
   def onShowSimulationSettings(self, event):
     if self.__windowSimulationSettings is None or isWindowDestroyed(self.__windowSimulationSettings):
