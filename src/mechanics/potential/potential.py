@@ -1,10 +1,13 @@
 from src.common.functions import sign
+from src.geometry.common import Common
+from src.geometry.geo import Geo
 
 class Potential:
   kind = None
   defaultWeight = None
   calibrationPossible = False
   __exponent = 1
+  __geoBearingsCache = {}
 
   def __init__(self, settings):
     self._settings = settings
@@ -13,9 +16,13 @@ class Potential:
 
   def emptyCacheAll(self):
     self.emptyCacheDampingFactor()
+    self.emptyCacheForStep()
 
   def emptyCacheDampingFactor(self):
     self.__D = None
+
+  def emptyCacheForStep(self):
+    self.__geoBearingsCache = {}
 
   def setCalibrationFactor(self, k):
     self.calibrationFactor = k
@@ -102,3 +109,10 @@ class Potential:
     #   return -1 / r**exponent * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
     # if force:
     #   return -exponent / r**(exponent + 1) * (1 - self._settings._dampingFactor) * self._settings._typicalDistance
+
+  def _geoBearingsForCell(self, cell, neighbouringCells):
+    key = cell._id2
+    if key not in self.__geoBearingsCache:
+      # the y axis of the Cartesian coordinate system is inverted, thus the ‘-’ in the formula below
+      self.__geoBearingsCache[key] = [Common.normalizeAngle(-Geo.bearing(cell._centreOriginal, neighbouringCell._centreOriginal)) for neighbouringCell in neighbouringCells]
+    return self.__geoBearingsCache[key]

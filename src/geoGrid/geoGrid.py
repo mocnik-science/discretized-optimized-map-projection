@@ -220,6 +220,9 @@ class GeoGrid:
       with timer('apply forces', step=self.__step):
         for cell in self.__cells.values():
           cell.applyForce()
+    # reset potentials
+    for potential in self.__settings.potentials:
+      potential.emptyCacheForStep()
     # calibrate
     self.calibrate()
     # compute next forces and energies
