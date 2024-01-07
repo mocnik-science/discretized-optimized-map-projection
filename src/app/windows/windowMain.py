@@ -1,5 +1,4 @@
 import json
-import os
 import wx
 
 from src.app.common import APP_NAME, APP_FILES_PATH
@@ -11,6 +10,7 @@ from src.app.windows.windowProj import WindowProj
 from src.app.windows.windowSimulationSettings import WindowSimulationSettings
 from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.geoGrid.geoGridSettings import GeoGridSettings
+from src.geometry.strategy import strategyForScale
 
 class WindowMain(wx.Frame):
   def __init__(self, appSettings):
@@ -99,7 +99,27 @@ class WindowMain(wx.Frame):
     resetMenuItems = []
     resetMenuItems.append(addItem(simulationMenu, 'Reset to simulation\tCtrl+Back', None, self.onReset))
     simulationMenu.AppendSeparator()
-    resetMenuItems.append(addItem(simulationMenu, 'Show Mercator projection', None, lambda *args, **kwargs: self.onReset(*args, crs='EPSG:3395', **kwargs)))
+    def addProjection(projectionName, crs, scaleDeferred=None):
+      resetMenuItems.append(addItem(simulationMenu, f'Show {projectionName} projection', None, lambda *args, **kwargs: self.onReset(*args, crs=crs, scale=(scaleDeferred if scaleDeferred else strategyForScale(crs))(), **kwargs)))
+    addProjection('Aitoff', 'ESRI:53043')
+    # addProjection('Albers', 'EPSG:5072') # Maßstab unklar
+    # addProjection('Bonne', 'ESRI:53024') # Maßstab unklar
+    addProjection('Eckert I', 'ESRI:53015')
+    addProjection('Eckert II', 'ESRI:53014')
+    addProjection('Eckert III', 'ESRI:53013')
+    addProjection('Eckert IV', 'ESRI:53012')
+    addProjection('Eckert V', 'ESRI:53011')
+    addProjection('Eckert VI', 'ESRI:53010')
+    # addProjection('Gall-Peters', '???') # CRS code unclear
+    # addProjection('Hammer-Aitoff', 'ESRI:53044') # ProjError: Input is not a transformation
+    addProjection('Mercator', 'EPSG:3395')
+    addProjection('Mollweide', 'ESRI:53009')
+    addProjection('Natural Earth', 'ESRI:53077')
+    addProjection('Natural Earth II', 'ESRI:53078')
+    addProjection('Peirce Quincuncial North Pole', 'ESRI:54090', scaleDeferred=strategyForScale('ESRI:54090', corners=[[-180, 0], [-90, 0], [0, 0], [90, 0]], horizontal=True, vertical=True, diagonalUp=True, diagonalDown=True, degreeHorizontal=360, degreeVertical=360, degreeDiagonalUp=360, degreeDiagonalDown=360, epsilon=0))
+    addProjection('Robinson', 'ESRI:53030')
+    addProjection('Sinusoidal', 'ESRI:53008')
+    addProjection('Winkel-Tripel', 'ESRI:53042')
 
     # capture menu
     captureMenu = wx.Menu()
