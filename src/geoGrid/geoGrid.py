@@ -150,32 +150,38 @@ class GeoGrid:
 
   def calibrate(self):
     energy = 0
-    for potential in self.__settings.potentials:
+    for (weight, potential) in self.__settings.weightedPotentials():
+      if weight.isVanishing():
+        continue
       if potential.calibrationPossible:
         self.__callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
         def computeEnergy(k):
           potential.setCalibrationFactor(abs(k))
-          _, outerEnergy = self.energy(potential=potential, calibration=True)
+          _, outerEnergy = self.energy(kindOfPotential=potential.kind, calibration=True)
           return outerEnergy
         result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
         potential.setCalibrationFactor(abs(result.x))
         energy += result.fun
       else:
-        _, outerEnergy = self.energy(potential=potential, calibration=True)
+        _, outerEnergy = self.energy(kindOfPotential=potential.kind, calibration=True)
         energy += outerEnergy
     statusPotentials = []
-    for potential in self.__settings.potentials:
+    for (weight, potential) in self.__settings.weightedPotentials():
+      if weight.isVanishing():
+        continue
       if potential.calibrationPossible:
         statusPotentials.append(f"k_{potential.kind.lower()} = {potential.calibrationFactor:.2f}")
     if len(statusPotentials) > 0:
       self.__callbackStatus(None, energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
 
-  def energy(self, potential=None, calibration=False):
-    with timer('compute energy', log=potential is None, step=self.__step):
+  def energy(self, kindOfPotential=None, calibration=False):
+    with timer('compute energy', log=kindOfPotential is None, step=self.__step):
       innerEnergy = 0
       outerEnergy = 0
       if self.__step <= 0 or calibration:
-        for (weight, potential) in [(GeoGridWeight(), potential)] if potential is not None else self.__settings.weightedPotentials():
+        for (weight, potential) in self.__settings.weightedPotentials():
+          if kindOfPotential is not None and potential.kind != kindOfPotential:
+            continue
           if weight.isVanishing():
             continue
           for cell in self.__cells.values():
@@ -187,7 +193,7 @@ class GeoGrid:
       else:
         for cell in self.__cells.values():
           if cell._isActive:
-            energy = cell.energy(potential if potential else 'ALL')
+            energy = cell.energy(kindOfPotential if kindOfPotential else 'ALL')
             if cell._selfAndAllNeighboursAreActive:
               innerEnergy += energy
             outerEnergy += energy

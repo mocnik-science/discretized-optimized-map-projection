@@ -103,6 +103,16 @@ class RenderThread(Thread):
       'step': str(self.__stepData['step']),
       'innerEnergy': f"{innerEnergy:.0f}",
       'outerEnergy': f"{outerEnergy:.0f}",
+    }
+    for key, value in self.__stepData['energyPerPotential'].items():
+      innerEnergy, outerEnergy = value
+      data = {
+        **data,
+        'innerEnergy_' + key: f"{innerEnergy:.0f}",
+        'outerEnergy_' + key: f"{outerEnergy:.0f}",
+      }
+    data = {
+      **data,
       'hash': info['hash'],
       'initialCRS': settings['initialCRS'],
       'resolution': str(settings['resolution']),

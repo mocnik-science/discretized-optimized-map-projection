@@ -66,16 +66,16 @@ class GeoGridCell:
   def point(self):
     return Point(self.x, self.y)
 
-  def setEnergy(self, kind, energy):
-    self._energy[kind] = energy
+  def setEnergy(self, kindOfPotential, energy):
+    self._energy[kindOfPotential] = energy
 
-  def energy(self, potential):
-    if potential is None:
+  def energy(self, kindOfPotential):
+    if kindOfPotential is None:
       return None
-    elif potential == 'ALL':
+    elif kindOfPotential == 'ALL':
       return sum(self._energy.values())
-    elif potential in self._energy:
-      return self._energy[potential]
+    elif kindOfPotential in self._energy:
+      return self._energy[kindOfPotential]
     raise Exception('The energy has not yet been computed')
 
   def addForce(self, force):
