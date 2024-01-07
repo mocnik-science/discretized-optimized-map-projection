@@ -57,8 +57,10 @@ class GeoGridCell:
     self._distanceToLand = NaturalEarth.distanceToLand(self.__dggridCell.centre)
     del self.__dggridCell
 
-  def initTransformer(self, transformer):
+  def initTransformer(self, transformer, scale=1):
     self.x, self.y = transformer.transform(self._centreOriginal.x, self._centreOriginal.y)
+    self.x *= scale
+    self.y *= scale
 
   def xy(self):
     return self.x, self.y

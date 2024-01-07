@@ -14,8 +14,9 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialCRS=None, resolution=3, dampingFactor=.98, stopThreshold=.001, limitLatForEnergy=90):
+  def __init__(self, initialCRS=None, initialScale=1, resolution=3, dampingFactor=.98, stopThreshold=.001, limitLatForEnergy=90):
     self.initialCRS = initialCRS
+    self.initialScale = initialScale
     self.resolution = resolution
     self._dampingFactor = dampingFactor
     self._stopThreshold = stopThreshold
@@ -40,6 +41,7 @@ class GeoGridSettings:
       'fileFormat': APP_FILE_FORMAT,
       'fileFormatVersion': '1.0',
       'initialCRS': self.initialCRS if self.initialCRS else '',
+      'initialScale': self.initialScale,
       'resolution': self.resolution,
       'dampingFactor': self._dampingFactor,
       'stopThreshold': self._stopThreshold,
@@ -77,15 +79,20 @@ class GeoGridSettings:
     if data['fileFormat'] != APP_FILE_FORMAT or data['fileFormatVersion'] != '1.0':
       raise Exception('Wrong fileformat')
     self.updateInitialCRS(data['initialCRS'])
+    self.updateInitialScale(data['initialScale'])
     self.updateResolution(data['resolution'])
     self.updateDampingFactor(data['dampingFactor'])
     self.updateStopThreshold(data['stopThreshold'])
     self.updateLimitLatForEnergy(data['limitLatForEnergy'])
     self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
 
-  # def updateInitialCRS(self, initialCRS):
-  #   self._updated()
-  #   self.initialCRS = initialCRS
+  def updateInitialCRS(self, initialCRS):
+    self._updated()
+    self.initialCRS = initialCRS
+
+  def updateInitialScale(self, initialScale):
+    self._updated()
+    self.initialScale = initialScale
 
   def updateResolution(self, resolution):
     self._updated()

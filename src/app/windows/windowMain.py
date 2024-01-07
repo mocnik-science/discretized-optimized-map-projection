@@ -480,8 +480,9 @@ class WindowMain(wx.Frame):
       self._guiPlay(True)
       self.__workerThread.unpauseStop()
 
-  def onReset(self, event, crs=None):
+  def onReset(self, event, crs=None, scale=1):
     self.__geoGridSettings.initialCRS = crs
+    self.__geoGridSettings.initialScale = scale
     self.reset()
 
   def onClose(self, event):

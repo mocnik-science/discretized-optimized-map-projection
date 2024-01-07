@@ -115,6 +115,7 @@ class RenderThread(Thread):
       **data,
       'hash': info['hash'],
       'initialCRS': settings['initialCRS'],
+      'initialScale': str(settings['initialScale']),
       'resolution': str(settings['resolution']),
       'dampingFactor': str(settings['dampingFactor']),
       'stopThreshold': str(settings['stopThreshold']),

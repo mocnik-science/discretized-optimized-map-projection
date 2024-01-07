@@ -59,10 +59,10 @@ class GeoGrid:
     self.__settings.updateGridStats(self.__gridStats)
     # project to initial crs
     if self.__settings.initialCRS is not None:
-      with timer('apply forces'):
+      with timer('apply initial CRS'):
         transformer = Transformer.from_crs(CRS('EPSG:4326'), CRS(self.__settings.initialCRS), always_xy=True)
         for cell in self.__cells.values():
-          cell.initTransformer(transformer)
+          cell.initTransformer(transformer, scale=self.__settings.initialScale)
     # calibrate
     if self.__settings.initialCRS is None:
       with timer('calibrate'):
