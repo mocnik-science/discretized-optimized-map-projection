@@ -68,8 +68,11 @@ class WindowMain(wx.Frame):
       if key not in object or default:
         object[key] = data
       return menuItem
+
     # init
     menuBar = wx.MenuBar()
+    menuItemsNotForOnlyShowForCRS = []
+
     # projection menu
     projectionMenu = wx.Menu()
     menuBar.Append(projectionMenu, "&Projection")
@@ -81,6 +84,7 @@ class WindowMain(wx.Frame):
     addItem(projectionMenu, 'Save projection for PROJ/QGIS to default directory', None, self.onSaveProjectionTINToDefault)
     projectionMenu.AppendSeparator()
     addItem(projectionMenu, 'About...', None, self.onAbout)
+
     # simulation menu
     simulationMenu = wx.Menu()
     menuBar.Append(simulationMenu, "&Simulation")
@@ -99,10 +103,16 @@ class WindowMain(wx.Frame):
     simulationMenu.AppendSeparator()
     resetMenuItems.append(addItem(simulationMenu, 'Show Mercator projection', None, lambda *args, **kwargs: self.onReset(*args, crs='EPSG:3395', **kwargs)))
 
+    # capture menu
+    captureMenu = wx.Menu()
+    menuBar.Append(captureMenu, "&Capture")
+    addItem(captureMenu, 'Save data', None, self.onSaveData)
+    addItem(captureMenu, 'Save screenshot', None, self.onSaveScreenshot)
+    menuItemsNotForOnlyShowForCRS.append(addCheckItem(captureMenu, 'Start/stop video capture', self.__viewSettings, 'captureVideo', self.updateViewSettings))
+
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
-    menuItemsNotForOnlyShowForCRS = []
     # view menu: potentials
     key = 'selectedPotential'
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings))
@@ -157,10 +167,7 @@ class WindowMain(wx.Frame):
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True))
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings))
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings))
-    viewMenu.AppendSeparator()
-    # view menu: capture
-    menuItemsNotForOnlyShowForCRS.append(addCheckItem(viewMenu, 'Capture video (unselect to save)', self.__viewSettings, 'captureVideo', self.updateViewSettings))
-    addItem(viewMenu, 'Capture screenshot', None, self.onSaveScreenshot)
+
     self.SetMenuBar(menuBar)
 
     ## tool bar
@@ -251,6 +258,9 @@ class WindowMain(wx.Frame):
 
   def onSaveScreenshot(self, event):
     self.__renderThread.saveScreenshot(self)
+  
+  def onSaveData(self, event):
+    self.__renderThread.saveData(self)
 
   def loadImage(self, image):
     self.__newImage = image

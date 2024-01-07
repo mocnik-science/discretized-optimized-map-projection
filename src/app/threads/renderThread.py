@@ -1,3 +1,4 @@
+import json
 import random
 import os
 from threading import Thread
@@ -35,6 +36,7 @@ class RenderThread(Thread):
     self.__size = None
     self.__shallViewUpdate = False
     self.__stepData = None
+    self.__randomHashData = self.__hash()
     self.__randomHashVideo = self.__hash()
     self.start()
   
@@ -51,12 +53,16 @@ class RenderThread(Thread):
       else:
         self.__shallViewUpdate = False
         frameSaved = False
-        # render
         with t:
+          # data
+          if self.__stepData and (self.__stepData['saveData'] or self.__stepData['step'] == 0):
+            self.__saveDataToTmp()
+            self.__stepData['saveData'] = False
+          # render
           im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080) if self.__viewSettings['captureVideo'] else self.__size, stepData=self.__stepData)
-          if self.__stepData and self.__stepData['save']:
+          if self.__stepData and self.__stepData['saveImage']:
             GeoGridRenderer.save(im, hash=self.__randomHashVideo, step=self.__stepData['step'])
-            self.__stepData['save'] = False
+            self.__stepData['saveImage'] = False
             frameSaved = True
         # cleanup
         self.__post(im=im, status=f"rendering {1000 * t.average():.0f} ms", frameSaved=frameSaved)
@@ -88,14 +94,38 @@ class RenderThread(Thread):
   def updateView(self):
     self.__shallViewUpdate = True
 
-  def renderVideo(self, parentWindow):
-    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashVideo)
-    renderVideo(fileNameTmp, 20)
+  def __saveDataToTmp(self):
+    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashData + '.csv')
+    innerEnergy, outerEnergy = self.__stepData['energy']
+    settings = self.__geoGridSettings.toJSON()
     info = self.__geoGridSettings.info()
-    dialog = wx.FileDialog(parentWindow, message='Save video', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__randomHashVideo}.mp4", wildcard='Video files (*.mp4)|*.mp4', style=wx.FD_SAVE)
+    data = {
+      'step': str(self.__stepData['step']),
+      'innerEnergy': f"{innerEnergy:.0f}",
+      'outerEnergy': f"{outerEnergy:.0f}",
+      'hash': info['hash'],
+      'resolution': str(settings['resolution']),
+      'dampingFactor': str(settings['dampingFactor']),
+      'stopThreshold': str(settings['stopThreshold']),
+      'weights': '"' + json.dumps(settings['weights']) + '"',
+    }
+    dataRow = f"{','.join(data.values())}\n"
+    if not os.path.exists(fileNameTmp):
+      os.makedirs(APP_CAPTURE_PATH, exist_ok=True)
+      with open(fileNameTmp, 'w') as f:
+        headerRow = f"{','.join(data.keys())}\n"
+        f.write(headerRow)
+        f.write(dataRow)
+    if self.__stepData['step'] > 0:
+      with open(fileNameTmp, 'a') as f:
+        f.write(dataRow)
+
+  def saveData(self, parentWindow):
+    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashData + '.csv')
+    info = self.__geoGridSettings.info()
+    dialog = wx.FileDialog(parentWindow, message='Save data', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__randomHashData}.csv", wildcard='CSV files (*.csv)|*.csv', style=wx.FD_SAVE)
     if dialog.ShowModal() == wx.ID_OK:
-      os.replace(fileNameTmp + '.mp4', dialog.GetPath())
-    self.__randomHashVideo = self.__hash()
+      os.replace(fileNameTmp, dialog.GetPath())
 
   def saveScreenshot(self, parentWindow):
     randomHash = self.__hash()
@@ -106,6 +136,15 @@ class RenderThread(Thread):
         os.unlink(dialog.GetPath())
       im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080), stepData=self.__stepData)
       im.save(dialog.GetPath(), optimize=False, compress_level=1)
+
+  def renderVideo(self, parentWindow):
+    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashVideo)
+    renderVideo(fileNameTmp, 20)
+    info = self.__geoGridSettings.info()
+    dialog = wx.FileDialog(parentWindow, message='Save video', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__randomHashVideo}.mp4", wildcard='Video files (*.mp4)|*.mp4', style=wx.FD_SAVE)
+    if dialog.ShowModal() == wx.ID_OK:
+      os.replace(fileNameTmp + '.mp4', dialog.GetPath())
+    self.__randomHashVideo = self.__hash()
 
   def quit(self):
     self.__shallQuit = True
