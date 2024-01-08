@@ -70,10 +70,14 @@ class WorkerThread(Thread):
             self.__geoGrid.computeForcesAndEnergies()
           serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
           # compute energy
-          energy = self.__geoGrid.energy()
+          energy = self.__geoGrid.energy(weighted=False)
+          energyWeighted = self.__geoGrid.energy(weighted=True)
           energyPerPotential = {}
           for potential in self.__geoGridSettings.potentials:
-            energyPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind)
+            energyPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind, weighted=False)
+          energyWeightedPerPotential = {}
+          for potential in self.__geoGridSettings.potentials:
+            energyWeightedPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind, weighted=True)
           # check whether the threshold has been reached
           stopThresholdReached = None
           if self.__shallRunStop:
@@ -93,7 +97,9 @@ class WorkerThread(Thread):
           'saveImage': (shallPerformStep or self.__enforceSendingStepData) and self.__viewSettings['captureVideo'],
           'step': self.__geoGrid.step(),
           'energy': energy,
+          'energyWeighted': energyWeighted,
           'energyPerPotential': energyPerPotential,
+          'energyWeightedPerPotential': energyWeightedPerPotential,
         })
         # cleanup
         if self.__viewSettings['captureVideo'] and not self.__enforceSendingStepData:

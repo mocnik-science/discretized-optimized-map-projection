@@ -156,13 +156,13 @@ class GeoGrid:
         self.__callbackStatus(f"calibrating {potential.kind.lower()} ...", None)
         def computeEnergy(k):
           potential.setCalibrationFactor(abs(k))
-          _, outerEnergy = self.energy(kindOfPotential=potential.kind, calibration=True)
+          _, outerEnergy = self.energy(kindOfPotential=potential.kind, weighted=True, calibration=True)
           return outerEnergy
         result = minimize_scalar(computeEnergy, method='brent', bracket=[.5, 1.5])
         potential.setCalibrationFactor(abs(result.x))
         energy += result.fun
       else:
-        _, outerEnergy = self.energy(kindOfPotential=potential.kind, calibration=True)
+        _, outerEnergy = self.energy(kindOfPotential=potential.kind, weighted=True, calibration=True)
         energy += outerEnergy
     statusPotentials = []
     for (weight, potential) in self.__settings.weightedPotentials():
@@ -173,7 +173,7 @@ class GeoGrid:
     if len(statusPotentials) > 0:
       self.__callbackStatus(None, energy, calibration=f"calibrated: {', '.join(statusPotentials)}")
 
-  def energy(self, kindOfPotential=None, calibration=False):
+  def energy(self, kindOfPotential=None, weighted=False, calibration=False):
     with timer('compute energy', log=kindOfPotential is None, step=self.__step):
       innerEnergy = 0
       outerEnergy = 0
@@ -185,14 +185,14 @@ class GeoGrid:
             continue
           for cell in self.__cells.values():
             if cell._isActive and cell.within(lat=self.__settings.limitLatForEnergy):
-              energy = weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+              energy = (weight.forCell(cell) if weighted else 1) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
               if cell._selfAndAllNeighboursAreActive:
                 innerEnergy += energy
               outerEnergy += energy
       else:
         for cell in self.__cells.values():
           if cell._isActive and cell.within(lat=self.__settings.limitLatForEnergy):
-            energy = cell.energy(kindOfPotential if kindOfPotential else 'ALL')
+            energy = cell.energy(kindOfPotential if kindOfPotential else 'ALL', weighted=weighted)
             if cell._selfAndAllNeighboursAreActive:
               innerEnergy += energy
             outerEnergy += energy
@@ -253,7 +253,8 @@ class GeoGrid:
       with timer(f"compute energies: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
           if cell._isActive:
-            cell.setEnergy(potential.kind, weight.forCell(cell) * potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]) if not weight.isVanishing() else 0)
+            cell.setEnergy(potential.kind, potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]) if not weight.isVanishing() else 0)
+            cell.setEnergyWeight(potential.kind, weight.forCell(cell))
 
   def serializedDataForProjection(self):
     with timer('serialize data for projection', step=self.__step):
@@ -300,7 +301,7 @@ class GeoGrid:
       if viewSettings['selectedEnergy'] is not None:
         for cell in self.__cells.values():
           if cell._isActive:
-            cells[cell._id2]['energy'] = cell.energy(viewSettings['selectedEnergy'])
+            cells[cell._id2]['energy'] = cell.energy(viewSettings['selectedEnergy'], weighted=True)
       # centres xy and is active
       for cell in self.__cells.values():
         cells[cell._id2]['xy'] = cell.xy()

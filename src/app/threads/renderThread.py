@@ -97,19 +97,25 @@ class RenderThread(Thread):
   def __saveDataToTmp(self):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashData + '.csv')
     innerEnergy, outerEnergy = self.__stepData['energy']
+    innerEnergyWeighted, outerEnergyWeighted = self.__stepData['energyWeighted']
     settings = self.__geoGridSettings.toJSON()
     info = self.__geoGridSettings.info()
     data = {
       'step': str(self.__stepData['step']),
       'innerEnergy': f"{innerEnergy:.0f}",
       'outerEnergy': f"{outerEnergy:.0f}",
+      'innerEnergyWeighted': f"{innerEnergyWeighted:.0f}",
+      'outerEnergyWeighted': f"{outerEnergyWeighted:.0f}",
     }
-    for key, value in self.__stepData['energyPerPotential'].items():
+    for (key, value), (keyWeighted, valueWeighted) in zip(self.__stepData['energyPerPotential'].items(), self.__stepData['energyWeightedPerPotential'].items()):
       innerEnergy, outerEnergy = value
+      innerEnergyWeighted, outerEnergyWeighted = valueWeighted
       data = {
         **data,
         'innerEnergy_' + key: f"{innerEnergy:.0f}",
         'outerEnergy_' + key: f"{outerEnergy:.0f}",
+        'innerEnergyWeighted_' + keyWeighted: f"{innerEnergyWeighted:.0f}",
+        'outerEnergyWeighted_' + keyWeighted: f"{outerEnergyWeighted:.0f}",
       }
     data = {
       **data,

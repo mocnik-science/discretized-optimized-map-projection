@@ -33,6 +33,7 @@ class GeoGridCell:
     self.y = radiusEarth * Common.deg2rad(self._centreOriginal.y)
     self._neighboursBearings2 = None
     self._energy = {}
+    self._energyWeight = {}
     self.__dggridCell = dggridCell
 
   def initNeighbours(self, neighbours):
@@ -74,13 +75,16 @@ class GeoGridCell:
   def setEnergy(self, kindOfPotential, energy):
     self._energy[kindOfPotential] = energy
 
-  def energy(self, kindOfPotential):
+  def setEnergyWeight(self, kindOfPotential, weight):
+    self._energyWeight[kindOfPotential] = weight
+
+  def energy(self, kindOfPotential, weighted=False):
     if kindOfPotential is None:
       return None
     elif kindOfPotential == 'ALL':
-      return sum(self._energy.values())
+      return sum(weight * energy for weight, energy in zip(self._energyWeight.values(), self._energy.values())) if weighted else sum(self._energy.values())
     elif kindOfPotential in self._energy:
-      return self._energy[kindOfPotential]
+      return self._energyWeight[kindOfPotential] * self._energy[kindOfPotential] if weighted else self._energy[kindOfPotential]
     raise Exception('The energy has not yet been computed')
 
   def addForce(self, force):
