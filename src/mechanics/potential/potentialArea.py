@@ -23,10 +23,10 @@ class PotentialArea(Potential):
     return self._quantity(cell, neighbouringCells, energy=True) * len(neighbouringCells)
   def forces(self, cell, neighbouringCells):
     q = self._quantity(cell, neighbouringCells, force=True)
-    return [Force(self.kind, neighbouringCell, cell, q) for neighbouringCell in neighbouringCells]
+    return [Force.toCell(self.kind, neighbouringCell, cell, q) for neighbouringCell in neighbouringCells]
   # def energyAndForces(self, cell, neighbouringCells):
   #   qEnergy, qForce = self._quantity(cell, neighbouringCells)
-  #   return qEnergy * len(neighbouringCells),  [Force(self.kind, neighbouringCell, cell, qForce) for neighbouringCell in neighbouringCells]
+  #   return qEnergy * len(neighbouringCells),  [Force.toCell(self.kind, neighbouringCell, cell, qForce) for neighbouringCell in neighbouringCells]
 
   def _value(self, cell, neighbouringCells):
     # cell area and partly area of the neighbouring cells

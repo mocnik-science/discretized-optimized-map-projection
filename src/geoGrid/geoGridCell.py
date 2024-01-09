@@ -88,16 +88,6 @@ class GeoGridCell:
     raise Exception('The energy has not yet been computed')
 
   def addForce(self, force):
-    # compute effect of the force
-    dX = force.x - force.xTo
-    dY = force.y - force.yTo
-    if dX == 0 and dY == 0:
-      raise Exception('The differences dX and dY should never both vanish')
-    l = Cartesian.length(dX, dY)
-    k = force.strength / l
-    # update the force
-    force.xForce += k * dX
-    force.yForce += k * dY
     # add the force
     self._forcesNext.append(force)
 
@@ -111,28 +101,25 @@ class GeoGridCell:
   def resetForcesNext(self):
     # reset next forces
     self._forcesNext = []
-    self._xForcesNext = None
-    self._yForcesNext = None
+    self._xForcesNext, self._yForcesNext = None, None
 
   def computeForcesNext(self):
     if self._xForcesNext is None or self._yForcesNext is None:
-      self._xForcesNext = 0
-      self._yForcesNext = 0
+      self._xForcesNext, self._yForcesNext = 0, 0
       for force in self._forcesNext:
-        self._xForcesNext += force.xForce
-        self._yForcesNext += force.yForce
+        self._xForcesNext += force.x
+        self._yForcesNext += force.y
     return self._xForcesNext, self._yForcesNext
 
   def forceVector(self, potential, k=30):
     if potential == 'ALL':
       xForcesNext, yForcesNext = self.computeForcesNext()
       return (self.x, self.y), (self.x + k * xForcesNext, self.y + k * yForcesNext)
-    xForce = 0
-    yForce = 0
+    xForce, yForce = 0, 0
     for force in self._forcesNext:
       if force.kind == potential:
-        xForce += force.xForce
-        yForce += force.yForce
+        xForce += force.x
+        yForce += force.y
     return (self.x, self.y), (self.x + k * xForce, self.y + k * yForce)
 
   def forceVectors(self, potential, k=30):
@@ -141,12 +128,12 @@ class GeoGridCell:
     for force in self._forcesNext:
       if potential == 'ALL' or force.kind == potential:
         if force.id2To is None:
-          collectedForces.append([self.x + k * force.xForce, self.y + k * force.yForce])
+          collectedForces.append([self.x + k * force.x, self.y + k * force.y])
         else:
           if force.id2To not in collectedForcesById:
             collectedForcesById[force.id2To] = [0, 0]
-          collectedForcesById[force.id2To][0] += force.xForce
-          collectedForcesById[force.id2To][1] += force.yForce
+          collectedForcesById[force.id2To][0] += force.x
+          collectedForcesById[force.id2To][1] += force.y
     return (self.x, self.y), collectedForces + [(self.x + k * force[0], self.y + k * force[1]) for force in collectedForcesById.values()]
 
   # def neighboursWithEnclosingBearing(self, cells, point):
