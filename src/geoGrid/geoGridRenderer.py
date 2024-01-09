@@ -96,13 +96,13 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
-    if viewSettings['drawOriginalPolygons'] and geoGridSettings.initialCRS is None:
+    if viewSettings['drawOriginalPolygons'] and geoGridSettings.hasNoInitialCRS():
       for cell in cells.values():
         GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100))
 
   @staticmethod
   def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
-    if viewSettings['drawNeighbours'] and geoGridSettings.initialCRS is None:
+    if viewSettings['drawNeighbours'] and geoGridSettings.hasNoInitialCRS():
       for cell in cells.values():
         if 'neighboursXY' in cell:
           for xy in cell['neighboursXY']:
@@ -110,7 +110,7 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
-    if viewSettings['selectedPotential'] is not None and geoGridSettings.initialCRS is None:
+    if viewSettings['selectedPotential'] is not None and geoGridSettings.hasNoInitialCRS():
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
           p1, p2 = cell['forceVector']
@@ -127,7 +127,7 @@ class GeoGridRenderer:
     if viewSettings['drawLabels']:
       font = ImageFont.truetype('Helvetica', size=14)
     for id2, cell in cells.items():
-      if geoGridSettings.initialCRS is not None and not cell['isActive']:
+      if geoGridSettings.hasInitialCRS() and not cell['isActive']:
         continue
       radius = r
       if viewSettings['selectedEnergy'] is not None and cell['isActive']:

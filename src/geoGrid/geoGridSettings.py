@@ -125,6 +125,11 @@ class GeoGridSettings:
     self._updated()
     self._potentialsWeights = dict(self._potentialsWeights, **weights)
 
+  def hasInitialCRS(self):
+    return self.initialCRS is not None and self.initialCRS != ''
+  def hasNoInitialCRS(self):
+    return not self.hasInitialCRS()
+
   def weightedPotentials(self):
     return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]
 

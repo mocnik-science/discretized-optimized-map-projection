@@ -212,19 +212,19 @@ class WindowMain(wx.Frame):
     # update functions
     def guiPlay(isPlaying):
       # menu
-      startMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.initialCRS is None)
-      startStopMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.initialCRS is None)
-      stopMenuItem.Enable(enable=isPlaying and self.__geoGridSettings.initialCRS is None)
-      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.initialCRS is None)
+      startMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
+      startStopMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
+      stopMenuItem.Enable(enable=isPlaying and self.__geoGridSettings.hasNoInitialCRS())
+      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
       for resetMenuItem in resetMenuItems:
         resetMenuItem.Enable(enable=not isPlaying)
       for menuItem in menuItemsNotForOnlyShowForCRS:
-        menuItem.Enable(enable=self.__geoGridSettings.initialCRS is None)
+        menuItem.Enable(enable=self.__geoGridSettings.hasNoInitialCRS())
       # toolbar
       toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlayStop)
       # toolBar.SetToolNormalBitmap(1, iconPause if isPlaying else iconPlay)
-      toolBar.EnableTool(0, self.__geoGridSettings.initialCRS is None)
-      toolBar.EnableTool(2, not isPlaying and self.__geoGridSettings.initialCRS is None)
+      toolBar.EnableTool(0, self.__geoGridSettings.hasNoInitialCRS())
+      toolBar.EnableTool(2, not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
       toolBar.EnableTool(3, not isPlaying)
       toolBar.Realize()
       toolBar.Refresh()
