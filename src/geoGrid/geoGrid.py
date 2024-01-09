@@ -314,6 +314,3 @@ class GeoGrid:
         'resolution': self.__settings.resolution,
         'step': self.__step,
       }
-
-  def render(self, viewSettings={}, **kwargs):
-    return GeoGridRenderer.render(self.serializedData(viewSettings), projection=self.projection(), **kwargs)
