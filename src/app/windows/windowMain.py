@@ -23,7 +23,6 @@ class WindowMain(wx.Frame):
     self.__geoGridSettings = GeoGridSettings()
     if 'geoGridSettings' in self.__appSettings and self.__appSettings['geoGridSettings'] is not None:
       self.__geoGridSettings.updateFromJSON(self.__appSettings['geoGridSettings'])
-    # self.__simulationSettings = {}
     self.__viewSettings = {}
     self.__windowProj = None
     self.__windowSimulationSettings = None

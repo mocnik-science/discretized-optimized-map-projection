@@ -316,5 +316,4 @@ class GeoGrid:
       }
 
   def render(self, viewSettings={}, **kwargs):
-    serializedData = self.serializedData(viewSettings)
-    return GeoGridRenderer.render(serializedData, projection=self.projection(), **kwargs)
+    return GeoGridRenderer.render(self.serializedData(viewSettings), projection=self.projection(), **kwargs)
