@@ -17,6 +17,7 @@ class Potential:
 
   def emptyCacheAll(self):
     self.emptyCacheDampingFactor()
+    self.emptyCacheForStep()
     self.__geoBearingsCache = {}
     self.__geoDistanceCache = {}
 

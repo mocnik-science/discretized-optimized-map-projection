@@ -30,6 +30,9 @@ class GeoGrid:
     self.__ballTree = None
     self.__ballTreeCellsId1s = None
     self.__projection = None
+    # reset potentials
+    for potential in self.__settings.potentials:
+      potential.emptyCacheAll()
     # load data
     filename = 'cells-{resolution}.pickle.gzip'.format(resolution=self.__settings.resolution)
     if os.path.exists(filename):
