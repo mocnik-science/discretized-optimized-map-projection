@@ -135,7 +135,7 @@ class WindowMain(wx.Frame):
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings))
     menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'All forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True))
     for potential in self.__geoGridSettings.potentials:
-      menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, f"Force for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings))
+      menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, f"Force for {potential.kind.lower().replace('_', ' ')}", self.__viewSettings, key, potential.kind, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: visualization method
     key = 'selectedVisualizationMethod'
@@ -147,7 +147,7 @@ class WindowMain(wx.Frame):
     addRadioItem(viewMenu, 'Hide energies', self.__viewSettings, key, None, self.updateViewSettings, default=True)
     addRadioItem(viewMenu, 'All energies', self.__viewSettings, key, 'ALL', self.updateViewSettings)
     for potential in self.__geoGridSettings.potentials:
-      addRadioItem(viewMenu, f"Energy for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+      addRadioItem(viewMenu, f"Energy for {potential.kind.lower().replace('_', ' ')}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw neighbours
     key = 'drawNeighbours'
@@ -164,7 +164,7 @@ class WindowMain(wx.Frame):
     addRadioItem(viewMenu, 'Hide cell centres', self.__viewSettings, key, None, self.updateViewSettings)
     addRadioItem(viewMenu, 'Show active state', self.__viewSettings, key, 'ACTIVE', self.updateViewSettings, default=True)
     for potential in self.__geoGridSettings.potentials:
-      addRadioItem(viewMenu, f"Show weights for {potential.kind.lower()}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
+      addRadioItem(viewMenu, f"Show weights for {potential.kind.lower().replace('_', ' ')}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
     # view menu: draw original polygons
     key = 'drawOriginalPolygons'
