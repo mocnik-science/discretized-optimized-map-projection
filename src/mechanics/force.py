@@ -32,11 +32,13 @@ class Force:
   def __initToDestination(self, cell, dX, dY):
     # compute effect of the force
     if dX == 0 and dY == 0:
-      raise Exception('The differences dX and dY should never both vanish')
-    k = self.strength / Cartesian.length(dX, dY)
-    # compute the force
-    self.x = k * dX
-    self.y = k * dY
+      self.x = 0
+      self.y = 0
+    else:
+      k = self.strength / Cartesian.length(dX, dY)
+      # compute the force
+      self.x = k * dX
+      self.y = k * dY
 
   def scaleStrength(self, factor):
     self.x *= factor
