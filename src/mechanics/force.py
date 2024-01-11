@@ -9,22 +9,22 @@ class Force:
     self.strength = strength
 
   # force in the direction of cellTo -> cell
-  @classmethod
-  def toCell(cls, kind, cell, cellTo, strength):
+  @staticmethod
+  def toCell(kind, cell, cellTo, strength):
     force = Force(kind, cell, cellTo, strength)
     force.__initToDestination(cell, cell.x - cellTo.x, cell.y - cellTo.y)
     return force
 
   # force in the direction of destination -> cell
-  @classmethod
-  def toDestination(cls, kind, cell, destination, strength):
+  @staticmethod
+  def toDestination(kind, cell, destination, strength):
     force = Force(kind, cell, None, strength)
     force.__initToDestination(cell, cell.x - destination.x, cell.y - destination.y)
     return force
 
   # force on cell, in the direction of delta
-  @classmethod
-  def byDelta(cls, kind, cell, delta, strength):
+  @staticmethod
+  def byDelta(kind, cell, delta, strength):
     force = Force(kind, cell, None, strength)
     force.__initToDestination(cell, delta.x, delta.y)
     return force

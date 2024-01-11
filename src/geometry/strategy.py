@@ -17,8 +17,8 @@ class CARDINAL_DIRECTION:
   ALL = ['N', 'E', 'S', 'W', 'NE', 'NW', 'SE', 'SW']
 
 class CardinalDirections:
-  @classmethod
-  def toCorner(cls, direction, epsilon=1):
+  @staticmethod
+  def toCorner(direction, epsilon=1):
     if direction == CARDINAL_DIRECTION.N:
       return [0, 90 - epsilon]
     if direction == CARDINAL_DIRECTION.E:
