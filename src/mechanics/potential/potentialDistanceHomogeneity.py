@@ -1,4 +1,5 @@
 import math
+import sys
 
 from src.geometry.cartesian import Cartesian, Point
 from src.geometry.common import Common
@@ -66,8 +67,14 @@ class PotentialDistanceHomogeneity(Potential):
         self.__dataForCellCache[key] = None
       else:
         # determine the weighted geometric average of the scales
-        scaleX = math.exp(sinScales**(1 / sinWeights))
-        scaleY = math.exp(cosScales**(1 / cosWeights))
+        try:
+          scaleX = math.exp(sinScales**(1 / sinWeights))
+        except OverflowError:
+          scaleX = math.sqrt(sys.float_info.max)
+        try:
+          scaleY = math.exp(cosScales**(1 / cosWeights))
+        except OverflowError:
+          scaleY = math.sqrt(sys.float_info.max)
         # geometric average scale of X and Y direction
         scale = math.sqrt(scaleX * scaleY)
         # relative scale
