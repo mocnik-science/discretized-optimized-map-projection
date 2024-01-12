@@ -30,6 +30,8 @@ class WindowMain(wx.Frame):
     wx.Frame.__init__(self, None, wx.ID_ANY, title=APP_NAME, size=(900, 600))
 
     ## menu bar
+    # view settings
+    viewSettingsInitialized = len(viewSettings) > 0
     # functions
     self.__menuDict = {}
     def addItem(menu, label, data, callback):
@@ -42,8 +44,8 @@ class WindowMain(wx.Frame):
       newId = wx.NewId()
       menuItem = menu.Append(newId, label, label, wx.ITEM_CHECK)
       usesViewSettings = object is self.__viewSettings
-      default = (usesViewSettings and object[key]) or (not usesViewSettings and default)
-      if default:
+      default = (usesViewSettings and not viewSettingsInitialized and (key not in object or default)) or (not usesViewSettings and (key not in object or default))
+      if default or (key in object and object[key]):
         menuItem.Check(True)
       def cb(event):
         objectPrevious = {**object}
@@ -52,7 +54,7 @@ class WindowMain(wx.Frame):
           self.__viewSettings.sync()
         callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
-      if key not in object:
+      if default:
         object[key] = default
       return menuItem
     def addRadioItem(menu, label, object, key, data, callback, default=False):
@@ -60,8 +62,8 @@ class WindowMain(wx.Frame):
       self.__menuDict[newId] = data
       menuItem = menu.Append(newId, label, label, wx.ITEM_RADIO)
       usesViewSettings = object is self.__viewSettings
-      default = (usesViewSettings and object[key] == data) or (not usesViewSettings and default)
-      if default:
+      default = (usesViewSettings and not viewSettingsInitialized and (key not in object or default)) or (not usesViewSettings and (key not in object or default))
+      if default or (key in object and object[key] == data):
         menuItem.Check(True)
       def cb(event):
         objectPrevious = {**object}
@@ -70,7 +72,7 @@ class WindowMain(wx.Frame):
           self.__viewSettings.sync()
         callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
-      if key not in object or default:
+      if default:
         object[key] = data
       return menuItem
 
