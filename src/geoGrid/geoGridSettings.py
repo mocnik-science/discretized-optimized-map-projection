@@ -14,7 +14,7 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialCRS=None, initialScale=1, resolution=3, dampingFactor=.98, stopThreshold=.001, limitLatForEnergy=90):
+  def __init__(self, initialCRS=None, initialScale=1, resolution=3, dampingFactor=.96, stopThreshold=.001, limitLatForEnergy=90):
     self.initialCRS = initialCRS
     self.initialScale = initialScale
     self.resolution = resolution
