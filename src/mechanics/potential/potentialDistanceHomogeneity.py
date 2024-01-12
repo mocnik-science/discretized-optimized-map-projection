@@ -9,7 +9,7 @@ from src.mechanics.potential.potential import Potential
 
 class PotentialDistanceHomogeneity(Potential):
   kind = 'DISTANCE_HOMOGENEITY'
-  defaultWeight = GeoGridWeight(active=True, weightLand=.7, weightOceanActive=True, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
+  defaultWeight = GeoGridWeight(active=True, weightLand=.2, weightOceanActive=True, weightOcean=0.05, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
   __dataForCellCache = {}
 
@@ -32,12 +32,9 @@ class PotentialDistanceHomogeneity(Potential):
       avgDiff = sum([Common.normalizeAngle(bearings[i] - bearingGeo[i], intervalStart=-Common._pi) for i in range(0, lenNeighbours)]) / lenNeighbours
       # compute scales
       rs = []
-      sins = []
-      coss = []
-      sinScales = 1
-      sinWeights = 0
-      cosScales = 1
-      cosWeights = 0
+      sins, coss = [], []
+      sinScales, cosScales = 1, 1
+      sinWeights, cosWeights = 0, 0
       for i, neighbouringCell in enumerate(neighbouringCells):
         r = Cartesian.distance(neighbouringCell, cell) * self.calibrationFactor
         if r <= self._settings._typicalDistance * 1e-3:
@@ -46,11 +43,9 @@ class PotentialDistanceHomogeneity(Potential):
           coss.append(None)
           continue
         rGeo = self._geoDistanceForCells(neighbouringCell, cell)
-        sin = math.sin(bearings[i])
-        cos = math.cos(bearings[i])
-        sinGeo = math.sin(bearingGeo[i] + avgDiff)
-        cosGeo = math.cos(bearingGeo[i] + avgDiff)
-        absSinCos = (abs(sin) + abs(cos))
+        sin, cos = math.sin(bearings[i]), math.cos(bearings[i])
+        sinGeo, cosGeo = math.sin(bearingGeo[i] + avgDiff), math.cos(bearingGeo[i] + avgDiff)
+        absSinCos = abs(sin) + abs(cos)
         if abs(sin) >= 1e-1 and abs(sinGeo) >= 1e-1 and sin * sinGeo > 0:
           sinWeight = abs(sin) / absSinCos
           sinWeights += sinWeight
@@ -77,11 +72,8 @@ class PotentialDistanceHomogeneity(Potential):
           scaleY = math.sqrt(sys.float_info.max)
         # geometric average scale of X and Y direction
         scale = math.sqrt(scaleX * scaleY)
-        # relative scale
-        scaleDeltaX = scaleX / scale
-        scaleDeltaY = scaleY / scale
         # force vectors
-        forceVectors = [Point((1 - scaleDeltaX) * r * sin, (1 - scaleDeltaY) * r * cos) if r is not None else None for r, sin, cos in zip(rs, sins, coss)]
+        forceVectors = [Point((scale - scaleX) * r * sin, (scale - scaleY) * r * cos) if r is not None else None for r, sin, cos in zip(rs, sins, coss)]
         # value
         value = max(abs(scaleX / scaleY), abs(scaleY / scaleX)) - 1
         # result
