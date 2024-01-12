@@ -13,7 +13,7 @@ from src.geoGrid.geoGridSettings import GeoGridSettings
 from src.geometry.strategy import strategyForScale
 
 class WindowMain(wx.Frame):
-  def __init__(self, appSettings):
+  def __init__(self, appSettings, viewSettings):
     self.__appSettings = appSettings
     self.__workerThread = None
     self.__renderThread = None
@@ -23,7 +23,7 @@ class WindowMain(wx.Frame):
     self.__geoGridSettings = GeoGridSettings()
     if 'geoGridSettings' in self.__appSettings and self.__appSettings['geoGridSettings'] is not None:
       self.__geoGridSettings.updateFromJSON(self.__appSettings['geoGridSettings'])
-    self.__viewSettings = {}
+    self.__viewSettings = viewSettings
     self.__windowProj = None
     self.__windowSimulationSettings = None
     self.__windowAbout = None
@@ -41,11 +41,15 @@ class WindowMain(wx.Frame):
     def addCheckItem(menu, label, object, key, callback, default=False):
       newId = wx.NewId()
       menuItem = menu.Append(newId, label, label, wx.ITEM_CHECK)
+      usesViewSettings = object is self.__viewSettings
+      default = (usesViewSettings and object[key]) or (not usesViewSettings and default)
       if default:
         menuItem.Check(True)
       def cb(event):
         objectPrevious = {**object}
         object[key] = menuItem.IsChecked()
+        if usesViewSettings:
+          self.__viewSettings.sync()
         callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
       if key not in object:
@@ -55,11 +59,15 @@ class WindowMain(wx.Frame):
       newId = wx.NewId()
       self.__menuDict[newId] = data
       menuItem = menu.Append(newId, label, label, wx.ITEM_RADIO)
+      usesViewSettings = object is self.__viewSettings
+      default = (usesViewSettings and object[key] == data) or (not usesViewSettings and default)
       if default:
         menuItem.Check(True)
       def cb(event):
         objectPrevious = {**object}
         object[key] = self.__menuDict[event.Id]
+        if usesViewSettings:
+          self.__viewSettings.sync()
         callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
       if key not in object or default:

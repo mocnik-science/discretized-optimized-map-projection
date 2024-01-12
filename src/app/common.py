@@ -6,5 +6,7 @@ APP_URL = 'https://github.com/mocnik-science/discretized-optimized-map-projectio
 APP_FILE_FORMAT = 'Discretized Optimized Map Projection file'
 APP_FILES_PATH_NON_EXPANDED = '~/.domp/'
 APP_FILES_PATH = os.path.expanduser(APP_FILES_PATH_NON_EXPANDED)
+APP_SETTINGS_PATH = os.path.join(APP_FILES_PATH, 'settings')
+APP_VIEW_SETTINGS_PATH = os.path.join(APP_FILES_PATH, 'viewSettings')
 APP_CAPTURE_PATH_NON_EXPANDED = os.path.join(APP_FILES_PATH_NON_EXPANDED, 'capture')
 APP_CAPTURE_PATH = os.path.expanduser(APP_CAPTURE_PATH_NON_EXPANDED)

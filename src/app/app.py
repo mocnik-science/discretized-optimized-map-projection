@@ -3,7 +3,7 @@ import shelve
 import wx
 import wx.adv
 
-from src.app.common import APP_FILES_PATH
+from src.app.common import APP_FILES_PATH, APP_SETTINGS_PATH, APP_VIEW_SETTINGS_PATH
 from src.app.windows.windowMain import WindowMain
 
 class TaskBarIcon(wx.adv.TaskBarIcon):
@@ -12,18 +12,20 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
     self.SetIcon(wx.Icon('assets/appIcon.png', wx.BITMAP_TYPE_PNG))
 
 class App(wx.App):
-  def __init__(self, *args, appSettings=None, **kwargs):
+  def __init__(self, *args, appSettings=None, viewSettings=None, **kwargs):
     self.__appSettings = appSettings
+    self.__viewSettings = viewSettings
     super().__init__(*args, **kwargs)
 
   def OnInit(self):
     self.tskic = TaskBarIcon()
-    windowMain = WindowMain(self.__appSettings)
+    windowMain = WindowMain(self.__appSettings, self.__viewSettings)
     windowMain.Show()
     return True
 
 def run():
   os.makedirs(APP_FILES_PATH, exist_ok=True)
-  with shelve.open(APP_FILES_PATH + 'settings') as appSettings:
-    app = App(redirect=False, appSettings=appSettings)
-    app.MainLoop()
+  with shelve.open(APP_SETTINGS_PATH) as appSettings:
+    with shelve.open(APP_VIEW_SETTINGS_PATH) as viewSettings:
+      app = App(redirect=False, appSettings=appSettings, viewSettings=viewSettings)
+      app.MainLoop()
