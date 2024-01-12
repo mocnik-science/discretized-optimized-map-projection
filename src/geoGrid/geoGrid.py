@@ -105,10 +105,10 @@ class GeoGrid:
     polesById1 = {}
     for cell in cells.values():
       if cell._id1 == cell._id2 and abs(cell._centreOriginal.x) < 1e-10 and (abs(cell._centreOriginal.y - 90) < 1e-10 or abs(cell._centreOriginal.y + 90) < 1e-10):
-        polesById1[cell._id1] = cell
+        polesById1[cell._id1] = cell, cell._centreOriginal.y > 0
     # identify neighbours in cartesian space
     for id2 in cells:
-      cells[id2].initNeighbours([polesById1[n] if n in polesById1 else minBy(cellsById1[n], by=lambda cellNeighbour: Cartesian.distance(cells[id2]._centreOriginal, cellNeighbour._centreOriginal)) for n in cells[id2]._neighbours])
+      cells[id2].initNeighbours([polesById1[n][0] if n in polesById1 else minBy(cellsById1[n], by=lambda cellNeighbour: Cartesian.distance(cells[id2]._centreOriginal, cellNeighbour._centreOriginal)) for n in cells[id2]._neighbours])
     # identify cells to keep
     bbox = shapely.geometry.box(-180, -90 - 1e-10, 180, 90 + 1e-10)
     shapely.prepare(bbox)
@@ -125,6 +125,9 @@ class GeoGrid:
     removeId2s = [id2 for id2 in cells if id2 not in keepId2s]
     for id2 in removeId2s:
       del cells[id2]
+    # init poles
+    for cell, isNorth in polesById1.values():
+      cell.initPole(isNorth, cells)
     # init additional information
     for cell in cells.values():
       cell.initAdditionalInformation()
@@ -230,6 +233,22 @@ class GeoGrid:
     self.calibrate()
     # compute next forces and energies
     self.computeForcesAndEnergies()
+
+  def findDeficiencies(self):
+    deficiencies, almostDeficiencies = [], []
+    with timer(f"find deficiencies", step=self.__step):
+      for cell in self.__cells.values():
+        if not cell._isActive:
+          continue
+        for i, j in cell.getNeighbourTriangles():
+          area = Cartesian.orientedArea(cell, self.__cells[i], self.__cells[j])
+          # deficiency: orientation swapped or area vanishes
+          if area <= 0:
+            deficiencies.append((cell, self.__cells[i], self.__cells[j]))
+          # almost a deficiency: altitude of the triangle is shorter than 5 per cent of the typical distance
+          elif area / Cartesian.distance(self.__cells[i], self.__cells[j]) <= self.__settings._almostDeficiencyPercentageOfTypicalDistance * self.__settings._typicalDistance:
+            almostDeficiencies.append((cell, self.__cells[i], self.__cells[j]))
+    return deficiencies, almostDeficiencies
 
   def computeForcesAndEnergies(self):
     # reset forces

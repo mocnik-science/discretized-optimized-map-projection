@@ -70,14 +70,16 @@ class WorkerThread(Thread):
             self.__geoGrid.computeForcesAndEnergies()
           serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
           # compute energy
-          energy = self.__geoGrid.energy(weighted=False)
-          energyWeighted = self.__geoGrid.energy(weighted=True)
+          energy, energyWeighted = self.__geoGrid.energy(weighted=False), self.__geoGrid.energy(weighted=True)
           energyPerPotential = {}
           for potential in self.__geoGridSettings.potentials:
             energyPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind, weighted=False)
           energyWeightedPerPotential = {}
           for potential in self.__geoGridSettings.potentials:
             energyWeightedPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind, weighted=True)
+          # compute deficiencies
+          deficiencies, almostDeficiencies = self.__geoGrid.findDeficiencies()
+          countDeficiencies, countAlmostDeficiencies = len(deficiencies), len(almostDeficiencies)
           # check whether the threshold has been reached
           stopThresholdReached = None
           if self.__shallRunStop:
@@ -100,6 +102,8 @@ class WorkerThread(Thread):
           'energyWeighted': energyWeighted,
           'energyPerPotential': energyPerPotential,
           'energyWeightedPerPotential': energyWeightedPerPotential,
+          'countDeficiencies': countDeficiencies,
+          'countAlmostDeficiencies': countAlmostDeficiencies,
         })
         # cleanup
         if self.__viewSettings['captureVideo'] and not self.__enforceSendingStepData:

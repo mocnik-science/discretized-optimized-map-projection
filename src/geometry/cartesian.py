@@ -37,3 +37,16 @@ class Cartesian:
   @staticmethod
   def bearing(start, end): # in radiant, positively oriented, north is 0
     return (math.atan2(end.y - start.y, end.x - start.x) + 1.5 * Common._pi) % Common._2pi
+
+  @staticmethod
+  def orientedArea(a, b, c):
+    return (a.x * b.y - b.x * a.y + b.x * c.y - c.x * b.y + c.x * a.y - a.x * c.y) / 2
+
+  @staticmethod
+  def orientation(a, b, c):
+    area = Cartesian.orientedArea(a, b, c)
+    return area > 0 if area != 0 else None
+
+  @staticmethod
+  def orientedAltitude(a, b, c):
+    return Cartesian.orientedArea(a, b, c) / Cartesian.distance(b, c)

@@ -102,6 +102,8 @@ class RenderThread(Thread):
     info = self.__geoGridSettings.info()
     data = {
       'step': str(self.__stepData['step']),
+      'countDeficiencies': str(self.__stepData['countDeficiencies']),
+      'countAlmostDeficiencies': str(self.__stepData['countAlmostDeficiencies']),
       'innerEnergy': f"{innerEnergy:.0f}",
       'outerEnergy': f"{outerEnergy:.0f}",
       'innerEnergyWeighted': f"{innerEnergyWeighted:.0f}",

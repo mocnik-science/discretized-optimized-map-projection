@@ -238,8 +238,8 @@ class WindowMain(wx.Frame):
     self._guiPlay = guiPlay
 
     ## status bar
-    self._statusBar = self.CreateStatusBar(4)
-    self._statusBar.SetStatusWidths([250, 200, -1, 180])
+    self._statusBar = self.CreateStatusBar(5)
+    self._statusBar.SetStatusWidths([250, 200, -1, 120, 180])
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
@@ -323,7 +323,12 @@ class WindowMain(wx.Frame):
   def setEnergy(self, energy):
     try:
       innerEnergy, outerEnergy = energy
-      self._statusBar.SetStatusText(f"energy = {innerEnergy:.2e} ({outerEnergy:.2e})", 3)
+      self._statusBar.SetStatusText(f"energy = {innerEnergy:.2e} ({outerEnergy:.2e})", 4)
+    except:
+      pass
+  def setDeficiencies(self, countDeficiencies, countAlmostDeficiencies):
+    try:
+      self._statusBar.SetStatusText(f"deficiencies = {countDeficiencies:d} ({countAlmostDeficiencies:d})", 3)
     except:
       pass
 
@@ -374,6 +379,7 @@ class WindowMain(wx.Frame):
       self.__renderThread.updateSerializedDataForProjection(event.serializedDataForProjection)
     if event.serializedData is not None:
       self.__renderThread.render(event.serializedData, stepData=event.stepData)
+      self.setDeficiencies(event.stepData['countDeficiencies'], event.stepData['countAlmostDeficiencies'])
     if event.status is not None:
       self.setStatus(event.status)
     if event.calibration is not None:

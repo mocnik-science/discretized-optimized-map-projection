@@ -1,7 +1,7 @@
 import shapely
 
 from src.geometry.common import Common
-from src.geometry.cartesian import Cartesian, Point
+from src.geometry.cartesian import Point
 from src.geometry.geo import Geo, radiusEarth
 from src.geometry.naturalEarth import NaturalEarth
 
@@ -26,7 +26,7 @@ class GeoGridCell:
     self._selfAndAllNeighboursAreActive = False
     self._isHexagon = dggridCell.isHexagon()
     self._neighbours = dggridCell.neighbours
-    self._neighboursOriginal = dggridCell.neighbours
+    self._noTriangle = None
     self._centreOriginal = translatePoint(dggridCell.centre, dLon)
     self._polygonOriginal = translatePolygon(dggridCell.polygon, dLon)
     self.x = radiusEarth * Common.deg2rad(self._centreOriginal.x)
@@ -44,15 +44,19 @@ class GeoGridCell:
     self._neighbours = [neighbour._id2 for neighbour in neighbours]
     neighboursBearings = [Geo.bearing(self._centreOriginal, neighbour._centreOriginal) for neighbour in neighbours]
     neighboursBearings2 = []
-    i = 0
-    for b0, b1 in zip(neighboursBearings, neighboursBearings[1:] + [neighboursBearings[0]]):
+    for i, (b0, b1) in enumerate(zip(neighboursBearings, neighboursBearings[1:] + [neighboursBearings[0]])):
       if b0 >= b1:
         neighboursBearings2.append((i, b0, b1))
       else:
         neighboursBearings2.append((i, b0, 0))
         neighboursBearings2.append((i, Common._2pi, b1))
-      i += 1
     self._neighboursBearings2 = neighboursBearings2
+
+  def initPole(self, isNorth, cells):
+    for k, (i, j) in enumerate(self.getNeighbourTriangles()):
+      if (1 if isNorth else -1) * (cells[j]._centreOriginal.x - cells[i]._centreOriginal.x) < 0:
+        self._noTriangle = k
+        break
 
   def initAdditionalInformation(self):
     self._distanceToLand = NaturalEarth.distanceToLand(self.__dggridCell.centre)
@@ -135,6 +139,9 @@ class GeoGridCell:
           collectedForcesById[force.id2To][0] += force.x
           collectedForcesById[force.id2To][1] += force.y
     return (self.x, self.y), collectedForces + [(self.x + k * force[0], self.y + k * force[1]) for force in collectedForcesById.values()]
+
+  def getNeighbourTriangles(self):
+    return [(self._neighbours[i], self._neighbours[(i + 1) % len(self._neighbours)]) for i in range(len(self._neighbours)) if not i == self._noTriangle]
 
   # def neighboursWithEnclosingBearing(self, cells, point):
   #   return GeoGridCell.neighboursWithEnclosingBearingStatic(self.getNeighboursWithEnclosingBearingStaticData())
