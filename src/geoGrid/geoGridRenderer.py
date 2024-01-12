@@ -21,7 +21,7 @@ class GeoGridRenderer:
   }
 
   @staticmethod
-  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSide=2000, border=10, r=3, boundsExtend=1.3, projection=None, save=False, stepData=None):
+  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSide=2000, border=10, transparency=False, r=3, boundsExtend=1.3, projection=None, save=False, stepData=None):
     # handle serialized data
     cells = serializedData['cells']
     path = serializedData['path']
@@ -66,7 +66,7 @@ class GeoGridRenderer:
         'heightOverall': heightOverall,
       }
       # create image
-      im = Image.new('RGB', (widthOverall, heightOverall), (255, 255, 255))
+      im = Image.new('RGBA', (widthOverall, heightOverall)) if transparency else Image.new('RGB', (widthOverall, heightOverall), (255, 255, 255))
       draw = ImageDraw.Draw(im)
       # render
       argsForRendering = [[draw, projectToImage], lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData]
@@ -184,4 +184,4 @@ class GeoGridRenderer:
     pathAndFilename = os.path.join(path, f"frame-{step:08d}.png")
     os.makedirs(path, exist_ok=True)
     if not os.path.exists(pathAndFilename):
-      im.save(pathAndFilename, optimize=False, compress_level=1)
+      im.save(pathAndFilename, optimize=True)

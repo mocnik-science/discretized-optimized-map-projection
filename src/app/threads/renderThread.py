@@ -155,8 +155,8 @@ class RenderThread(Thread):
     if dialog.ShowModal() == wx.ID_OK:
       if os.path.exists(dialog.GetPath()):
         os.unlink(dialog.GetPath())
-      im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080), stepData=self.__stepData)
-      im.save(dialog.GetPath(), optimize=False, compress_level=1)
+      im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080), transparency=True, stepData=self.__stepData)
+      im.save(dialog.GetPath(), optimize=True)
 
   def renderVideo(self, parentWindow):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashVideo)
