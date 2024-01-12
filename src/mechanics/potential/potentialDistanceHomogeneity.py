@@ -37,7 +37,7 @@ class PotentialDistanceHomogeneity(Potential):
       sinWeights, cosWeights = 0, 0
       for i, neighbouringCell in enumerate(neighbouringCells):
         r = Cartesian.distance(neighbouringCell, cell) * self.calibrationFactor
-        if r <= self._settings._typicalDistance * 1e-3:
+        if r <= 1e-3 * self._settings._typicalDistance:
           rs.append(None)
           sins.append(None)
           coss.append(None)
