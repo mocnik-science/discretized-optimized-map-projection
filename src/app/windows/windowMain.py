@@ -328,7 +328,7 @@ class WindowMain(wx.Frame):
       pass
   def setDeficiencies(self, countDeficiencies, countAlmostDeficiencies):
     try:
-      self._statusBar.SetStatusText(f"deficiencies = {countDeficiencies:d} ({countAlmostDeficiencies:d})", 3)
+      self._statusBar.SetStatusText(f"deficiencies = {countDeficiencies:d} ({countDeficiencies + countAlmostDeficiencies:d})", 3)
     except:
       pass
 
@@ -379,6 +379,7 @@ class WindowMain(wx.Frame):
       self.__renderThread.updateSerializedDataForProjection(event.serializedDataForProjection)
     if event.serializedData is not None:
       self.__renderThread.render(event.serializedData, stepData=event.stepData)
+    if event.stepData is not None:
       self.setDeficiencies(event.stepData['countDeficiencies'], event.stepData['countAlmostDeficiencies'])
     if event.status is not None:
       self.setStatus(event.status)
