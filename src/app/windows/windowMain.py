@@ -44,8 +44,8 @@ class WindowMain(wx.Frame):
       newId = wx.NewId()
       menuItem = menu.Append(newId, label, label, wx.ITEM_CHECK)
       usesViewSettings = object is self.__viewSettings
-      default = (usesViewSettings and not viewSettingsInitialized and (key not in object or default)) or (not usesViewSettings and (key not in object or default))
-      if default or (key in object and object[key]):
+      value = (usesViewSettings and not viewSettingsInitialized and default) or (not usesViewSettings and default) or (key in object and object[key])
+      if value:
         menuItem.Check(True)
       def cb(event):
         objectPrevious = {**object}
@@ -54,16 +54,15 @@ class WindowMain(wx.Frame):
           self.__viewSettings.sync()
         callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
-      if default:
-        object[key] = default
+      object[key] = value
       return menuItem
     def addRadioItem(menu, label, object, key, data, callback, default=False):
       newId = wx.NewId()
       self.__menuDict[newId] = data
       menuItem = menu.Append(newId, label, label, wx.ITEM_RADIO)
       usesViewSettings = object is self.__viewSettings
-      default = (usesViewSettings and not viewSettingsInitialized and (key not in object or default)) or (not usesViewSettings and (key not in object or default))
-      if default or (key in object and object[key] == data):
+      value = (usesViewSettings and not viewSettingsInitialized and (key not in object or default)) or (not usesViewSettings and (key not in object or default)) or (key in object and object[key] == data)
+      if value:
         menuItem.Check(True)
       def cb(event):
         objectPrevious = {**object}
@@ -72,7 +71,7 @@ class WindowMain(wx.Frame):
           self.__viewSettings.sync()
         callback(objectPrevious)
       self.Bind(wx.EVT_MENU, cb, menuItem)
-      if default:
+      if value:
         object[key] = data
       return menuItem
 
