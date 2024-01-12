@@ -10,7 +10,7 @@ from sklearn.neighbors import BallTree
 from src.common.functions import minBy
 from src.common.timer import timer
 from src.geometry.common import Common
-from src.geometry.cartesian import Cartesian
+from src.geometry.cartesian import Cartesian, Point
 from src.geometry.dggrid import DGGRID
 from src.geoGrid.geoGridCell import GeoGridCell
 from src.geoGrid.geoGridProjection import GeoGridProjection
@@ -229,6 +229,8 @@ class GeoGrid:
     # reset potentials
     for potential in self.__settings.potentials:
       potential.emptyCacheForStep()
+    # find deficiencies and correct them
+    # self.correctDeficiencies()
     # calibrate
     self.calibrate()
     # compute next forces and energies
@@ -249,6 +251,29 @@ class GeoGrid:
           elif area / Cartesian.distance(self.__cells[i], self.__cells[j]) <= self.__settings._almostDeficiencyPercentageOfTypicalDistance * self.__settings._typicalDistance:
             almostDeficiencies.append((cell, self.__cells[i], self.__cells[j]))
     return deficiencies, almostDeficiencies
+
+  def correctDeficiencies(self):
+    deficiencies, almostDeficiencies = self.findDeficiencies()
+    with timer(f"correct deficiencies", step=self.__step):
+      def _correctDeficiencies(ds, almostAltitude):
+        coordinatesForCell = {}
+        for cell0, cell1, cell2 in ds:
+          x, y = cell0.xy()
+          xForce, yForce = cell0.computeForcesNext()
+          xBefore, yBefore = x - xForce, y - yForce
+          altitude = Cartesian.orientedAltitude(cell0, cell1, cell2)
+          altitudeBefore = Cartesian.orientedAltitude(Point(xBefore, yBefore), cell1, cell2)
+          factor = max(0, min(1, (altitudeBefore - almostAltitude) / (altitudeBefore - altitude)))
+          saveFactor = True
+          if cell0._id2 in coordinatesForCell:
+            factorOld, _ = coordinatesForCell[cell0._id2]
+            saveFactor = factorOld < factor
+          if saveFactor:
+            coordinatesForCell[cell0._id2] = factor, (xBefore + factor * xForce, yBefore + factor * yForce)
+        for id2, (_, coordinates) in coordinatesForCell.items():
+          self.__cells[id2].x, self.__cells[id2].y = coordinates
+      # _correctDeficiencies(deficiencies, 0)
+      _correctDeficiencies(deficiencies + almostDeficiencies, self.__settings._almostDeficiencyPercentageOfTypicalDistance * self.__settings._typicalDistance)
 
   def computeForcesAndEnergies(self):
     # reset forces
