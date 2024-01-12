@@ -113,7 +113,7 @@ class WorkerThread(Thread):
         self.__shallRun1 = False
         if stopThresholdReached:
           self.__shallRunStop = False
-        self.__needsGUIUpdate = True
+        self.__needsGUIUpdate = False
 
   def __post(self, **kwargs):
     wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
