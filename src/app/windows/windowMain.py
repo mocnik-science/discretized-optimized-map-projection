@@ -134,6 +134,7 @@ class WindowMain(wx.Frame):
     menuBar.Append(captureMenu, "&Capture")
     addItem(captureMenu, 'Save data', None, self.onSaveData)
     addItem(captureMenu, 'Save screenshot', None, self.onSaveScreenshot)
+    addItem(captureMenu, 'Save screenshot (large symbols)', None, lambda *args: self.onSaveScreenshot(*args, largeSymbols=True))
     menuItemsNotForOnlyShowForCRS.append(addCheckItem(captureMenu, 'Start/stop video capture', self.__viewSettings, 'captureVideo', self.updateViewSettings))
 
     # view menu
@@ -282,8 +283,8 @@ class WindowMain(wx.Frame):
     if self.__renderThread:
       self.__renderThread.updateViewSettings(self.__viewSettings)
 
-  def onSaveScreenshot(self, event):
-    self.__renderThread.saveScreenshot(self)
+  def onSaveScreenshot(self, event, largeSymbols=False):
+    self.__renderThread.saveScreenshot(self, largeSymbols=largeSymbols)
   
   def onSaveData(self, event):
     self.__renderThread.saveData(self)

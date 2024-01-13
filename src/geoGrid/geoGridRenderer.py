@@ -21,7 +21,7 @@ class GeoGridRenderer:
   }
 
   @staticmethod
-  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSide=2000, border=10, transparency=False, r=3, boundsExtend=1.3, projection=None, save=False, stepData=None):
+  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSide=2000, border=10, transparency=False, largeSymbols=False, r=3, boundsExtend=1.3, projection=None, save=False, stepData=None):
     # handle serialized data
     cells = serializedData['cells']
     path = serializedData['path']
@@ -69,7 +69,7 @@ class GeoGridRenderer:
       im = Image.new('RGBA', (widthOverall, heightOverall)) if transparency else Image.new('RGB', (widthOverall, heightOverall), (255, 255, 255))
       draw = ImageDraw.Draw(im)
       # render
-      argsForRendering = [[draw, projectToImage], lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData]
+      argsForRendering = [[draw, projectToImage], lonLatToCartesian, cells, geoGridSettings, viewSettings, 5 if largeSymbols else 1, (4 if largeSymbols else 1) * r, projection, stepData]
       GeoGridRenderer.renderContinentalBorders(*argsForRendering)
       GeoGridRenderer.renderOriginalPolygons(*argsForRendering)
       GeoGridRenderer.renderNeighbours(*argsForRendering)
@@ -83,7 +83,7 @@ class GeoGridRenderer:
       return im
 
   @staticmethod
-  def renderContinentalBorders(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
+  def renderContinentalBorders(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if projection is None:
       return
     if viewSettings['drawContinentsTolerance']:
@@ -95,34 +95,34 @@ class GeoGridRenderer:
         GeoGridRenderer.__polygon(d, [projection.project(*c) for c in cs], fill=(255, 255, 255))
 
   @staticmethod
-  def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
+  def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['drawOriginalPolygons'] and geoGridSettings.hasNoInitialCRS():
       for cell in cells.values():
-        GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100))
+        GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100), width=w)
 
   @staticmethod
-  def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
+  def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['drawNeighbours'] and geoGridSettings.hasNoInitialCRS():
       for cell in cells.values():
         if 'neighboursXY' in cell:
           for xy in cell['neighboursXY']:
-            GeoGridRenderer.__line(d, cell['xy'], xy, fill=(220, 220, 220))
+            GeoGridRenderer.__line(d, cell['xy'], xy, fill=(220, 220, 220), width=w)
 
   @staticmethod
-  def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
+  def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['selectedPotential'] is not None and geoGridSettings.hasNoInitialCRS():
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
           p1, p2 = cell['forceVector']
-          GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150))
+          GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150), width=w)
       else:
         for cell in cells.values():
           p1, p2s = cell['forceVectors']
           for p2 in p2s:
-            GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150))
+            GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150), width=w)
 
   @staticmethod
-  def renderCentres(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
+  def renderCentres(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     factor = 1e-4
     if viewSettings['drawLabels']:
       font = ImageFont.truetype('Helvetica', size=14)
@@ -148,7 +148,7 @@ class GeoGridRenderer:
         GeoGridRenderer.__text(d, tuple(map(sum, zip(cell['xy'], lonLatToCartesian((.6, -.3))))), str(id2), font=font, fill=(0, 0, 0), anchor='mm' if viewSettings['drawCentres'] is None else 'la', align='center' if viewSettings['drawCentres'] is None else 'left')
 
   @staticmethod
-  def renderStepData(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, r, projection, stepData):
+  def renderStepData(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['captureVideo'] and stepData:
       font = ImageFont.truetype('Helvetica', size=40)
       GeoGridRenderer.__text(d, (30, viewSettings['heightOverall'] - 20), f"Step {stepData['step']}", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='ls', align='left')

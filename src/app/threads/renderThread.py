@@ -148,14 +148,14 @@ class RenderThread(Thread):
     if dialog.ShowModal() == wx.ID_OK:
       os.replace(fileNameTmp, dialog.GetPath())
 
-  def saveScreenshot(self, parentWindow):
+  def saveScreenshot(self, parentWindow, largeSymbols=False):
     randomHash = self.__hash()
     info = self.__geoGridSettings.info()
     dialog = wx.FileDialog(parentWindow, message='Save screenshot', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__stepData['step']}-{randomHash}.png", wildcard='Image files (*.png)|*.png', style=wx.FD_SAVE)
     if dialog.ShowModal() == wx.ID_OK:
       if os.path.exists(dialog.GetPath()):
         os.unlink(dialog.GetPath())
-      im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080), transparency=True, stepData=self.__stepData)
+      im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=self.__stepData)
       im.save(dialog.GetPath(), optimize=True)
 
   def renderVideo(self, parentWindow):
