@@ -38,4 +38,4 @@ class PotentialShape(Potential):
     # compute average difference
     avgDiff = 0 if self._enforceNorth else sum([Common.normalizeAngle(bearings[i] - bearingIdeal[i], intervalStart=-Common._pi) for i in range(0, lenNeighbours)]) / lenNeighbours
     # quantities
-    return [1 / (2 * Common._pi) * Common.normalizeAngle(bearing - (bearingIdeal[i] + avgDiff), intervalStart=-Common._pi) for i, bearing in enumerate(bearings)]
+    return [12 / (2 * Common._pi) * abs(Common.normalizeAngle(bearing - (bearingIdeal[i] + avgDiff), intervalStart=-Common._pi)) for i, bearing in enumerate(bearings)]

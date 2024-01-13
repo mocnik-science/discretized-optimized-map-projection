@@ -36,5 +36,4 @@ class PotentialArea(Potential):
     if cartesianA < 0:
       return 0
     geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
-    sqrtGeoA = math.sqrt(geoA)
-    return (math.sqrt(cartesianA) - sqrtGeoA) / sqrtGeoA
+    return cartesianA / geoA - 1
