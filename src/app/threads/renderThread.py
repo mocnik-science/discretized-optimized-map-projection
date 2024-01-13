@@ -128,7 +128,7 @@ class RenderThread(Thread):
       'dampingFactor': str(settings['dampingFactor']),
       'stopThreshold': str(settings['stopThreshold']),
       'limitLatForEnergy': str(settings['limitLatForEnergy']),
-      'weights': '"' + json.dumps(settings['weights']) + '"',
+      'weights': '"' + json.dumps(settings['weights']).replace('"', '""') + '"',
     }
     dataRow = f"{','.join(data.values())}\n"
     if not os.path.exists(fileNameTmp):
