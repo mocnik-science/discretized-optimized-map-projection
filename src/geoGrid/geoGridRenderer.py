@@ -130,8 +130,10 @@ class GeoGridRenderer:
       if geoGridSettings.hasInitialCRS() and not cell['isActive']:
         continue
       radius = r
+      fill = None
       if viewSettings['selectedEnergy'] is not None and cell['isActive']:
         radius *= .5 + max(0, min(10, 3 + math.log((cell['energy'] + 1e-10) * factor)))
+        fill = (255, 140, 140)
       if viewSettings['drawCentres'] is not None:
         fill = None
         if viewSettings['drawCentres'] == 'ACTIVE':
@@ -140,8 +142,8 @@ class GeoGridRenderer:
           for weight, potential in geoGridSettings.weightedPotentials():
             if not weight.isVanishing() and potential.kind == viewSettings['drawCentres']:
               fill = GeoGridRenderer.__blendColour(.5 * weight.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
-        if fill is not None:
-          GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
+      if fill is not None:
+        GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
       if viewSettings['drawLabels']:
         GeoGridRenderer.__text(d, tuple(map(sum, zip(cell['xy'], lonLatToCartesian((.6, -.3))))), str(id2), font=font, fill=(0, 0, 0), anchor='mm' if viewSettings['drawCentres'] is None else 'la', align='center' if viewSettings['drawCentres'] is None else 'left')
 
