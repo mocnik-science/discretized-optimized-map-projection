@@ -241,7 +241,7 @@ class WindowMain(wx.Frame):
 
     ## status bar
     self._statusBar = self.CreateStatusBar(5)
-    self._statusBar.SetStatusWidths([250, 200, -1, 120, 180])
+    self._statusBar.SetStatusWidths([250, 200, -1, 160, 180])
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
