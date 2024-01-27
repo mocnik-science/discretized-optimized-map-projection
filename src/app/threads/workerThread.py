@@ -67,7 +67,7 @@ class WorkerThread(Thread):
           if shallPerformStep:
             self.__geoGrid.performStep()
           else:
-            self.__geoGrid.computeForcesAndEnergies()
+            self.__geoGrid.computeEnergiesAndForces()
           serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
           # compute energy
           energy, energyWeighted = self.__geoGrid.energy(weighted=False), self.__geoGrid.energy(weighted=True)

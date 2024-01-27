@@ -48,8 +48,8 @@ class Potential:
     raise Exception('Needs to be implemented by inheriting class')
   def forces(self, cell, neighbouringCells):
     raise Exception('Needs to be implemented by inheriting class')
-  # def energyAndForces(self, cell, neighbouringCells):
-  #   raise Exception('Needs to be implemented by inheriting class')
+  def energyAndForces(self, cell, neighbouringCells):
+    raise Exception('Needs to be implemented by inheriting class')
 
   def _value(self, cell, *args):
     raise Exception('Needs to be implemented by inheriting class')
@@ -60,14 +60,14 @@ class Potential:
     return self.__quantity(self._value(*args), **kwargs)
   def _quantities(self, *args, **kwargs):
     return [self.__quantity(r, **kwargs) for r in self._values(*args)]
-  def __quantity(self, r, energy=False, force=False, relativeToTypicalDistance=True):
+  def __quantity(self, r, onlyEnergy=False, onlyForce=False, relativeToTypicalDistance=True):
     # D – spring constant
     #     chosen such that the force at r = 1/2 is -delta/2 (where delta is the typical distance)
     if self.__D is None:
       self.__D = (self._settings._typicalDistance if relativeToTypicalDistance else 1) * 2**(self.__exponent - 1)
-    if energy:
+    if onlyEnergy:
       return self.__D / (self.__exponent + 1) * abs(r)**(self.__exponent + 1)
-    elif force:
+    elif onlyForce:
       return self.__D * abs(r)**self.__exponent * sign(r)
     else:
       k = self.__D * abs(r)**self.__exponent

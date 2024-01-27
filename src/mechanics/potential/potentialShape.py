@@ -16,23 +16,24 @@ class PotentialShape(Potential):
   def energy(self, cell, neighbouringCells):
     if not cell._isActive:
       return 0
-    return sum(self._quantities(cell, neighbouringCells, energy=True))
+    return sum(self._quantities(cell, neighbouringCells, onlyEnergy=True))
   def forces(self, cell, neighbouringCells):
     if not cell._isActive:
       return []
     forces = []
-    for i, q in enumerate(self._quantities(cell, neighbouringCells, force=True)):
+    for i, q in enumerate(self._quantities(cell, neighbouringCells, onlyForce=True)):
       neighbouringCell = neighbouringCells[i]
       forces.append(Force.toDestination(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
     return forces
-  # def energyAndForces(self, cell, neighbouringCells):
-  #   energies = 0
-  #   forces = []
-  #   for i, (qEnergy, qForce) in enumerate(self._quantities(cell, neighbouringCells)):
-  #     energies += qEnergy
-  #     neighbouringCell = neighbouringCells[i]
-  #     forces.append(Force.toCell(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), qForce))
-  #   return energies, forces
+  def energyAndForces(self, cell, neighbouringCells):
+    energy, forces = 0, []
+    if not cell._isActive:
+      return energy, forces
+    for i, (qEnergy, qForce) in enumerate(self._quantities(cell, neighbouringCells)):
+      energy += qEnergy
+      neighbouringCell = neighbouringCells[i]
+      forces.append(Force.toCell(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), qForce))
+    return energy, forces
 
   def _values(self, cell, neighbouringCells):
     lenNeighbours = len(cell._neighbours)

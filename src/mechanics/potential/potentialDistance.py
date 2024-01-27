@@ -12,17 +12,16 @@ class PotentialDistance(Potential):
     super().__init__(*args, **kwargs)
 
   def energy(self, cell, neighbouringCells):
-    return sum(self._quantity(cell, neighbouringCell, energy=True) for neighbouringCell in neighbouringCells)
+    return sum(self._quantity(cell, neighbouringCell, onlyEnergy=True) for neighbouringCell in neighbouringCells)
   def forces(self, cell, neighbouringCells):
-    return [Force.toCell(self.kind, neighbouringCell, cell, self._quantity(cell, neighbouringCell, force=True)) for neighbouringCell in neighbouringCells]
-  # def energyAndForces(self, cell, neighbouringCells):
-  #   energies = 0
-  #   forces = []
-  #   for neighbouringCell in neighbouringCells:
-  #     qEnergy, qForce = self._quantity(cell, neighbouringCell)
-  #     energies += qEnergy
-  #     forces.append(Force.toCell(self.kind, neighbouringCell, cell, qForce))
-  #   return energies, forces
+    return [Force.toCell(self.kind, neighbouringCell, cell, self._quantity(cell, neighbouringCell, onlyForce=True)) for neighbouringCell in neighbouringCells]
+  def energyAndForces(self, cell, neighbouringCells):
+    energy, forces = 0, []
+    for neighbouringCell in neighbouringCells:
+      qEnergy, qForce = self._quantity(cell, neighbouringCell)
+      energy += qEnergy
+      forces.append(Force.toCell(self.kind, neighbouringCell, cell, qForce))
+    return energy, forces
 
   def _value(self, cell, neighbouringCell):
     cartesianD = Cartesian.distance(neighbouringCell, cell) * self.calibrationFactor

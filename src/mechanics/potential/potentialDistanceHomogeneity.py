@@ -83,7 +83,7 @@ class PotentialDistanceHomogeneity(Potential):
   def energy(self, cell, neighbouringCells):
     if not cell._isActive:
       return 0
-    return self._quantity(cell, neighbouringCells, energy=True)
+    return self._quantity(cell, neighbouringCells, onlyEnergy=True)
   def forces(self, cell, neighbouringCells):
     if not cell._isActive:
       return []
@@ -91,7 +91,18 @@ class PotentialDistanceHomogeneity(Potential):
     if d is None:
       return []
     forceVectors, _ = d
-    return [Force.byDelta(self.kind, neighbouringCell, forceVector, self._quantity(cell, neighbouringCells, force=True)) for forceVector, neighbouringCell in zip(forceVectors, neighbouringCells) if forceVector is not None]
+    return [Force.byDelta(self.kind, neighbouringCell, forceVector, self._quantity(cell, neighbouringCells, onlyForce=True)) for forceVector, neighbouringCell in zip(forceVectors, neighbouringCells) if forceVector is not None]
+  def energyAndForces(self, cell, neighbouringCells):
+    energy, forces = 0, []
+    if not cell._isActive:
+      return energy, forces
+    energy, qForce = self._quantity(cell, neighbouringCells)
+    d = self.__dataForCell(cell, neighbouringCells)
+    if d is None:
+      return energy, forces
+    forceVectors, _ = d
+    forces = [Force.byDelta(self.kind, neighbouringCell, forceVector, qForce) for forceVector, neighbouringCell in zip(forceVectors, neighbouringCells) if forceVector is not None]
+    return energy, forces
 
   def _value(self, cell, neighbouringCells):
     d = self.__dataForCell(cell, neighbouringCells)

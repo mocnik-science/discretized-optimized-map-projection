@@ -71,7 +71,7 @@ class GeoGrid:
       with timer('calibrate'):
         self.calibrate()
     # compute next forces and energies
-    self.computeForcesAndEnergies()
+    self.computeEnergiesAndForces()
 
   def settings(self):
     return self.__settings
@@ -234,7 +234,7 @@ class GeoGrid:
     # calibrate
     self.calibrate()
     # compute next forces and energies
-    self.computeForcesAndEnergies()
+    self.computeEnergiesAndForces()
 
   def findDeficiencies(self):
     deficiencies, almostDeficiencies = [], []
@@ -275,36 +275,30 @@ class GeoGrid:
       # _correctDeficiencies(deficiencies, 0)
       _correctDeficiencies(deficiencies + almostDeficiencies, self.__settings._almostDeficiencyPercentageOfTypicalDistance * self.__settings._typicalDistance)
 
-  def computeForcesAndEnergies(self):
+  def computeEnergiesAndForces(self):
     # reset forces
     for cell in self.__cells.values():
       cell.resetForcesNext()
-    # compute maximum computational order for all potentials
-    # maxComputationalOrder = max(potential.computationalOrder for potential in self.__settings.potentials)
-    # for computationalOrder in range(maxComputationalOrder + 1):
-    # compute forces
+    # compute energies and forces
     for (weight, potential) in self.__settings.weightedPotentials():
-      forces = []
-      # if potential.computationalOrder == computationalOrder
-      # compute individual forces
-      with timer(f"compute forces: {potential.kind.lower()}", step=self.__step):
-        if weight.isVanishing():
-          continue
+      with timer(f"compute energies and forces: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
+          # only continue if weight is not vanishing
+          if weight.isVanishing():
+            cell.setEnergy(potential.kind, 0)
+            cell.setEnergyWeight(potential.kind, 0)
+            continue
+          # weight
           w = weight.forCell(cell)
-          for force in potential.forces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]):
+          # compute
+          energy, forces = potential.energyAndForces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells])
+          # handle energies
+          cell.setEnergy(potential.kind, energy)
+          cell.setEnergyWeight(potential.kind, w)
+          # handle forces
+          for force in forces:
             force.scaleStrength((1 - self.__settings._dampingFactor) * w)
-            forces.append(force)
-      # collect forces
-      with timer('collect forces', step=self.__step):
-        for force in forces:
-          self.__cells[force.id2From].addForce(force)
-    # compute energies
-    for (weight, potential) in self.__settings.weightedPotentials():
-      with timer(f"compute energies: {potential.kind.lower()}", step=self.__step):
-        for cell in self.__cells.values():
-          cell.setEnergy(potential.kind, potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]) if not weight.isVanishing() else 0)
-          cell.setEnergyWeight(potential.kind, weight.forCell(cell))
+            self.__cells[force.id2From].addForce(force)
 
   def serializedDataForProjection(self):
     with timer('serialize data for projection', step=self.__step):
