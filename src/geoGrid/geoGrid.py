@@ -291,22 +291,20 @@ class GeoGrid:
         if weight.isVanishing():
           continue
         for cell in self.__cells.values():
-          if cell._isActive:
-            w = weight.forCell(cell)
-            for force in potential.forces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]):
-              force.scaleStrength((1 - self.__settings._dampingFactor) * w)
-              forces.append(force)
-    # collect forces
-    with timer('collect forces', step=self.__step):
-      for force in forces:
-        self.__cells[force.id2].addForce(force)
+          w = weight.forCell(cell)
+          for force in potential.forces(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]):
+            force.scaleStrength((1 - self.__settings._dampingFactor) * w)
+            forces.append(force)
+      # collect forces
+      with timer('collect forces', step=self.__step):
+        for force in forces:
+          self.__cells[force.id2From].addForce(force)
     # compute energies
     for (weight, potential) in self.__settings.weightedPotentials():
       with timer(f"compute energies: {potential.kind.lower()}", step=self.__step):
         for cell in self.__cells.values():
-          if cell._isActive:
-            cell.setEnergy(potential.kind, potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]) if not weight.isVanishing() else 0)
-            cell.setEnergyWeight(potential.kind, weight.forCell(cell))
+          cell.setEnergy(potential.kind, potential.energy(cell, [self.__cells[n] for n in cell._neighbours if n in self.__cells]) if not weight.isVanishing() else 0)
+          cell.setEnergyWeight(potential.kind, weight.forCell(cell))
 
   def serializedDataForProjection(self):
     with timer('serialize data for projection', step=self.__step):
