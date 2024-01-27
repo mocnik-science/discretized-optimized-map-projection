@@ -4,6 +4,7 @@ from src.geometry.geo import Geo
 
 class Potential:
   kind = None
+  computationalOrder = 0
   defaultWeight = None
   calibrationPossible = False
   __exponent = 1
@@ -59,19 +60,19 @@ class Potential:
     return self.__quantity(self._value(*args), **kwargs)
   def _quantities(self, *args, **kwargs):
     return [self.__quantity(r, **kwargs) for r in self._values(*args)]
-  def __quantity(self, r, energy=False, force=False):
+  def __quantity(self, r, energy=False, force=False, relativeToTypicalDistance=True):
     # D – spring constant
     #     chosen such that the force at r = 1/2 is -delta/2 (where delta is the typical distance)
     if self.__D is None:
-      self.__D = self._settings._typicalDistance * 2**(self.__exponent - 1)
+      self.__D = (self._settings._typicalDistance if relativeToTypicalDistance else 1) * 2**(self.__exponent - 1)
     if energy:
       return self.__D / (self.__exponent + 1) * abs(r)**(self.__exponent + 1)
     elif force:
-      return -self.__D * abs(r)**self.__exponent * sign(r)
+      return self.__D * abs(r)**self.__exponent * sign(r)
     else:
       k = self.__D * abs(r)**self.__exponent
       energy = k / (self.__exponent + 1) * abs(r)
-      force = -k * sign(r)
+      force = k * sign(r)
       return energy, force
 
     # # D – spring constant

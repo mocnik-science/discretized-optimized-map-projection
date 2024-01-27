@@ -20,8 +20,12 @@ class PotentialArea(Potential):
   calibrationPossible = False
 
   def energy(self, cell, neighbouringCells):
+    if not cell._isActive:
+      return 0
     return self._quantity(cell, neighbouringCells, energy=True) * len(neighbouringCells)
   def forces(self, cell, neighbouringCells):
+    if not cell._isActive:
+      return []
     q = self._quantity(cell, neighbouringCells, force=True)
     return [Force.toCell(self.kind, neighbouringCell, cell, q) for neighbouringCell in neighbouringCells]
   # def energyAndForces(self, cell, neighbouringCells):
@@ -32,8 +36,10 @@ class PotentialArea(Potential):
     # cell area and partly area of the neighbouring cells
     # hexagon:   1 + 6 * 2/6 = 3
     # pentagon:  5/6 + 5 * 2/6 = 15/6 = 2.5
-    cartesianA = Cartesian.area(neighbouringCells) * self.calibrationFactor**2
-    if cartesianA < 0:
-      return 0
+    cartesianA = Cartesian.orientedArea(*neighbouringCells) * self.calibrationFactor**2
+    # if cartesianA < 0:
+    #   geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
+    #   print(cell._id2, cartesianA, cartesianA / geoA)
+    #   return 0
     geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
     return cartesianA / geoA - 1

@@ -95,25 +95,34 @@ class GeoGridCell:
     # add the force
     self._forcesNext.append(force)
 
-  def applyForce(self):
+  def applyForces(self, persist=True):
+    newX, newY = self.xy()
     # sum up the force
-    xForcesNext, yForcesNext = self.computeForcesNext()
+    xForcesNext, yForcesNext = self.computeForcesNext(persist=persist)
     # apply the force
-    self.x += xForcesNext
-    self.y += yForcesNext
+    newX += xForcesNext
+    newY += yForcesNext
+    # persist
+    if persist:
+      self.x, self.y = newX, newY
+    # return
+    return newX, newY
 
   def resetForcesNext(self):
     # reset next forces
     self._forcesNext = []
     self._xForcesNext, self._yForcesNext = None, None
 
-  def computeForcesNext(self):
-    if self._xForcesNext is None or self._yForcesNext is None:
-      self._xForcesNext, self._yForcesNext = 0, 0
-      for force in self._forcesNext:
-        self._xForcesNext += force.x
-        self._yForcesNext += force.y
-    return self._xForcesNext, self._yForcesNext
+  def computeForcesNext(self, persist=True):
+    if self._xForcesNext is not None and self._yForcesNext is not None:
+      return self._xForcesNext, self._yForcesNext
+    xForcesNext, yForcesNext = 0, 0
+    for force in self._forcesNext:
+      xForcesNext += force.x
+      yForcesNext += force.y
+    if persist:
+      self._xForcesNext, self._yForcesNext = xForcesNext, yForcesNext
+    return xForcesNext, yForcesNext
 
   def forceVector(self, potential, k=30):
     if potential == 'ALL':

@@ -14,12 +14,16 @@ class PotentialShape(Potential):
     self._enforceNorth = enforceNorth
 
   def energy(self, cell, neighbouringCells):
+    if not cell._isActive:
+      return 0
     return sum(self._quantities(cell, neighbouringCells, energy=True))
   def forces(self, cell, neighbouringCells):
+    if not cell._isActive:
+      return []
     forces = []
     for i, q in enumerate(self._quantities(cell, neighbouringCells, force=True)):
       neighbouringCell = neighbouringCells[i]
-      forces.append(Force.toCell(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
+      forces.append(Force.toDestination(self.kind, neighbouringCell, Point(neighbouringCell.x + (neighbouringCell.y - cell.y), neighbouringCell.y - (neighbouringCell.x - cell.x)), q))
     return forces
   # def energyAndForces(self, cell, neighbouringCells):
   #   energies = 0

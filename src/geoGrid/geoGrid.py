@@ -225,7 +225,7 @@ class GeoGrid:
     if not _onlyComputeNextForces:
       with timer('apply forces', step=self.__step):
         for cell in self.__cells.values():
-          cell.applyForce()
+          cell.applyForces()
     # reset potentials
     for potential in self.__settings.potentials:
       potential.emptyCacheForStep()
@@ -279,9 +279,14 @@ class GeoGrid:
     # reset forces
     for cell in self.__cells.values():
       cell.resetForcesNext()
+    # compute maximum computational order for all potentials
+    # maxComputationalOrder = max(potential.computationalOrder for potential in self.__settings.potentials)
+    # for computationalOrder in range(maxComputationalOrder + 1):
     # compute forces
-    forces = []
     for (weight, potential) in self.__settings.weightedPotentials():
+      forces = []
+      # if potential.computationalOrder == computationalOrder
+      # compute individual forces
       with timer(f"compute forces: {potential.kind.lower()}", step=self.__step):
         if weight.isVanishing():
           continue

@@ -81,8 +81,12 @@ class PotentialDistanceHomogeneity(Potential):
     return self.__dataForCellCache[key]
 
   def energy(self, cell, neighbouringCells):
+    if not cell._isActive:
+      return 0
     return self._quantity(cell, neighbouringCells, energy=True)
   def forces(self, cell, neighbouringCells):
+    if not cell._isActive:
+      return []
     d = self.__dataForCell(cell, neighbouringCells)
     if d is None:
       return []
