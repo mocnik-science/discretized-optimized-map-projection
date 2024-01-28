@@ -8,7 +8,7 @@ class PotentialTriangleAltitude(Potential):
   computationalOrder = 1
   defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=True, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
-  maximumStrengthRatioOfTypicalDistance = 1
+  maximumStrengthRatioOfTypicalDistance = .2
   __dataForCellCache = {}
 
   def __init__(self, *args, **kwargs):
@@ -27,11 +27,14 @@ class PotentialTriangleAltitude(Potential):
     for i, j in cell.getNeighbourTriangles():
       if i not in cells or j not in cells:
         continue
-      strength = self._quantity(cell, cells[i], cells[j], onlyForce=True, relativeToTypicalDistance=False)
-      if strength == 0:
+      qForce = self._quantity(cell, cells[i], cells[j], onlyForce=True, relativeToTypicalDistance=False)
+      if qForce == 0:
         continue
       p = self.__dataForCellCache[(cell._id2, i, j)][1]
-      forces.append(Force.toDestination(self.kind, cell, p, abs(strength), withoutDamping=True))
+      forces.append(Force.toDestination(self.kind, cell, p, qForce, withoutDamping=True))
+      delta = Point(cell.x - p.x, cell.y - p.y)
+      forces.append(Force.byDelta(self.kind, cells[i], delta, qForce / 2, withoutDamping=True))
+      forces.append(Force.byDelta(self.kind, cells[j], delta, qForce / 2, withoutDamping=True))
     return forces
   def energyAndForces(self, cell, neighbouringCells):
     cells = dict((neighbouringCell._id2, neighbouringCell) for neighbouringCell in neighbouringCells)
@@ -42,7 +45,10 @@ class PotentialTriangleAltitude(Potential):
       if qForce == 0:
         continue
       p = self.__dataForCellCache[(cell._id2, i, j)][1]
-      forces.append(Force.toDestination(self.kind, cell, p, abs(qForce), withoutDamping=True))
+      forces.append(Force.toDestination(self.kind, cell, p, qForce / 2, withoutDamping=True))
+      delta = Point(cell.x - p.x, cell.y - p.y)
+      forces.append(Force.byDelta(self.kind, cells[i], delta, qForce / 2, withoutDamping=True))
+      forces.append(Force.byDelta(self.kind, cells[j], delta, qForce / 2, withoutDamping=True))
     return energy, forces
 
   def _value(self, cell, cell1, cell2):
