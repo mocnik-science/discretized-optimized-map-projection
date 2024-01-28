@@ -27,7 +27,7 @@ class PotentialDistanceHomogeneity(Potential):
       lenNeighbours = len(neighbouringCells)
       bearingGeo = self._geoBearingsForCell(cell, neighbouringCells)
       # compute bearings
-      bearings = [Cartesian.bearing(cell, neighbouringCell) for neighbouringCell in neighbouringCells]
+      bearings = [Cartesian.bearing(cell.point(), neighbouringCell.point()) for neighbouringCell in neighbouringCells]
       # compute average difference
       avgDiff = sum([Common.normalizeAngle(bearings[i] - bearingGeo[i], intervalStart=-Common._pi) for i in range(0, lenNeighbours)]) / lenNeighbours
       # compute scales
@@ -36,7 +36,7 @@ class PotentialDistanceHomogeneity(Potential):
       sinScales, cosScales = 1, 1
       sinWeights, cosWeights = 0, 0
       for i, neighbouringCell in enumerate(neighbouringCells):
-        r = Cartesian.distance(neighbouringCell, cell) * self.calibrationFactor
+        r = Cartesian.distance(neighbouringCell.point(), cell.point()) * self.calibrationFactor
         if r <= 1e-3 * self._settings._typicalDistance:
           rs.append(None)
           sins.append(None)

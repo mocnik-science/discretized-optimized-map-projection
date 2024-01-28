@@ -24,6 +24,6 @@ class PotentialDistance(Potential):
     return energy, forces
 
   def _value(self, cell, neighbouringCell):
-    cartesianD = Cartesian.distance(neighbouringCell, cell) * self.calibrationFactor
+    cartesianD = Cartesian.distance(neighbouringCell.point(), cell.point()) * self.calibrationFactor
     geoD = self._geoDistanceForCells(neighbouringCell, cell)
     return cartesianD / geoD - 1

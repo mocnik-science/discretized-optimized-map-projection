@@ -39,7 +39,7 @@ class PotentialShape(Potential):
     lenNeighbours = len(cell._neighbours)
     bearingIdeal = self._geoBearingsForCell(cell, neighbouringCells)
     # compute bearings
-    bearings = [Cartesian.bearing(cell, neighbouringCell) for neighbouringCell in neighbouringCells]
+    bearings = [Cartesian.bearing(cell.point(), neighbouringCell.point()) for neighbouringCell in neighbouringCells]
     # compute average difference
     avgDiff = 0 if self._enforceNorth else sum([Common.normalizeAngle(bearings[i] - bearingIdeal[i], intervalStart=-Common._pi) for i in range(0, lenNeighbours)]) / lenNeighbours
     # quantities
