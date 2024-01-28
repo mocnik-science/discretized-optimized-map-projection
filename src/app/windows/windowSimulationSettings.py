@@ -9,9 +9,9 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings = geoGridSettings
     self.__workerThread = workerThread
     self.__data = {}
-    wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 270))
-    self.SetMinSize((800, 270))
-    self.SetMaxSize((800, 270))
+    wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 300))
+    self.SetMinSize((800, 300))
+    self.SetMaxSize((800, 300))
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)

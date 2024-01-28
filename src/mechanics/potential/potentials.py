@@ -3,5 +3,6 @@ from src.mechanics.potential.potentialDistance import PotentialDistance
 from src.mechanics.potential.potentialDistanceHomogeneity import PotentialDistanceHomogeneity
 from src.mechanics.potential.potentialShape import PotentialShape
 from src.mechanics.potential.potentialOrientation import PotentialOrientation
+from src.mechanics.potential.potentialTriangleAltitude import PotentialTriangleAltitude
 
-potentials = [PotentialArea, PotentialDistance, PotentialDistanceHomogeneity, PotentialShape, PotentialOrientation]
+potentials = [PotentialArea, PotentialDistance, PotentialDistanceHomogeneity, PotentialShape, PotentialOrientation, PotentialTriangleAltitude]
