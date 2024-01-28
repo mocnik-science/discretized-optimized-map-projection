@@ -4,10 +4,10 @@ import wx
 from src.app.common import APP_NAME, APP_FILES_PATH
 from src.app.threads.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
 from src.app.threads.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
-from src.app.windows.windows import isWindowDestroyed
-from src.app.windows.windowAbout import WindowAbout
-from src.app.windows.windowProj import WindowProj
-from src.app.windows.windowSimulationSettings import WindowSimulationSettings
+from src.interfaces.gui.windows import isWindowDestroyed
+from src.interfaces.gui.windowAbout import WindowAbout
+from src.interfaces.gui.windowProj import WindowProj
+from src.interfaces.gui.windowSimulationSettings import WindowSimulationSettings
 from src.geoGrid.geoGridProjectionTIN import GeoGridProjectionTIN
 from src.geoGrid.geoGridSettings import GeoGridSettings
 from src.geometry.strategy import strategyForScale

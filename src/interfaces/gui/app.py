@@ -4,7 +4,7 @@ import wx
 import wx.adv
 
 from src.app.common import APP_FILES_PATH, APP_SETTINGS_PATH, APP_VIEW_SETTINGS_PATH
-from src.app.windows.windowMain import WindowMain
+from src.interfaces.gui.windowMain import WindowMain
 
 class TaskBarIcon(wx.adv.TaskBarIcon):
   def __init__(self):
