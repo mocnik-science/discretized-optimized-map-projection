@@ -23,7 +23,7 @@ class GeoGridSettings:
     self.limitLatForEnergy = limitLatForEnergy
     self._typicalDistance = None
     self._typicalArea = None
-    self._almostDeficiencyPercentageOfTypicalDistance = .15 # a triangle is considered almost being an deficiency, if its height is smaller than the percentage of the typical distance provided here
+    self._almostDeficiencyRatioOfTypicalDistance = .05 # a triangle is considered almost being an deficiency, if its height is smaller than the ratio of the typical distance provided here
     self.potentials = sorted([potential(self) for potential in potentials], key=lambda potential: potential.computationalOrder)
     self._potentialsWeights = dict([(potential.kind, potential.defaultWeight or GeoGridWeight()) for potential in self.potentials])
     self._updated(initial=True)

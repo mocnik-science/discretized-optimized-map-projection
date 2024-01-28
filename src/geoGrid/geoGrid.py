@@ -248,7 +248,7 @@ class GeoGrid:
           if area <= 0:
             deficiencies.append((cell, self.__cells[i], self.__cells[j]))
           # almost a deficiency: altitude of the triangle is shorter than 5 per cent of the typical distance
-          elif area / Cartesian.distance(self.__cells[i], self.__cells[j]) <= self.__settings._almostDeficiencyPercentageOfTypicalDistance * self.__settings._typicalDistance:
+          elif area / Cartesian.distance(self.__cells[i], self.__cells[j]) <= self.__settings._almostDeficiencyRatioOfTypicalDistance * self.__settings._typicalDistance:
             almostDeficiencies.append((cell, self.__cells[i], self.__cells[j]))
     return deficiencies, almostDeficiencies
 
@@ -273,7 +273,7 @@ class GeoGrid:
         for id2, (_, coordinates) in coordinatesForCell.items():
           self.__cells[id2].x, self.__cells[id2].y = coordinates
       # _correctDeficiencies(deficiencies, 0)
-      _correctDeficiencies(deficiencies + almostDeficiencies, self.__settings._almostDeficiencyPercentageOfTypicalDistance * self.__settings._typicalDistance)
+      _correctDeficiencies(deficiencies + almostDeficiencies, self.__settings._almostDeficiencyRatioOfTypicalDistance * self.__settings._typicalDistance)
 
   def computeEnergiesAndForces(self):
     # reset forces
