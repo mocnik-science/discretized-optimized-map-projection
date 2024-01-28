@@ -297,7 +297,7 @@ class GeoGrid:
           cell.setEnergyWeight(potential.kind, w)
           # handle forces
           for force in forces:
-            force.scaleStrength((1 - self.__settings._dampingFactor) * w)
+            force.scaleStrength(w if force.withoutDamping else (1 - self.__settings._dampingFactor) * w)
             self.__cells[force.id2From].addForce(force)
 
   def serializedDataForProjection(self):
