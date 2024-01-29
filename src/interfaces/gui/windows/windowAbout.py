@@ -1,6 +1,6 @@
 import wx
 
-from src.app.common import APP_NAME, APP_COPYRIGHT
+from src.interfaces.common.common import APP_NAME, APP_COPYRIGHT
 
 class WindowAbout(wx.Frame):
   def __init__(self):

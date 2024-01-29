@@ -5,10 +5,10 @@ from threading import Thread
 import time
 import wx
 
-from src.app.common import APP_CAPTURE_PATH
 from src.common.timer import timer
 from src.common.video import renderVideo
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
+from src.interfaces.common.common import APP_CAPTURE_PATH
 
 EVT_RENDER_THREAD_UPDATE_ID = wx.NewId()
 

@@ -4,6 +4,7 @@ import wx
 
 from src.common.timer import timer
 from src.geoGrid.geoGrid import GeoGrid
+from src.interfaces.common.interfaceCommon import InterfaceCommon
 
 EVT_WORKER_THREAD_UPDATE_ID = wx.NewId()
 
@@ -81,14 +82,7 @@ class WorkerThread(Thread):
           deficiencies, almostDeficiencies = self.__geoGrid.findDeficiencies()
           countDeficiencies, countAlmostDeficiencies = len(deficiencies), len(almostDeficiencies)
           # check whether the threshold has been reached
-          stopThresholdReached = None
-          if self.__shallRunStop:
-            # maxForceStrength is in units of the coordinate system in which the cells are located: radiusEarth * deg2rad(lon), radiusEarth * deg2rad(lat)
-            # maxForceStrength is divided by the typical distance (which works perfectly at the equator) to normalize
-            # The normalized maxForceStrength is divided by the speed (100 * (1 - dampingFactor)), in order to compensate for varying speeds
-            stopThresholdReached = self.__geoGrid.maxForceStrength() / (100 * (1 - self.__geoGridSettings._dampingFactor)) < self.__geoGridSettings._stopThreshold * self.__geoGridSettings._typicalDistance
-            if stopThresholdReached:
-              self.__geoGridSettings.setThresholdReached()
+          stopThresholdReached = InterfaceCommon.isStopThresholdReached(self.__geoGrid, self.__geoGridSettings)
           if shallUpdateGui:
             guiData = self.__updateGui1()
         # update transient information in the settings
