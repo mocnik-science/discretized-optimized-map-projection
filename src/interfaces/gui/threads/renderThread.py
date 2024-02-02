@@ -1,14 +1,13 @@
 import json
-import random
 import os
 from threading import Thread
 import time
 import wx
 
 from src.common.timer import timer
-from src.common.video import renderVideo
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
 from src.interfaces.common.common import APP_CAPTURE_PATH
+from src.interfaces.common.interfaceCommon import InterfaceCommon
 
 EVT_RENDER_THREAD_UPDATE_ID = wx.NewId()
 
@@ -36,13 +35,10 @@ class RenderThread(Thread):
     self.__size = None
     self.__shallViewUpdate = False
     self.__stepData = None
-    self.__randomHashData = self.__hash()
-    self.__randomHashVideo = self.__hash()
+    self.__dataData = InterfaceCommon.startData()
+    self.__videoData = InterfaceCommon.startVideo()
     self.start()
   
-  def __hash(self):
-    return f'{random.randrange(0, 10**6):06d}'
-
   def run(self):
     t = timer(log=False)
     # loop
@@ -56,12 +52,12 @@ class RenderThread(Thread):
         with t:
           # data
           if self.__stepData and (self.__stepData['saveData'] or self.__stepData['step'] == 0):
-            self.__saveDataToTmp()
+            InterfaceCommon.stepData(self.__dataData, self.__geoGridSettings, stepData=self.__stepData)
             self.__stepData['saveData'] = False
           # render
-          im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080) if self.__viewSettings['captureVideo'] else self.__size, stepData=self.__stepData)
+          im, _ = InterfaceCommon.renderImage(self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, size=self.__size if not self.__viewSettings['captureVideo'] else None)
           if self.__stepData and self.__stepData['saveImage']:
-            GeoGridRenderer.save(im, hash=self.__randomHashVideo, step=self.__stepData['step'])
+            InterfaceCommon.stepVideo(im, self.__videoData, stepData=self.__stepData)
             self.__stepData['saveImage'] = False
             frameSaved = True
         # cleanup
@@ -94,78 +90,24 @@ class RenderThread(Thread):
   def updateView(self):
     self.__shallViewUpdate = True
 
-  def __saveDataToTmp(self):
-    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashData + '.csv')
-    innerEnergy, outerEnergy = self.__stepData['energy']
-    innerEnergyWeighted, outerEnergyWeighted = self.__stepData['energyWeighted']
-    settings = self.__geoGridSettings.toJSON()
-    info = self.__geoGridSettings.info()
-    data = {
-      'step': str(self.__stepData['step']),
-      'countDeficiencies': str(self.__stepData['countDeficiencies']),
-      'countAlmostDeficiencies': str(self.__stepData['countDeficiencies'] + self.__stepData['countAlmostDeficiencies']),
-      'innerEnergy': f"{innerEnergy:.0f}",
-      'outerEnergy': f"{outerEnergy:.0f}",
-      'innerEnergyWeighted': f"{innerEnergyWeighted:.0f}",
-      'outerEnergyWeighted': f"{outerEnergyWeighted:.0f}",
-    }
-    for (key, value), (keyWeighted, valueWeighted) in zip(self.__stepData['energyPerPotential'].items(), self.__stepData['energyWeightedPerPotential'].items()):
-      innerEnergy, outerEnergy = value
-      innerEnergyWeighted, outerEnergyWeighted = valueWeighted
-      data = {
-        **data,
-        'innerEnergy_' + key: f"{innerEnergy:.0f}",
-        'outerEnergy_' + key: f"{outerEnergy:.0f}",
-        'innerEnergyWeighted_' + keyWeighted: f"{innerEnergyWeighted:.0f}",
-        'outerEnergyWeighted_' + keyWeighted: f"{outerEnergyWeighted:.0f}",
-      }
-    data = {
-      **data,
-      'hash': info['hash'],
-      'initialCRS': settings['initialCRS'],
-      'initialScale': str(settings['initialScale']),
-      'resolution': str(settings['resolution']),
-      'dampingFactor': str(settings['dampingFactor']),
-      'stopThreshold': str(settings['stopThreshold']),
-      'limitLatForEnergy': str(settings['limitLatForEnergy']),
-      'weights': '"' + json.dumps(settings['weights']).replace('"', '""') + '"',
-    }
-    dataRow = f"{','.join(data.values())}\n"
-    if not os.path.exists(fileNameTmp):
-      os.makedirs(APP_CAPTURE_PATH, exist_ok=True)
-      with open(fileNameTmp, 'w') as f:
-        headerRow = f"{','.join(data.keys())}\n"
-        f.write(headerRow)
-        f.write(dataRow)
-    if self.__stepData['step'] > 0:
-      with open(fileNameTmp, 'a') as f:
-        f.write(dataRow)
-
   def saveData(self, parentWindow):
-    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashData + '.csv')
-    info = self.__geoGridSettings.info()
-    dialog = wx.FileDialog(parentWindow, message='Save data', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__randomHashData}.csv", wildcard='CSV files (*.csv)|*.csv', style=wx.FD_SAVE)
-    if dialog.ShowModal() == wx.ID_OK:
-      os.replace(fileNameTmp, dialog.GetPath())
+    def _pathFunction(defaultDir, defaultFilename):
+      dialog = wx.FileDialog(parentWindow, message='Save data', defaultDir=defaultDir, defaultFile=defaultFilename, wildcard='CSV files (*.csv)|*.csv', style=wx.FD_SAVE)
+      return dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
+    InterfaceCommon.saveData(_pathFunction, self.__dataData, self.__geoGridSettings)
 
   def saveScreenshot(self, parentWindow, largeSymbols=False):
-    randomHash = self.__hash()
-    info = self.__geoGridSettings.info()
-    dialog = wx.FileDialog(parentWindow, message='Save screenshot', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__stepData['step']}-{randomHash}.png", wildcard='Image files (*.png)|*.png', style=wx.FD_SAVE)
-    if dialog.ShowModal() == wx.ID_OK:
-      if os.path.exists(dialog.GetPath()):
-        os.unlink(dialog.GetPath())
-      im = GeoGridRenderer.render(self.__serializedData or self.__serializedDataLast, geoGridSettings=self.__geoGridSettings, viewSettings=self.__viewSettings, projection=self.__projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=self.__stepData)
-      im.save(dialog.GetPath(), optimize=True)
+    def _pathFunction(defaultDir, defaultFilename):
+      dialog = wx.FileDialog(parentWindow, message='Save screenshot', defaultDir=defaultDir, defaultFile=defaultFilename, wildcard='Image files (*.png)|*.png', style=wx.FD_SAVE)
+      return dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
+    InterfaceCommon.saveScreenshot(_pathFunction, self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, largeSymbols=largeSymbols)
 
-  def renderVideo(self, parentWindow):
-    fileNameTmp = os.path.join(APP_CAPTURE_PATH, self.__randomHashVideo)
-    renderVideo(fileNameTmp, 20)
-    info = self.__geoGridSettings.info()
-    dialog = wx.FileDialog(parentWindow, message='Save video', defaultDir='~/Downloads', defaultFile=f"domp-{info['hash']}-{self.__randomHashVideo}.mp4", wildcard='Video files (*.mp4)|*.mp4', style=wx.FD_SAVE)
-    if dialog.ShowModal() == wx.ID_OK:
-      os.replace(fileNameTmp + '.mp4', dialog.GetPath())
-    self.__randomHashVideo = self.__hash()
+  def saveVideo(self, parentWindow):
+    def _pathFunction(defaultDir, defaultFilename):
+      dialog = wx.FileDialog(parentWindow, message='Save video', defaultDir=defaultDir, defaultFile=defaultFilename, wildcard='Video files (*.mp4)|*.mp4', style=wx.FD_SAVE)
+      return dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
+    InterfaceCommon.saveVideo(_pathFunction, self.__videoData, self.__geoGridSettings)
+    self.__videoData = InterfaceCommon.startVideo()
 
   def quit(self):
     self.__shallQuit = True

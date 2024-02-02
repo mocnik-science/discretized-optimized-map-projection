@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 import json
 import os
 
-from src.app.common import APP_NAME, APP_URL, APP_FILES_PATH
 from src.common.database import Database
 from src.common.paths import projDb, srsDb
+from src.interfaces.common.common import APP_NAME, APP_URL, APP_FILES_PATH
 
 class GeoGridProjectionTIN:
   @staticmethod
@@ -68,7 +68,7 @@ class GeoGridProjectionTIN:
         },
       },
       'input_crs': 'EPSG:4326',
-      'output_crs': info['dompCRS'],
+      'output_crs': info['dompSRID'],
       'fallback_strategy': 'nearest_side',
       'transformed_components': ['horizontal'],
       'vertices_columns': ['source_x', 'source_y', 'target_x', 'target_y'],

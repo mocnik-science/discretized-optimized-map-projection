@@ -1,6 +1,6 @@
 import wx
 
-from src.interfaces.common.common import APP_NAME, APP_COPYRIGHT
+from src.interfaces.common.common import APP_NAME, APP_NAME_WITH_LINEBREAK, APP_COPYRIGHT
 
 class WindowAbout(wx.Frame):
   def __init__(self):
@@ -27,7 +27,7 @@ class WindowAbout(wx.Frame):
     box.AddSpacer(45)
     image(box, 'assets/globe.png', size=(100, 100))
     box.AddSpacer(10)
-    text(box, APP_NAME, fontSize=18)
+    text(box, APP_NAME_WITH_LINEBREAK, fontSize=18)
     box.AddSpacer(30)
     text(box, APP_COPYRIGHT)
 

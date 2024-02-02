@@ -2,11 +2,11 @@ import math
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-from src.app.common import APP_CAPTURE_PATH
 from src.common.timer import timer
 from src.geometry.common import Common
 from src.geometry.geo import radiusEarth
 from src.geometry.naturalEarth import NaturalEarth
+from src.interfaces.common.common import APP_CAPTURE_PATH
 
 class GeoGridRenderer:
   viewSettingsDefault = {
@@ -96,13 +96,13 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
-    if viewSettings['drawOriginalPolygons'] and geoGridSettings.hasNoInitialCRS():
+    if viewSettings['drawOriginalPolygons'] and geoGridSettings.canBeOptimized():
       for cell in cells.values():
         GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100), width=w)
 
   @staticmethod
   def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
-    if viewSettings['drawNeighbours'] and geoGridSettings.hasNoInitialCRS():
+    if viewSettings['drawNeighbours'] and geoGridSettings.canBeOptimized():
       for cell in cells.values():
         if 'neighboursXY' in cell:
           for xy in cell['neighboursXY']:
@@ -110,7 +110,7 @@ class GeoGridRenderer:
 
   @staticmethod
   def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
-    if viewSettings['selectedPotential'] is not None and geoGridSettings.hasNoInitialCRS():
+    if viewSettings['selectedPotential'] is not None and geoGridSettings.canBeOptimized():
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
           p1, p2 = cell['forceVector']
@@ -127,7 +127,7 @@ class GeoGridRenderer:
     if viewSettings['drawLabels']:
       font = ImageFont.truetype('Helvetica', size=14)
     for id2, cell in cells.items():
-      if geoGridSettings.hasInitialCRS() and not cell['isActive']:
+      if geoGridSettings.cannotBeOptimized() and not cell['isActive']:
         continue
       radius = r
       fill = None

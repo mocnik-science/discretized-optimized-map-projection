@@ -56,7 +56,7 @@ class WorkerThread(Thread):
       if self.__waitForRendering or not (self.__shallRun or self.__shallRun1 or self.__shallRunStop or self.__needsUpdate):
         # perform gui update if necessary
         if self.__needsGUIUpdate:
-          self.__updateGui2(self.__updateGui1())
+          self.__updateGui()
         # wait
         time.sleep(.01)
       else:
@@ -70,34 +70,19 @@ class WorkerThread(Thread):
           else:
             self.__geoGrid.computeEnergiesAndForces()
           serializedDataForProjection = self.__geoGrid.serializedDataForProjection()
-          # compute energy
-          energy, energyWeighted = self.__geoGrid.energy(weighted=False), self.__geoGrid.energy(weighted=True)
-          energyPerPotential = {}
-          for potential in self.__geoGridSettings.potentials:
-            energyPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind, weighted=False)
-          energyWeightedPerPotential = {}
-          for potential in self.__geoGridSettings.potentials:
-            energyWeightedPerPotential[potential.kind] = self.__geoGrid.energy(kindOfPotential=potential.kind, weighted=True)
-          # compute deficiencies
-          deficiencies, almostDeficiencies = self.__geoGrid.findDeficiencies()
-          countDeficiencies, countAlmostDeficiencies = len(deficiencies), len(almostDeficiencies)
+          # compute step data
+          stepData = InterfaceCommon.computeStepData(self.__geoGrid, self.__geoGridSettings)
           # check whether the threshold has been reached
           stopThresholdReached = InterfaceCommon.isStopThresholdReached(self.__geoGrid, self.__geoGridSettings)
           if shallUpdateGui:
-            guiData = self.__updateGui1()
+            serializedData = self.__geoGrid.serializedData(self.__viewSettings)
         # update transient information in the settings
-        self.__geoGridSettings.updateTransient(energy=energy, step=self.__geoGrid.step())
+        self.__geoGridSettings.updateTransient(energy=stepData['energy'], step=self.__geoGrid.step())
         # post result
-        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui2(guiData, post=False) if shallUpdateGui else {}), energy=energy, stopThresholdReached=stopThresholdReached, stepData={
+        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui(serializedData=serializedData, post=False) if shallUpdateGui else {}), energy=stepData['energy'], stopThresholdReached=stopThresholdReached, stepData={
           'saveData': (shallPerformStep or self.__enforceSendingStepData),
           'saveImage': (shallPerformStep or self.__enforceSendingStepData) and self.__viewSettings['captureVideo'],
-          'step': self.__geoGrid.step(),
-          'energy': energy,
-          'energyWeighted': energyWeighted,
-          'energyPerPotential': energyPerPotential,
-          'energyWeightedPerPotential': energyWeightedPerPotential,
-          'countDeficiencies': countDeficiencies,
-          'countAlmostDeficiencies': countAlmostDeficiencies,
+          **stepData,
         })
         # cleanup
         if self.__viewSettings['captureVideo'] and not self.__enforceSendingStepData:
@@ -112,14 +97,11 @@ class WorkerThread(Thread):
   def __post(self, **kwargs):
     wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
 
-  def __updateGui1(self):
-    return self.__geoGrid.serializedData(self.__viewSettings)
-
-  def __updateGui2(self, serializedData, post=True):
+  def __updateGui(self, serializedData=None, post=True):
     self.__needsGUIUpdate = False
     self.__shallUpdateGui = False
     kwargs = {
-      'serializedData': serializedData,
+      'serializedData': serializedData or self.__geoGrid.serializedData(self.__viewSettings),
     }
     if post:
       self.__post(**kwargs)
@@ -128,7 +110,7 @@ class WorkerThread(Thread):
 
   def updateViewSettings(self, viewSettings=None):
     if viewSettings is None:
-      self.__updateGui2(self.__updateGui1())
+      self.__updateGui()
       return
     if not self.__viewSettings['captureVideo'] and viewSettings['captureVideo']:
       self.__enforceSendingStepData = True

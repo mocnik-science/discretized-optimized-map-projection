@@ -1,8 +1,9 @@
 import hashlib
 import json
 
-from src.app.common import APP_FILE_FORMAT
 from src.geoGrid.geoGridWeight import GeoGridWeight
+from src.interfaces.common.common import APP_FILE_FORMAT
+from src.interfaces.common.projections import PROJECTION, Projection
 from src.mechanics.potential.potentials import potentials
 
 # F = - G m1 m2 / r^2
@@ -14,9 +15,8 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialCRS=None, initialScale=1, resolution=3, dampingFactor=.96, stopThreshold=.001, limitLatForEnergy=90):
-    self.initialCRS = initialCRS
-    self.initialScale = initialScale
+  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThreshold=.001, limitLatForEnergy=90):
+    self.initialProjection = initialProjection
     self.resolution = resolution
     self._dampingFactor = dampingFactor
     self._stopThreshold = stopThreshold
@@ -41,8 +41,7 @@ class GeoGridSettings:
     return {
       'fileFormat': APP_FILE_FORMAT,
       'fileFormatVersion': '1.0',
-      'initialCRS': self.initialCRS if self.initialCRS else '',
-      'initialScale': self.initialScale,
+      'initialProjection': self.initialProjection.toJSON(),
       'resolution': self.resolution,
       'dampingFactor': self._dampingFactor,
       'stopThreshold': self._stopThreshold,
@@ -51,13 +50,16 @@ class GeoGridSettings:
       **transient,
     }
 
+  def hash(self, includeTransient=False):
+    return self.info(includeTransient=includeTransient)['hash']
+
   def info(self, includeTransient=False):
     settingsJson = self.toJSON(includeTransient=includeTransient)
     hash = hashlib.sha1(json.dumps(settingsJson).encode()).hexdigest()[:7]
     return {
       'jsonSettings': settingsJson,
       'hash': hash,
-      'dompCRS': 'DOMP:' + hash,
+      'dompSRID': 'DOMP:' + hash,
       'filenameSettings': 'domp-' + hash + '-projection.domp',
       'filenameTIN': 'domp-' + hash + '-tin.json',
     }
@@ -79,21 +81,16 @@ class GeoGridSettings:
     self._updated()
     if data['fileFormat'] != APP_FILE_FORMAT or data['fileFormatVersion'] != '1.0':
       raise Exception('Wrong fileformat')
-    self.updateInitialCRS(data['initialCRS'])
-    self.updateInitialScale(data['initialScale'])
+    self.updateInitialProjection(Projection.fromJSON(data['initialProjection']))
     self.updateResolution(data['resolution'])
     self.updateDampingFactor(data['dampingFactor'])
     self.updateStopThreshold(data['stopThreshold'])
     self.updateLimitLatForEnergy(data['limitLatForEnergy'])
     self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
 
-  def updateInitialCRS(self, initialCRS):
+  def updateInitialProjection(self, initialProjection):
     self._updated()
-    self.initialCRS = initialCRS
-
-  def updateInitialScale(self, initialScale):
-    self._updated()
-    self.initialScale = initialScale
+    self.initialProjection = initialProjection
 
   def updateResolution(self, resolution):
     self._updated()
@@ -126,10 +123,10 @@ class GeoGridSettings:
     self._updated()
     self._potentialsWeights = dict(self._potentialsWeights, **weights)
 
-  def hasInitialCRS(self):
-    return self.initialCRS is not None and self.initialCRS != ''
-  def hasNoInitialCRS(self):
-    return not self.hasInitialCRS()
+  def canBeOptimized(self):
+    return self.initialProjection is not None and self.initialProjection.canBeOptimized
+  def cannotBeOptimized(self):
+    return not self.canBeOptimized()
 
   def weightedPotentials(self):
     return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]

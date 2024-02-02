@@ -4,6 +4,7 @@ import wx
 import wx.adv
 
 from src.interfaces.common.common import APP_FILES_PATH, APP_SETTINGS_PATH, APP_VIEW_SETTINGS_PATH
+from src.interfaces.common.interfaceCommon import InterfaceCommon
 from src.interfaces.gui.windows.windowMain import WindowMain
 
 class TaskBarIcon(wx.adv.TaskBarIcon):
@@ -29,3 +30,4 @@ def run():
     with shelve.open(APP_VIEW_SETTINGS_PATH) as viewSettings:
       app = App(redirect=False, appSettings=appSettings, viewSettings=viewSettings)
       app.MainLoop()
+  InterfaceCommon.cleanup()

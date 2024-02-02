@@ -2,6 +2,8 @@ import json
 import wx
 
 from src.interfaces.common.common import APP_NAME, APP_FILES_PATH
+from src.interfaces.common.interfaceCommon import InterfaceCommon
+from src.interfaces.common.projections import PROJECTION
 from src.interfaces.gui.threads.renderThread import RenderThread, EVT_RENDER_THREAD_UPDATE
 from src.interfaces.gui.threads.workerThread import WorkerThread, EVT_WORKER_THREAD_UPDATE
 from src.interfaces.gui.windows.windows import isWindowDestroyed
@@ -77,7 +79,7 @@ class WindowMain(wx.Frame):
 
     # init
     menuBar = wx.MenuBar()
-    menuItemsNotForOnlyShowForCRS = []
+    menuItemsOnlyIfCanBeOptimized = []
 
     # projection menu
     projectionMenu = wx.Menu()
@@ -85,9 +87,9 @@ class WindowMain(wx.Frame):
     # projection menu: projection
     addItem(projectionMenu, 'Show projections installed to PROJ/QGIS...\tCtrl+P', None, self.onShowProj)
     projectionMenu.AppendSeparator()
-    addItem(projectionMenu, 'Save and install projection to PROJ/QGIS\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall)
-    addItem(projectionMenu, 'Save projection for PROJ/QGIS...\tCtrl+Alt+S', None, self.onSaveProjectionTIN)
-    addItem(projectionMenu, 'Save projection for PROJ/QGIS to default directory', None, self.onSaveProjectionTINToDefault)
+    menuItemsOnlyIfCanBeOptimized.append(addItem(projectionMenu, 'Save and install projection to PROJ/QGIS\tCtrl+I', None, self.onSaveProjectionTINToDefaultAndInstall))
+    menuItemsOnlyIfCanBeOptimized.append(addItem(projectionMenu, 'Save projection for PROJ/QGIS...\tCtrl+Alt+S', None, self.onSaveProjectionTIN))
+    menuItemsOnlyIfCanBeOptimized.append(addItem(projectionMenu, 'Save projection for PROJ/QGIS to default directory', None, self.onSaveProjectionTINToDefault))
     projectionMenu.AppendSeparator()
     addItem(projectionMenu, 'About...', None, self.onAbout)
 
@@ -107,27 +109,10 @@ class WindowMain(wx.Frame):
     resetMenuItems = []
     resetMenuItems.append(addItem(simulationMenu, 'Reset to simulation\tCtrl+Back', None, self.onReset))
     simulationMenu.AppendSeparator()
-    def addProjection(projectionName, crs, scaleDeferred=None):
-      resetMenuItems.append(addItem(simulationMenu, f'Show {projectionName} projection', None, lambda *args, **kwargs: self.onReset(*args, crs=crs, scale=(scaleDeferred if scaleDeferred else strategyForScale(crs))(), **kwargs)))
-    addProjection('Aitoff', 'ESRI:53043')
-    # addProjection('Albers', 'EPSG:5072') # Maßstab unklar
-    # addProjection('Bonne', 'ESRI:53024') # Maßstab unklar
-    addProjection('Eckert I', 'ESRI:53015')
-    addProjection('Eckert II', 'ESRI:53014')
-    addProjection('Eckert III', 'ESRI:53013')
-    addProjection('Eckert IV', 'ESRI:53012')
-    addProjection('Eckert V', 'ESRI:53011')
-    addProjection('Eckert VI', 'ESRI:53010')
-    # addProjection('Gall-Peters', '???') # CRS code unclear
-    # addProjection('Hammer-Aitoff', 'ESRI:53044') # ProjError: Input is not a transformation
-    addProjection('Mercator', 'EPSG:3395')
-    addProjection('Mollweide', 'ESRI:53009')
-    addProjection('Natural Earth', 'ESRI:53077')
-    addProjection('Natural Earth II', 'ESRI:53078')
-    addProjection('Peirce Quincuncial North Pole', 'ESRI:54090', scaleDeferred=strategyForScale('ESRI:54090', corners=[[-180, 0], [-90, 0], [0, 0], [90, 0]], horizontal=True, vertical=True, diagonalUp=True, diagonalDown=True, degreeHorizontal=360, degreeVertical=360, degreeDiagonalUp=360, degreeDiagonalDown=360, epsilon=0))
-    addProjection('Robinson', 'ESRI:53030')
-    addProjection('Sinusoidal', 'ESRI:53008')
-    addProjection('Winkel-Tripel', 'ESRI:53042')
+    for projection in PROJECTION.relevantProjections:
+      def _onResetWithProjection(projection):
+        return lambda *args, **kwargs: self.onReset(*args, projection, **kwargs)
+      resetMenuItems.append(addItem(simulationMenu, f"Show {projection.name} projection", None, _onResetWithProjection(projection)))
 
     # capture menu
     captureMenu = wx.Menu()
@@ -135,22 +120,22 @@ class WindowMain(wx.Frame):
     addItem(captureMenu, 'Save data', None, self.onSaveData)
     addItem(captureMenu, 'Save screenshot', None, self.onSaveScreenshot)
     addItem(captureMenu, 'Save screenshot (large symbols)', None, lambda *args: self.onSaveScreenshot(*args, largeSymbols=True))
-    menuItemsNotForOnlyShowForCRS.append(addCheckItem(captureMenu, 'Start/stop video capture', self.__viewSettings, 'captureVideo', self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addCheckItem(captureMenu, 'Start/stop video capture', self.__viewSettings, 'captureVideo', self.updateViewSettings))
 
     # view menu
     viewMenu = wx.Menu()
     menuBar.Append(viewMenu, "&View")
     # view menu: potentials
     key = 'selectedPotential'
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'All forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Hide forces', self.__viewSettings, key, None, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'All forces', self.__viewSettings, key, 'ALL', self.updateViewSettings, default=True))
     for potential in self.__geoGridSettings.potentials:
-      menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, f"Force for {potential.kind.lower().replace('_', ' ')}", self.__viewSettings, key, potential.kind, self.updateViewSettings))
+      menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, f"Force for {potential.kind.lower().replace('_', ' ')}", self.__viewSettings, key, potential.kind, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: visualization method
     key = 'selectedVisualizationMethod'
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Sum of forces', self.__viewSettings, key, 'SUM', self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Individual force', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Sum of forces', self.__viewSettings, key, 'SUM', self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Individual force', self.__viewSettings, key, 'INDIVIDUALLY', self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: energy
     key = 'selectedEnergy'
@@ -161,8 +146,8 @@ class WindowMain(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: draw neighbours
     key = 'drawNeighbours'
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide neighbours', self.__viewSettings, key, False, self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Show neighbours', self.__viewSettings, key, True, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Hide neighbours', self.__viewSettings, key, False, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Show neighbours', self.__viewSettings, key, True, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: draw labels
     key = 'drawLabels'
@@ -178,8 +163,8 @@ class WindowMain(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: draw original polygons
     key = 'drawOriginalPolygons'
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Hide initial cells', self.__viewSettings, key, False, self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Show initial cells', self.__viewSettings, key, True, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Hide initial cells', self.__viewSettings, key, False, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Show initial cells', self.__viewSettings, key, True, self.updateViewSettings))
     viewMenu.AppendSeparator()
     # view menu: draw continents
     key = 'drawContinentsTolerance'
@@ -190,10 +175,10 @@ class WindowMain(wx.Frame):
     viewMenu.AppendSeparator()
     # view menu: showNthStep
     key = 'showNthStep'
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Try to render every step', self.__viewSettings, key, 1, self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings))
-    menuItemsNotForOnlyShowForCRS.append(addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Try to render every step', self.__viewSettings, key, 1, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Render every 5th step', self.__viewSettings, key, 5, self.updateViewSettings, default=True))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Render every 10th step', self.__viewSettings, key, 10, self.updateViewSettings))
+    menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Render every 25th step', self.__viewSettings, key, 25, self.updateViewSettings))
 
     self.SetMenuBar(menuBar)
 
@@ -221,19 +206,19 @@ class WindowMain(wx.Frame):
     # update functions
     def guiPlay(isPlaying):
       # menu
-      startMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
-      startStopMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
-      stopMenuItem.Enable(enable=isPlaying and self.__geoGridSettings.hasNoInitialCRS())
-      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
+      startMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.canBeOptimized())
+      startStopMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.canBeOptimized())
+      stopMenuItem.Enable(enable=isPlaying and self.__geoGridSettings.canBeOptimized())
+      computeNextStepMenuItem.Enable(enable=not isPlaying and self.__geoGridSettings.canBeOptimized())
       for resetMenuItem in resetMenuItems:
         resetMenuItem.Enable(enable=not isPlaying)
-      for menuItem in menuItemsNotForOnlyShowForCRS:
-        menuItem.Enable(enable=self.__geoGridSettings.hasNoInitialCRS())
+      for menuItem in menuItemsOnlyIfCanBeOptimized:
+        menuItem.Enable(enable=self.__geoGridSettings.canBeOptimized())
       # toolbar
       toolBar.SetToolNormalBitmap(0, iconPause if isPlaying else iconPlayStop)
       # toolBar.SetToolNormalBitmap(1, iconPause if isPlaying else iconPlay)
-      toolBar.EnableTool(0, self.__geoGridSettings.hasNoInitialCRS())
-      toolBar.EnableTool(2, not isPlaying and self.__geoGridSettings.hasNoInitialCRS())
+      toolBar.EnableTool(0, self.__geoGridSettings.canBeOptimized())
+      toolBar.EnableTool(2, not isPlaying and self.__geoGridSettings.canBeOptimized())
       toolBar.EnableTool(3, not isPlaying)
       toolBar.Realize()
       toolBar.Refresh()
@@ -277,18 +262,18 @@ class WindowMain(wx.Frame):
 
   def updateViewSettings(self, viewSettingsPrevious):
     if viewSettingsPrevious['captureVideo'] and not self.__viewSettings['captureVideo']:
-      self.__renderThread.renderVideo(self)
+      self.__renderThread.saveVideo(self)
     if self.__workerThread:
       self.__workerThread.updateViewSettings(self.__viewSettings)
     if self.__renderThread:
       self.__renderThread.updateViewSettings(self.__viewSettings)
 
-  def onSaveScreenshot(self, event, largeSymbols=False):
-    self.__renderThread.saveScreenshot(self, largeSymbols=largeSymbols)
-  
   def onSaveData(self, event):
     self.__renderThread.saveData(self)
 
+  def onSaveScreenshot(self, event, largeSymbols=False):
+    self.__renderThread.saveScreenshot(self, largeSymbols=largeSymbols)
+  
   def loadImage(self, image):
     self.__newImage = image
     if self.__isLoadingNewImage:
@@ -516,9 +501,8 @@ class WindowMain(wx.Frame):
       self._guiPlay(True)
       self.__workerThread.unpauseStop()
 
-  def onReset(self, event, crs=None, scale=1):
-    self.__geoGridSettings.initialCRS = crs
-    self.__geoGridSettings.initialScale = scale
+  def onReset(self, event, projection=PROJECTION.unprojected):
+    self.__geoGridSettings.initialProjection = projection
     self.reset()
 
   def onClose(self, event):
