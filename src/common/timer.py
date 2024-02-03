@@ -1,6 +1,8 @@
 import time
 
-DISABLE_ALL_LOG = True
+from src.common.console import Console
+
+DISABLE_ALL_LOG = False
 FILTER_LOG = None
 
 class timer(object):
@@ -27,7 +29,7 @@ class timer(object):
     avg = ''
     if self.__showAverage is not False:
       avg = f", avg {sum(timer.__durationsByLabel[self.__label]) / len(timer.__durationsByLabel[self.__label]) * 10**3:8.3f} ms"
-    print(f"{label1:<10} | {self.__label:<60} {duration * 10**3:8.3f} ms{avg}")
+    Console.print(f"{label1:<10} | {self.__label:<60} {duration * 10**3:8.3f} ms{avg}")
 
   def end(self):
     if self.__time is None:

@@ -1,5 +1,8 @@
 import os
+import py
+import sys
 
+from src.common.console import Console
 from src.geoGrid.geoGrid import GeoGrid
 from src.geoGrid.geoGridSettings import GeoGridSettings
 from src.geoGrid.geoGridWeight import GeoGridWeight
@@ -7,6 +10,8 @@ from src.interfaces.common.common import APP_NAME, APP_COPYRIGHT, APP_FILES_PATH
 from src.interfaces.common.interfaceCommon import InterfaceCommon
 from src.interfaces.common.projections import PROJECTION, Projection
 from src.mechanics.potential.potentials import potentials
+
+Print = Console.print
 
 class POTENTIAL:
   pass
@@ -44,12 +49,15 @@ class DOMP:
     # load the default projection
     self.loadProjection()
 
+  def __callbackStatus(self, status, energy=None, calibration=None):
+    Console.print(f"{'':<10} |", status, energy or '', calibration or '')
+  
   ###### ABOUT
 
   def about(self):
-    print(APP_NAME)
-    print(APP_COPYRIGHT)
-    print()
+    Console.print(APP_NAME)
+    Console.print(APP_COPYRIGHT)
+    Console.print()
 
   ###### VIEW SETTINGS
 
@@ -148,9 +156,7 @@ class DOMP:
     self.__resetGeoGrid()
 
   def __resetGeoGrid(self):
-    def callbackStatus(status, energy, calibration=None):
-      print(f"{'':<10} |", status, energy or '', calibration or '')
-    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=callbackStatus)
+    self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=self.__callbackStatus)
 
   ###### RUN
 
@@ -230,5 +236,22 @@ class DOMP:
     self.__videoDatas = [vd for vd in self.__videoDatas if vd != videoData]
     InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
 
-  def cleanup(self):
+  ###### WITH
+
+  def __trace(self, frame, event, arg):
+    if event != 'line':
+      return
+    lineNumber = frame.f_lineno
+    Console.status(f'\nline {lineNumber + 1:>5} |', self.__codeFulltext[lineNumber].strip())
+
+  def __enter__(self):
+    sys.settrace(lambda *args, **kwargs: None)
+    frame = sys._getframe(1)
+    self.__codeFulltext = py.code.Frame(sys._getframe(1)).code.fullsource
+    frame.f_trace = self.__trace
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    self.__callbackStatus('cleanup')
     InterfaceCommon.cleanup()
+    Console.clearStatus()

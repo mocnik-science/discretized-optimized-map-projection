@@ -1,6 +1,5 @@
-import math
 
-from src.common.functions import sign
+# from src.common.console import Console
 from src.geometry.cartesian import Cartesian
 from src.geoGrid.geoGridWeight import GeoGridWeight
 from src.mechanics.force import Force
@@ -41,7 +40,7 @@ class PotentialArea(Potential):
     cartesianA = Cartesian.orientedArea(*(neighbouringCell.point() for neighbouringCell in neighbouringCells)) * self.calibrationFactor**2
     if cartesianA < 0:
     #   geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
-    #   print(cell._id2, cartesianA, cartesianA / geoA)
+    #   Console.print(cell._id2, cartesianA, cartesianA / geoA)
       return 0
     geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
     return cartesianA / geoA - 1
