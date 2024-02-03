@@ -5,7 +5,7 @@ import time
 import wx
 
 from src.common.timer import timer
-from src.interfaces.common.interfaceCommon import File, InterfaceCommon
+from src.interfaces.common.interfaceCommon import InterfaceCommon
 
 EVT_RENDER_THREAD_UPDATE_ID = wx.NewId()
 
