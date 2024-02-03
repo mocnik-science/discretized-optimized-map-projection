@@ -104,13 +104,20 @@ class WindowMain(wx.Frame):
     startStopMenuItem = addItem(simulationMenu, 'Start, and stop at threshold\tSpace', None, self.onRunStop)
     stopMenuItem = addItem(simulationMenu, 'Stop\tSpace', None, self.onRun)
     computeNextStepMenuItem = addItem(simulationMenu, 'Compute next step\tCtrl+Right', None, self.onRun1)
+    simulationMenu.AppendSeparator()
     resetMenuItems = []
-    resetMenuItems.append(addItem(simulationMenu, 'Reset to simulation\tCtrl+Back', None, self.onReset))
+    resetMenuItems.append(addItem(simulationMenu, 'Reset to unprojected coordinates\tCtrl+Back', None, self.onReset))
+    for projection in PROJECTION.relevantProjections:
+          if projection.canBeOptimized:
+            def _onResetWithProjection(projection):
+              return lambda *args, **kwargs: self.onReset(*args, projection, **kwargs)
+            resetMenuItems.append(addItem(simulationMenu, f"Reset to {projection.name} projection", None, _onResetWithProjection(projection)))
     simulationMenu.AppendSeparator()
     for projection in PROJECTION.relevantProjections:
-      def _onResetWithProjection(projection):
-        return lambda *args, **kwargs: self.onReset(*args, projection, **kwargs)
-      resetMenuItems.append(addItem(simulationMenu, f"Show {projection.name} projection", None, _onResetWithProjection(projection)))
+      if not projection.canBeOptimized:
+        def _onResetWithProjection(projection):
+          return lambda *args, **kwargs: self.onReset(*args, projection, **kwargs)
+        resetMenuItems.append(addItem(simulationMenu, f"Show {projection.name} projection", None, _onResetWithProjection(projection)))
 
     # capture menu
     captureMenu = wx.Menu()
@@ -197,7 +204,7 @@ class WindowMain(wx.Frame):
     addTool(0, 'RunStop', iconPlayStop, self.onRunStop)
     # addTool(1, 'Run', iconPlay, self.onRun)
     addTool(2, 'Run one step', iconPlay1, self.onRun1)
-    addTool(3, 'Reset to simulation', iconReset, self.onReset)
+    addTool(3, 'Reset to unprojected coordinates', iconReset, self.onReset)
     addTool(4, 'Show simulation settings', iconGear, self.onShowSimulationSettings)
     toolBar.Realize()
 

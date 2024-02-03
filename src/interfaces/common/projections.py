@@ -1,11 +1,16 @@
+import math
+
+from src.geometry.common import Common
+from src.geometry.geo import Geo
 from src.geometry.strategy import strategyForScale
 
 class Projection:
-  def __init__(self, name=None, srid=None, scale=None, canBeOptimized=False):
+  def __init__(self, name=None, srid=None, scale=None, transform=None, canBeOptimized=False):
     self.name = name
     self.srid = srid
-    self.scale = scale if scale or srid is None else strategyForScale(srid)
+    self.transform = transform
     self.canBeOptimized = canBeOptimized
+    self.scale = scale(self) if callable(scale) else scale if scale or (transform is None and srid is None) else strategyForScale()(self)
 
   def toJSON(self):
     return {
@@ -91,7 +96,7 @@ class PROJECTION:
   Peirce_Quincuncial_North_Pole = Projection(
     name='Peirce Quincuncial North Pole',
     srid='ESRI:54090',
-    scale=strategyForScale('ESRI:54090', corners=[[-180, 0], [-90, 0], [0, 0], [90, 0]], horizontal=True, vertical=True, diagonalUp=True, diagonalDown=True, degreeHorizontal=360, degreeVertical=360, degreeDiagonalUp=360, degreeDiagonalDown=360, epsilon=0),
+    scale=strategyForScale(corners=[[-180, 0], [-90, 0], [0, 0], [90, 0]], horizontal=True, vertical=True, diagonalUp=True, diagonalDown=True, degreeHorizontal=360, degreeVertical=360, degreeDiagonalUp=360, degreeDiagonalDown=360, epsilon=0),
   )
   Robinson = Projection(
     name='Robinson',
@@ -100,7 +105,13 @@ class PROJECTION:
   Sinusoidal = Projection(
     name='Sinusoidal',
     srid='ESRI:53008',
+    transform=lambda x, y: (math.cos(Common.deg2rad(y)) * x * Geo.radiusEarth / 360, y * Geo.radiusEarth / 360),
+    canBeOptimized=True,
   )
+  # Sinusoidal_ORIGINAL = Projection(
+  #   name='Sinusoidal ORIGINAL',
+  #   srid='ESRI:53008',
+  # )
   Winkel_Tripel = Projection(
     name='Winkel-Tripel',
     srid='ESRI:53042',
