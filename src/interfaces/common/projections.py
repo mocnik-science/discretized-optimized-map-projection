@@ -25,6 +25,7 @@ class Projection:
     return Projection(**data)
 
 class PROJECTION:
+  allProjections = [] # initialized below
   relevantProjections = [] # initialized below
 
   unprojected = Projection(
@@ -117,4 +118,5 @@ class PROJECTION:
     srid='ESRI:53042',
   )
 
-PROJECTION.relevantProjections = [getattr(PROJECTION, attr) for attr in dir(PROJECTION) if isinstance(getattr(PROJECTION, attr), Projection) and attr not in ['unprojected']]
+PROJECTION.allProjections = [getattr(PROJECTION, attr) for attr in dir(PROJECTION) if isinstance(getattr(PROJECTION, attr), Projection)]
+PROJECTION.relevantProjections = [proj for proj in PROJECTION.allProjections if proj not in [PROJECTION.unprojected]]
