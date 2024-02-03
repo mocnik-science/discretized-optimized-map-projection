@@ -216,10 +216,14 @@ class DOMP:
   def data(self, dataData=None, **kwargs):
     self.saveData(self.startData(dataData=dataData), **kwargs)
 
-  def startData(self, dataData=None):
+  def appendData(self, dataData=None, **kwargs):
+    self.stopData(self.startData(dataData=dataData), **kwargs)
+
+  def startData(self, dataData=None, preventInitialSnapshot=False):
     dataData = dataData or InterfaceCommon.startData()
     self.__dataDatas.append(dataData)
-    self.__stepActionsData(dataData=dataData)
+    if not preventInitialSnapshot:
+      self.__stepActionsData(dataData=dataData)
     return dataData
 
   def stopData(self, dataData):
