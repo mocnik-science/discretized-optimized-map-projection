@@ -154,12 +154,16 @@ class DOMP:
       raise Exception('Provide both a name and an SRID')
     self.__geoGridSettings.initialProjection = projection
     self.__resetGeoGrid()
+    self.__stepActions()
 
   def __resetGeoGrid(self):
     self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=self.__callbackStatus)
 
   ###### RUN
 
+  def __stepActions(self):
+    self.__stepActionsData(self.__dataDatas)
+    self.__stepActionsVideo(self.__videoDatas)
   def __stepActionsData(self, dataDatas=None, dataData=None):
     if dataData and not dataDatas:
       dataDatas = [dataData]
@@ -181,8 +185,7 @@ class DOMP:
   def steps(self, n=None):
     def _step():
       self.__geoGrid.performStep()
-      self.__stepActionsData(self.__dataDatas)
-      self.__stepActionsVideo(self.__videoDatas)
+      self.__stepActions()
     if n is None:
       while True:
         _step()
