@@ -9,7 +9,7 @@ from src.mechanics.potential.potential import Potential
 
 class PotentialDistanceHomogeneity(Potential):
   kind = 'DISTANCE_HOMOGENEITY'
-  defaultWeight = GeoGridWeight(active=False, weightLand=.2, weightOceanActive=True, weightOcean=0.05, distanceTransitionStart=100000, distanceTransitionEnd=800000)
+  defaultWeight = GeoGridWeight(active=False, weightLand=.2, weightOceanActive=True, weightOcean=.05, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
   __dataForCellCache = {}
 

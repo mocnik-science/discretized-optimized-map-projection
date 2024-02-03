@@ -6,7 +6,7 @@ from src.mechanics.potential.potential import Potential
 class PotentialTriangleAltitude(Potential):
   kind = 'TRIANGLE_ALTITUDE'
   computationalOrder = 1
-  defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=True, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
+  defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=False, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
   maximumStrengthRatioOfTypicalDistance = .2
   __dataForCellCache = {}
