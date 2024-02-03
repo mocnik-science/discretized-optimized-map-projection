@@ -100,7 +100,7 @@ class DOMP:
   def stopThreshold(self, stopThreshold=None):
     if stopThreshold is not None:
       self.__geoGridSettings.updateStopThreshold(stopThreshold / 100)
-    return 100 * self.__geoGridSettings.stopThreshold
+    return 100 * self.__geoGridSettings._stopThreshold
 
   def limitLatForEnergy(self, limitLatForEnergy=None):
     if limitLatForEnergy is not None:
