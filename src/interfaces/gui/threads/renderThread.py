@@ -50,7 +50,7 @@ class RenderThread(Thread):
         with t:
           # data
           if self.__stepData and (self.__stepData['saveData'] or self.__stepData['step'] == 0):
-            InterfaceCommon.stepData(self.__dataData, self.__geoGridSettings, stepData=self.__stepData)
+            InterfaceCommon.stepData(self.__dataData, self.__geoGridSettings, stepData=self.__stepData, appendOnlyIf=self.__stepData['step'] > 0)
             self.__stepData['saveData'] = False
           # render
           im, _ = InterfaceCommon.renderImage(self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, size=self.__size if not self.__viewSettings['captureVideo'] else None)

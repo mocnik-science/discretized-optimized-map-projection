@@ -51,7 +51,7 @@ class InterfaceCommon:
     return InterfaceCommon.hash()
 
   @staticmethod
-  def stepData(dataData, geoGridSettings, geoGrid=None, stepData=None):
+  def stepData(dataData, geoGridSettings, geoGrid=None, stepData=None, appendOnlyIf=True):
     stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
     if stepData is None:
       raise Exception('Please provide either stepData or geogrid')
@@ -97,7 +97,7 @@ class InterfaceCommon:
         headerRow = f"{','.join(data.keys())}\n"
         f.write(headerRow)
         f.write(dataRow)
-    elif stepData['step'] > 0:
+    elif appendOnlyIf:
       with open(fileNameTmp, 'a') as f:
         f.write(dataRow)
 
