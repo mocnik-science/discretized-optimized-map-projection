@@ -1,6 +1,6 @@
 import wx
 
-from src.geometry.geo import radiusEarth
+from src.geometry.geo import Geo
 from src.geoGrid.geoGridWeight import GeoGridWeight
 
 class WindowSimulationSettings(wx.Frame):
@@ -51,7 +51,7 @@ class WindowSimulationSettings(wx.Frame):
     def weightNumber(box, key, callback, defaultValue=1, disabled=[], label=None):
       number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=100, digits=2, increment=.1, disabled=disabled, label=label)
     def distanceNumber(box, key, callback, defaultValue=1, disabled=[], label=None, unit=None):
-      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=radiusEarth / 1000, digits=2, increment=1, disabled=disabled, label=label, unit=unit)
+      number(box, key, callback, defaultValue=defaultValue, minValue=0, maxValue=Geo.radiusEarth / 1000, digits=2, increment=1, disabled=disabled, label=label, unit=unit)
     def checkBox(box, key, callback, defaultValue=True, disabled=[], proportion=0, **kwargs):
       checkBox = wx.CheckBox(self._panel, **kwargs)
       checkBox.SetValue(defaultValue)

@@ -4,10 +4,10 @@ import shapely
 from src.geometry.cartesian import Point
 from src.geometry.common import Common
 
-radiusEarth = 6371007.1809
-radiusEarth2 = radiusEarth * radiusEarth
-
 class Geo:
+  radiusEarth = 6371007.1809
+  radiusEarth2 = radiusEarth * radiusEarth
+
   @staticmethod
   def distance(start, end): # in metres
     startX = Common.deg2rad(start.x)
@@ -16,10 +16,10 @@ class Geo:
     endY = Common.deg2rad(end.y)
     # Haversine theorem
     a = math.sin((endY - startY) / 2)**2 + math.cos(startY) * math.cos(endY) * math.sin((endX - startX) / 2)**2
-    return radiusEarth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return Geo.radiusEarth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     # faster, but numerically less stable:
     # a = (1 - math.cos(endY - startY) + math.cos(startY) * math.cos(endY) * (1 - math.cos(endX - startX))) / 2
-    # return radiusEarth * 2 * math.asin(min(1, math.sqrt(a)))
+    # return Geo.radiusEarth * 2 * math.asin(min(1, math.sqrt(a)))
 
   @staticmethod
   def bearing(start, end): # in radiant, negatively oriented, north is 0
@@ -42,7 +42,7 @@ class Geo:
       #   d += Common._2pi
       # e += d
     # Girard's theorem
-    return e * radiusEarth2
+    return e * Geo.radiusEarth2
 
   @staticmethod
   def areaOfPolygon(polygon): # in square metres
@@ -59,13 +59,13 @@ class Geo:
     for i in range(1, lenPoints + 1):
       e += Common.normalizeAngle(Geo.bearing(points[i], points[i - 1]) - Geo.bearing(points[i], points[i + 1]))
     # generalized Girard's theorem
-    return e * radiusEarth2
+    return e * Geo.radiusEarth2
 
   # @staticmethod
   # def destination(start, bearing, distance): # in radiants
   #   startX = Common.deg2rad(start.x)
   #   startY = Common.deg2rad(start.y)
-  #   d = distance / radiusEarth # angular distance
+  #   d = distance / Geo.radiusEarth # angular distance
   #   y2 = math.asin(math.sin(startY) * math.cos(d) + math.cos(startY) * math.sin(d) * math.cos(bearing))
   #   x2 = startX + math.atan2(math.sin(bearing) * math.sin(d) * math.cos(startY), math.cos(d) - math.sin(startY) * math.sin(y2))
   #   return Point(x2, y2)
@@ -80,7 +80,7 @@ class Geo:
   @staticmethod
   # segmentation length in km
   def segmentize(geometry, segmentation=10000):
-    maxSegmentInDegree = segmentation * 360 / (Common._pi * 2 * radiusEarth)
+    maxSegmentInDegree = segmentation * 360 / (Common._pi * 2 * Geo.radiusEarth)
     return [shapely.segmentize(g, max_segment_length=maxSegmentInDegree) for g in (geometry if isinstance(geometry, list) else [geometry])]
 
   class PreparedForDistanceTo:

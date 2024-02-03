@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from src.common.timer import timer
 from src.geometry.common import Common
-from src.geometry.geo import radiusEarth
+from src.geometry.geo import Geo
 from src.geometry.naturalEarth import NaturalEarth
 from src.interfaces.common.common import APP_CAPTURE_PATH
 
@@ -48,9 +48,9 @@ class GeoGridRenderer:
       heightOverall = height
       width -= 2 * border
       height -= 2 * border
-      xMin = -Common._pi * radiusEarth * boundsExtend
+      xMin = -Common._pi * Geo.radiusEarth * boundsExtend
       xMax = -xMin
-      yMin = -Common._pi_2 * radiusEarth * boundsExtend
+      yMin = -Common._pi_2 * Geo.radiusEarth * boundsExtend
       yMax = -yMin
       w = min(width, (xMax - xMin) / (yMax - yMin) * height)
       h = min(height, (yMax - yMin) / (xMax - xMin) * width)
@@ -58,7 +58,7 @@ class GeoGridRenderer:
       dy2 = border + (height - h) / 2
       s = w / (xMax - xMin)
       projectToImage = lambda x, y: (dx2 + s * (x - xMin), dy2 + s * (-y - yMin))
-      k = Common._pi_180 * radiusEarth
+      k = Common._pi_180 * Geo.radiusEarth
       lonLatToCartesian = lambda cs: (k * c for c in cs)
       viewSettings = {
         **viewSettings,

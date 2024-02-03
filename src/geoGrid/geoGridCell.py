@@ -2,7 +2,7 @@ import shapely
 
 from src.geometry.common import Common
 from src.geometry.cartesian import Point
-from src.geometry.geo import Geo, radiusEarth
+from src.geometry.geo import Geo
 from src.geometry.naturalEarth import NaturalEarth
 
 def translatePoint(p, dLon):
@@ -29,8 +29,8 @@ class GeoGridCell:
     self._noTriangle = None
     self._centreOriginal = translatePoint(dggridCell.centre, dLon)
     self._polygonOriginal = translatePolygon(dggridCell.polygon, dLon)
-    self.x = radiusEarth * Common.deg2rad(self._centreOriginal.x)
-    self.y = radiusEarth * Common.deg2rad(self._centreOriginal.y)
+    self.x = Geo.radiusEarth * Common.deg2rad(self._centreOriginal.x)
+    self.y = Geo.radiusEarth * Common.deg2rad(self._centreOriginal.y)
     self._neighboursBearings2 = None
     self._energy = {}
     self._energyWeight = {}
