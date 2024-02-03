@@ -1,16 +1,25 @@
 import math
+from pyproj import CRS, Transformer
 
 from src.geometry.common import Common
 from src.geometry.geo import Geo
 from src.geometry.strategy import strategyForScale
 
 class Projection:
-  def __init__(self, name=None, srid=None, scale=None, transform=None, canBeOptimized=False):
+  def __init__(self, name=None, srid=None, scale=None, transformRad=None, transformDeg=None, needsNoTransform=False, canBeOptimized=False):
     self.name = name
     self.srid = srid
-    self.transform = transform
+    if transformRad:
+      self.transform = lambda x, y: transformRad(Common.deg2rad(x), Common.deg2rad(y))
+    elif transformDeg:
+      self.transform = transformDeg
+    elif srid:
+      self.transform = Transformer.from_crs(CRS('EPSG:4326'), CRS(srid), always_xy=True).transform
+    else:
+      self.transform = None
+    self.needsNoTransform = needsNoTransform
     self.canBeOptimized = canBeOptimized
-    self.scale = scale(self) if callable(scale) else scale if scale or (transform is None and srid is None) else strategyForScale()(self)
+    self.scale = scale(self) if callable(scale) else scale if scale or (self.transform is None and srid is None) else strategyForScale()(self)
 
   def toJSON(self):
     return {
@@ -82,9 +91,16 @@ class PROJECTION:
   Mercator = Projection(
     name='Mercator',
     srid='EPSG:3395',
+    needsNoTransform=True,
   )
   Mollweide = Projection(
     name='Mollweide',
+    srid='ESRI:53009',
+    transformRad=lambda l, t: (Geo.radiusEarth * Common._sqrt2 / Common._pi_2 * l * math.cos(t), Geo.radiusEarth * Common._sqrt2 * math.sin(t)),
+    canBeOptimized=True,
+  )
+  Mollweide_PROJ = Projection(
+    name='Mollweide (PROJ)',
     srid='ESRI:53009',
   )
   Natural_Earth = Projection(
@@ -107,13 +123,13 @@ class PROJECTION:
   Sinusoidal = Projection(
     name='Sinusoidal',
     srid='ESRI:53008',
-    transform=lambda x, y: (math.cos(Common.deg2rad(y)) * x * Geo.radiusEarth / 360, y * Geo.radiusEarth / 360),
+    transformRad=lambda l, t: (Geo.radiusEarth * l * math.cos(t), Geo.radiusEarth * t),
     canBeOptimized=True,
   )
-  # Sinusoidal_ORIGINAL = Projection(
-  #   name='Sinusoidal ORIGINAL',
-  #   srid='ESRI:53008',
-  # )
+  Sinusoidal_PROJ = Projection(
+    name='Sinusoidal (PROJ)',
+    srid='ESRI:53008',
+  )
   Winkel_Tripel = Projection(
     name='Winkel-Tripel',
     srid='ESRI:53042',

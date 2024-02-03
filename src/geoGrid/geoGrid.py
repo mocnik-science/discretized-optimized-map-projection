@@ -1,7 +1,6 @@
 import gzip
 import os
 import pickle
-from pyproj import CRS, Transformer
 from scipy.optimize import minimize_scalar
 import shapely
 import shutil
@@ -61,15 +60,10 @@ class GeoGrid:
     # update the settings
     self.__settings.updateGridStats(self.__gridStats)
     # project to initial crs
-    if self.__settings.initialProjection and self.__settings.initialProjection.transform is not None:
+    if self.__settings.initialProjection and not self.__settings.initialProjection.needsNoTransform and self.__settings.initialProjection.transform is not None:
       with timer('apply initial CRS'):
         for cell in self.__cells.values():
           cell.initTransform(self.__settings.initialProjection.transform, scale=self.__settings.initialProjection.scale)
-    elif self.__settings.initialProjection and self.__settings.initialProjection.srid is not None:
-      with timer('apply initial CRS'):
-        transformer = Transformer.from_crs(CRS('EPSG:4326'), CRS(self.__settings.initialProjection.srid), always_xy=True)
-        for cell in self.__cells.values():
-          cell.initTransformer(transformer, scale=self.__settings.initialProjection.scale)
     # calibrate
     if self.__settings.canBeOptimized() is None:
       with timer('calibrate'):

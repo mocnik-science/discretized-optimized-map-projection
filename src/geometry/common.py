@@ -6,6 +6,7 @@ class Common:
   _10pi = 10 * math.pi
   _pi_2 = math.pi / 2
   _pi_180 = math.pi / 180
+  _sqrt2 = math.sqrt(2)
 
   @staticmethod
   def normalizeAngle(a, intervalStart=0): # in radiant

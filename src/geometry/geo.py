@@ -5,7 +5,7 @@ from src.geometry.cartesian import Point
 from src.geometry.common import Common
 
 class Geo:
-  radiusEarth = 6371007.1809
+  radiusEarth = 6371000
   radiusEarth2 = radiusEarth * radiusEarth
 
   @staticmethod
