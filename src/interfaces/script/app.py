@@ -77,6 +77,7 @@ class DOMP:
   def resolution(self, resolution=None):
     if resolution is not None:
       self.__geoGridSettings.updateResolution(resolution)
+      self.__resetGeoGrid()
     return self.__geoGridSettings.resolution
 
   def dampingFactor(self, dampingFactor=None):
@@ -144,6 +145,9 @@ class DOMP:
     elif srid is not None or name is not None:
       raise Exception('Provide both a name and an SRID')
     self.__geoGridSettings.initialProjection = projection
+    self.__resetGeoGrid()
+
+  def __resetGeoGrid(self):
     def callbackStatus(status, energy, calibration=None):
       print(f"{'':<10} |", status, energy or '', calibration or '')
     self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=callbackStatus)
