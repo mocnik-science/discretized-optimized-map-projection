@@ -19,8 +19,9 @@ class PotentialTriangleAltitude(Potential):
     self.__dataForCellCache = {}
 
   def energy(self, cell, neighbouringCells):
-    cells = dict((neighbouringCell._id2, neighbouringCell) for neighbouringCell in neighbouringCells)
-    return sum(self._quantity(cell, cells[i], cells[j], onlyEnergy=True, relativeToTypicalDistance=False) for i, j in cell.getNeighbourTriangles() if i in cells and j in cells)
+    return 0
+    # cells = dict((neighbouringCell._id2, neighbouringCell) for neighbouringCell in neighbouringCells)
+    # return sum(self._quantity(cell, cells[i], cells[j], onlyEnergy=True, relativeToTypicalDistance=False) for i, j in cell.getNeighbourTriangles() if i in cells and j in cells)
   def forces(self, cell, neighbouringCells):
     cells = dict((neighbouringCell._id2, neighbouringCell) for neighbouringCell in neighbouringCells)
     forces = []
@@ -37,19 +38,20 @@ class PotentialTriangleAltitude(Potential):
       forces.append(Force.byDelta(self.kind, cells[j], delta, qForce / 2, withoutDamping=True))
     return forces
   def energyAndForces(self, cell, neighbouringCells):
-    cells = dict((neighbouringCell._id2, neighbouringCell) for neighbouringCell in neighbouringCells)
-    quantities = [(i, j, self._quantity(cell, cells[i], cells[j], relativeToTypicalDistance=False)) for i, j in cell.getNeighbourTriangles() if i in cells and j in cells]
-    energy = sum(qEnergy for _, _, (qEnergy, _) in quantities)
-    forces = []
-    for i, j, (_, qForce) in quantities:
-      if qForce == 0:
-        continue
-      p = self.__dataForCellCache[(cell._id2, i, j)][1]
-      forces.append(Force.toDestination(self.kind, cell, p, qForce / 2, withoutDamping=True))
-      delta = Point(cell.x - p.x, cell.y - p.y)
-      forces.append(Force.byDelta(self.kind, cells[i], delta, qForce / 2, withoutDamping=True))
-      forces.append(Force.byDelta(self.kind, cells[j], delta, qForce / 2, withoutDamping=True))
-    return energy, forces
+    return 0, self.forces(cell, neighbouringCells=neighbouringCells)
+    # cells = dict((neighbouringCell._id2, neighbouringCell) for neighbouringCell in neighbouringCells)
+    # quantities = [(i, j, self._quantity(cell, cells[i], cells[j], relativeToTypicalDistance=False)) for i, j in cell.getNeighbourTriangles() if i in cells and j in cells]
+    # energy = sum(qEnergy for _, _, (qEnergy, _) in quantities)
+    # forces = []
+    # for i, j, (_, qForce) in quantities:
+    #   if qForce == 0:
+    #     continue
+    #   p = self.__dataForCellCache[(cell._id2, i, j)][1]
+    #   forces.append(Force.toDestination(self.kind, cell, p, qForce / 2, withoutDamping=True))
+    #   delta = Point(cell.x - p.x, cell.y - p.y)
+    #   forces.append(Force.byDelta(self.kind, cells[i], delta, qForce / 2, withoutDamping=True))
+    #   forces.append(Force.byDelta(self.kind, cells[j], delta, qForce / 2, withoutDamping=True))
+    # return energy, forces
 
   def _value(self, cell, cell1, cell2):
     Cartesian.orientedAltitude(cell.point(), cell1.point(), cell2.point())
