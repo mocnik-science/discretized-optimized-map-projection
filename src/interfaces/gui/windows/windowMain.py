@@ -204,7 +204,7 @@ class WindowMain(wx.Frame):
     addTool(0, 'RunStop', iconPlayStop, self.onRunStop)
     # addTool(1, 'Run', iconPlay, self.onRun)
     addTool(2, 'Run one step', iconPlay1, self.onRun1)
-    addTool(3, 'Reset to unprojected coordinates', iconReset, self.onReset)
+    addTool(3, 'Reset', iconReset, lambda *args, **kwargs: self.onReset(*args, self.__geoGridSettings.initialProjection, **kwargs))
     addTool(4, 'Show simulation settings', iconGear, self.onShowSimulationSettings)
     toolBar.Realize()
 
