@@ -5,9 +5,7 @@ import time
 import wx
 
 from src.common.timer import timer
-from src.geoGrid.geoGridRenderer import GeoGridRenderer
-from src.interfaces.common.common import APP_CAPTURE_PATH
-from src.interfaces.common.interfaceCommon import InterfaceCommon
+from src.interfaces.common.interfaceCommon import File, InterfaceCommon
 
 EVT_RENDER_THREAD_UPDATE_ID = wx.NewId()
 
@@ -90,23 +88,21 @@ class RenderThread(Thread):
   def updateView(self):
     self.__shallViewUpdate = True
 
+  @staticmethod
+  def __fileFunction(*args, **kwargs):
+    return lambda file: file.byDialog(wx.FileDialog, wx.ID_OK, *args, **kwargs, style=wx.FD_SAVE)
+
   def saveData(self, parentWindow):
-    def _pathFunction(defaultDir, defaultFilename):
-      dialog = wx.FileDialog(parentWindow, message='Save data', defaultDir=defaultDir, defaultFile=defaultFilename, wildcard='CSV files (*.csv)|*.csv', style=wx.FD_SAVE)
-      return dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
-    InterfaceCommon.saveData(_pathFunction, self.__dataData, self.__geoGridSettings)
+    _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save data', wildcard='CSV files (*.csv)|*.csv')
+    InterfaceCommon.saveData(_fileFunction, self.__dataData, self.__geoGridSettings)
 
   def saveScreenshot(self, parentWindow, largeSymbols=False):
-    def _pathFunction(defaultDir, defaultFilename):
-      dialog = wx.FileDialog(parentWindow, message='Save screenshot', defaultDir=defaultDir, defaultFile=defaultFilename, wildcard='Image files (*.png)|*.png', style=wx.FD_SAVE)
-      return dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
-    InterfaceCommon.saveScreenshot(_pathFunction, self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, largeSymbols=largeSymbols)
+    _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save screenshot', wildcard='Image files (*.png)|*.png')
+    InterfaceCommon.saveScreenshot(_fileFunction, self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, largeSymbols=largeSymbols)
 
   def saveVideo(self, parentWindow):
-    def _pathFunction(defaultDir, defaultFilename):
-      dialog = wx.FileDialog(parentWindow, message='Save video', defaultDir=defaultDir, defaultFile=defaultFilename, wildcard='Video files (*.mp4)|*.mp4', style=wx.FD_SAVE)
-      return dialog.GetPath() if dialog.ShowModal() == wx.ID_OK else None
-    InterfaceCommon.saveVideo(_pathFunction, self.__videoData, self.__geoGridSettings)
+    _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save video', wildcard='Video files (*.mp4)|*.mp4')
+    InterfaceCommon.saveVideo(_fileFunction, self.__videoData, self.__geoGridSettings)
     self.__videoData = InterfaceCommon.startVideo()
 
   def quit(self):

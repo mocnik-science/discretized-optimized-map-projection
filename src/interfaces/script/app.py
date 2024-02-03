@@ -197,8 +197,8 @@ class DOMP:
   ###### SAVING DATA, SCREENSHOTS, AND VIDEOS
 
   @staticmethod
-  def __pathFunction(directory=None, filename=None):
-    return lambda defaultDir, defaultFilename: os.path.join(directory or defaultDir, filename or defaultFilename)
+  def __fileFunction(**kwargs):
+    return lambda file: file.update(**kwargs)
 
   def data(self, **kwargs):
     self.saveData(self.startData(), **kwargs)
@@ -209,12 +209,12 @@ class DOMP:
     self.__stepActionsData(dataData=dataData)
     return dataData
 
-  def saveData(self, dataData, directory=None, filename=None):
+  def saveData(self, dataData, **kwargs):
     self.__dataDatas = [dd for dd in self.__dataDatas if dd != dataData]
-    InterfaceCommon.saveData(DOMP.__pathFunction(directory, filename), dataData, self.__geoGridSettings)
+    InterfaceCommon.saveData(DOMP.__fileFunction(**kwargs), dataData, self.__geoGridSettings)
 
-  def screenshot(self, directory=None, filename=None, largeSymbols=False):
-    InterfaceCommon.saveScreenshot(DOMP.__pathFunction(directory, filename), self.__geoGridSettings, self.__viewSettings, geoGrid=self.__geoGrid, largeSymbols=largeSymbols)
+  def screenshot(self, largeSymbols=False, **kwargs):
+    InterfaceCommon.saveScreenshot(DOMP.__fileFunction(**kwargs), self.__geoGridSettings, self.__viewSettings, geoGrid=self.__geoGrid, largeSymbols=largeSymbols)
 
   def startVideo(self):
     videoData = InterfaceCommon.startVideo()
@@ -222,9 +222,9 @@ class DOMP:
     self.__stepActionsVideo(videoData=videoData)
     return videoData
 
-  def saveVideo(self, videoData, directory=None, filename=None):
+  def saveVideo(self, videoData, **kwargs):
     self.__videoDatas = [vd for vd in self.__videoDatas if vd != videoData]
-    InterfaceCommon.saveVideo(DOMP.__pathFunction(directory, filename), videoData, self.__geoGridSettings)
+    InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
 
   def cleanup(self):
     InterfaceCommon.cleanup()

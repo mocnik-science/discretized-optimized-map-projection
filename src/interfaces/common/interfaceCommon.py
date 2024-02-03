@@ -4,9 +4,9 @@ import random
 import shutil
 
 from src.common.video import renderVideo
-from src.geometry.strategy import strategyForScale
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
 from src.interfaces.common.common import APP_CAPTURE_PATH
+from src.interfaces.common.file import File
 
 class InterfaceCommon:
   @staticmethod
@@ -102,18 +102,9 @@ class InterfaceCommon:
         f.write(dataRow)
 
   @staticmethod
-  def filename(geoGridSettings, *args, extension=None):
-    return f"domp-{geoGridSettings.initialProjection.name.replace(' ', '_').replace('-', '_')}-{geoGridSettings.hash()}{'-' + '-'.join([str(arg) for arg in args]) if args else ''}{'.' + extension if extension else ''}"
-
-  @staticmethod
   def saveData(pathFunction, dataData, geoGridSettings):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, dataData + '.csv')
-    path = pathFunction('~/Downloads', InterfaceCommon.filename(geoGridSettings, dataData, extension='csv'))
-    if path:
-      path = os.path.expanduser(path)
-      if os.path.exists(path):
-        os.unlink(path)
-      shutil.copy2(fileNameTmp, path)
+    File(geoGridSettings, dataData, extension='csv').apply(pathFunction).byTmpFile(fileNameTmp)
 
   @staticmethod
   def saveScreenshot(pathFunction, geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, largeSymbols=False):
@@ -123,13 +114,11 @@ class InterfaceCommon:
       stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
     if serializedData is None or projection is None or stepData is None:
       raise Exception('Please provide either serializedData, projection, and stepData, or provide geogrid')
-    path = pathFunction('~/Downloads', InterfaceCommon.filename(geoGridSettings, stepData['step'], InterfaceCommon.hash(), extension='png'))
-    if path:
-      path = os.path.expanduser(path)
-      if os.path.exists(path):
-        os.unlink(path)
+    file = File(geoGridSettings, stepData['step'], extension='png', addHash=InterfaceCommon.hash()).apply(pathFunction)
+    if not file.isCancelled():
+      file.removeExisting()
       im = GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=stepData)
-      im.save(path, optimize=True)
+      im.save(file.pathAndFilename(), optimize=True)
 
   @staticmethod
   def renderImage(geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, size=None):
@@ -137,8 +126,7 @@ class InterfaceCommon:
       serializedData = serializedData or geoGrid.serializedData(viewSettings)
       projection = projection or geoGrid.projection()
       stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
-    if serializedData is None or projection is None: # or stepData is None:
-      print(serializedData is None, projection is None, stepData is None)
+    if serializedData is None or projection is None:
       raise Exception('Please provide either serializedData, projection, and stepData, or provide geogrid')
     return GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=size if size else (1920, 1080), stepData=stepData), stepData
 
@@ -154,12 +142,7 @@ class InterfaceCommon:
   def saveVideo(pathFunction, videoData, geoGridSettings):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, videoData)
     renderVideo(fileNameTmp, 20)
-    path = pathFunction('~/Downloads', InterfaceCommon.filename(geoGridSettings, videoData, extension='mp4'))
-    if path:
-      path = os.path.expanduser(path)
-      if os.path.exists(path):
-        os.unlink(path)
-      os.replace(fileNameTmp + '.mp4', path)
+    File(geoGridSettings, videoData, extension='mp4').apply(pathFunction).byTmpFile(fileNameTmp + '.mp4', move=True)
 
   @staticmethod
   def cleanup():
