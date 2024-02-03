@@ -213,17 +213,20 @@ class DOMP:
   def __fileFunction(**kwargs):
     return lambda file: file.update(**kwargs)
 
-  def data(self, **kwargs):
-    self.saveData(self.startData(), **kwargs)
+  def data(self, dataData=None, **kwargs):
+    self.saveData(self.startData(dataData=dataData), **kwargs)
 
-  def startData(self):
-    dataData = InterfaceCommon.startData()
+  def startData(self, dataData=None):
+    dataData = dataData or InterfaceCommon.startData()
     self.__dataDatas.append(dataData)
     self.__stepActionsData(dataData=dataData)
     return dataData
 
-  def saveData(self, dataData, **kwargs):
+  def stopData(self, dataData):
     self.__dataDatas = [dd for dd in self.__dataDatas if dd != dataData]
+
+  def saveData(self, dataData, **kwargs):
+    self.stopData(dataData)
     InterfaceCommon.saveData(DOMP.__fileFunction(**kwargs), dataData, self.__geoGridSettings)
 
   def screenshot(self, largeSymbols=False, **kwargs):

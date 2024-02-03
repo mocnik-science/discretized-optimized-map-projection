@@ -84,6 +84,7 @@ class InterfaceCommon:
       **data,
       'hash': info['hash'],
       'initialProjection': _jsonDumps(settings['initialProjection']),
+      'initialProjectionName': settings['initialProjection']['name'],
       'resolution': str(settings['resolution']),
       'dampingFactor': str(settings['dampingFactor']),
       'stopThreshold': str(settings['stopThreshold']),

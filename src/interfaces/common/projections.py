@@ -27,6 +27,7 @@ class Projection:
 class PROJECTION:
   allProjections = [] # initialized below
   relevantProjections = [] # initialized below
+  canBeOptimizedProjections = [] # initialized below
 
   unprojected = Projection(
     name='unprojected',
@@ -120,3 +121,4 @@ class PROJECTION:
 
 PROJECTION.allProjections = [getattr(PROJECTION, attr) for attr in dir(PROJECTION) if isinstance(getattr(PROJECTION, attr), Projection)]
 PROJECTION.relevantProjections = [proj for proj in PROJECTION.allProjections if proj not in [PROJECTION.unprojected]]
+PROJECTION.canBeOptimizedProjections = [proj for proj in PROJECTION.allProjections if proj.canBeOptimized]

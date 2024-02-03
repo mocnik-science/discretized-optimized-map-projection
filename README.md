@@ -39,12 +39,15 @@ with DOMP() as domp:
   # domp.steps(n=2)
   # data2 = domp.startData()
   # domp.steps(n=2)
-  # domp.saveData(data)
+  # domp.stopData(data)
   # domp.saveData(data2)
   # domp.screenshot()
   # domp.screenshot(path='~/Downloads', filename='important.png', largeSymbols=True)
   # domp.screenshot(addPath='new-files', addParts=['remember', 'this'])
   # domp.saveVideo(video)
+  # data = domp.startData(data)
+  # domp.steps(n=2)
+  # domp.saveData(data)
 
   ### Information
 
