@@ -34,7 +34,7 @@ class DOMP:
     # init paths
     os.makedirs(APP_FILES_PATH, exist_ok=True)
     # variables
-    self.__dataDatas = []
+    self.__dataDataDict = {}
     self.__videoDatas = []
     # settings
     self.viewForces(all=True)
@@ -162,13 +162,11 @@ class DOMP:
   ###### RUN
 
   def __stepActions(self):
-    self.__stepActionsData(self.__dataDatas)
+    self.__stepActionsData(self.__dataDataDict)
     self.__stepActionsVideo(self.__videoDatas)
-  def __stepActionsData(self, dataDatas=None, dataData=None):
-    if dataData and not dataDatas:
-      dataDatas = [dataData]
-    for dataData in dataDatas:
-      InterfaceCommon.stepData(dataData, self.__geoGridSettings, geoGrid=self.__geoGrid)
+  def __stepActionsData(self, dataDataDict={}):
+    for dataData, dd in dataDataDict.items():
+      InterfaceCommon.stepData(dataData, self.__geoGridSettings, geoGrid=self.__geoGrid, additionalData=dd['additionalData'] if dd is not None and 'additionalData' in dd else {})
   def __stepActionsVideo(self, videoDatas=None, videoData=None):
     if videoData and not videoDatas:
       videoDatas = [videoData]
@@ -213,21 +211,23 @@ class DOMP:
   def __fileFunction(**kwargs):
     return lambda file: file.update(**kwargs)
 
-  def data(self, dataData=None, **kwargs):
-    self.saveData(self.startData(dataData=dataData), **kwargs)
+  def data(self, dataData=None, additionalData=None, **kwargs):
+    self.saveData(self.startData(dataData=dataData, additionalData=additionalData), **kwargs)
 
-  def appendData(self, dataData=None, **kwargs):
-    self.stopData(self.startData(dataData=dataData), **kwargs)
+  def appendData(self, dataData=None, additionalData=None, **kwargs):
+    self.stopData(self.startData(dataData=dataData, additionalData=additionalData), **kwargs)
 
-  def startData(self, dataData=None, preventInitialSnapshot=False):
+  def startData(self, dataData=None, additionalData=None, preventInitialSnapshot=False, preventSnapshots=False):
     dataData = dataData or InterfaceCommon.startData()
-    self.__dataDatas.append(dataData)
-    if not preventInitialSnapshot:
-      self.__stepActionsData(dataData=dataData)
+    if not preventSnapshots:
+      self.__dataDataDict[dataData] = {'additionalData': additionalData}
+    if not (preventSnapshots or preventInitialSnapshot):
+      self.__stepActionsData(dataDataDict={dataData: self.__dataDataDict[dataData]})
     return dataData
 
   def stopData(self, dataData):
-    self.__dataDatas = [dd for dd in self.__dataDatas if dd != dataData]
+    if dataData in self.__dataDataDict:
+      del self.__dataDataDict[dataData]
 
   def saveData(self, dataData, **kwargs):
     self.stopData(dataData)

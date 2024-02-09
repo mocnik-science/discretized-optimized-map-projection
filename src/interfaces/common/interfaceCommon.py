@@ -51,7 +51,7 @@ class InterfaceCommon:
     return InterfaceCommon.hash()
 
   @staticmethod
-  def stepData(dataData, geoGridSettings, geoGrid=None, stepData=None, appendOnlyIf=True):
+  def stepData(dataData, geoGridSettings, geoGrid=None, stepData=None, additionalData=None, appendOnlyIf=True):
     stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
     if stepData is None:
       raise Exception('Please provide either stepData or geogrid')
@@ -90,6 +90,7 @@ class InterfaceCommon:
       'stopThreshold': str(settings['stopThreshold']),
       'limitLatForEnergy': str(settings['limitLatForEnergy']),
       'weights': _jsonDumps(settings['weights']),
+      **(additionalData if additionalData is not None else {}),
     }
     dataRow = f"{','.join(data.values())}\n"
     if not os.path.exists(fileNameTmp):

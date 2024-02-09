@@ -34,6 +34,8 @@ with DOMP() as domp:
 
   ### Saving data, screenshots, and videos
 
+  ## preventSnapshots=True, preventInitialSnapshot=True
+
   # data = domp.startData()
   # video = domp.startVideo()
   # domp.steps(n=2)
