@@ -252,7 +252,7 @@ class DOMP:
     if event != 'line':
       return
     lineNumber = frame.f_lineno
-    Console.status(f'\nline {lineNumber + 1:>5} |', self.__codeFulltext[lineNumber].strip())
+    Console.status(f'\nline {lineNumber + 1:>5} |', self.__codeFulltext[lineNumber - 1].strip())
 
   def __enter__(self):
     sys.settrace(lambda *args, **kwargs: None)
