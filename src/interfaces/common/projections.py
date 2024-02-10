@@ -6,7 +6,7 @@ from src.geometry.geo import Geo
 from src.geometry.strategy import strategyForScale
 
 class Projection:
-  def __init__(self, name=None, srid=None, scale=None, transformRad=None, transformDeg=None, needsNoTransform=False, canBeOptimized=False):
+  def __init__(self, name=None, srid=None, scale=None, transformRad=None, transformDeg=None, canBeOptimized=False):
     self.name = name
     self.srid = srid
     if transformRad:
@@ -17,7 +17,6 @@ class Projection:
       self.transform = Transformer.from_crs(CRS('EPSG:4326'), CRS(srid), always_xy=True).transform
     else:
       self.transform = None
-    self.needsNoTransform = needsNoTransform
     self.canBeOptimized = canBeOptimized
     self.scale = scale(self) if callable(scale) else scale if scale or (self.transform is None and srid is None) else strategyForScale()(self)
 
@@ -40,7 +39,6 @@ class PROJECTION:
 
   unprojected = Projection(
     name='unprojected',
-    srid=None,
     scale=1,
     canBeOptimized=True,
   )
@@ -91,7 +89,6 @@ class PROJECTION:
   Mercator = Projection(
     name='Mercator',
     srid='EPSG:3395',
-    needsNoTransform=True,
   )
   Mollweide = Projection(
     name='Mollweide',

@@ -60,7 +60,7 @@ class GeoGrid:
     # update the settings
     self.__settings.updateGridStats(self.__gridStats)
     # project to initial crs
-    if self.__settings.initialProjection and not self.__settings.initialProjection.needsNoTransform and self.__settings.initialProjection.transform is not None:
+    if self.__settings.initialProjection and self.__settings.initialProjection.transform is not None:
       with timer('apply initial CRS'):
         for cell in self.__cells.values():
           cell.initTransform(self.__settings.initialProjection.transform, scale=self.__settings.initialProjection.scale)
