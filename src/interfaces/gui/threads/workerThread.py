@@ -77,9 +77,9 @@ class WorkerThread(Thread):
           if shallUpdateGui:
             serializedData = self.__geoGrid.serializedData(self.__viewSettings)
         # update transient information in the settings
-        self.__geoGridSettings.updateTransient(energy=stepData['energy'], step=self.__geoGrid.step())
+        self.__geoGridSettings.updateTransient(energy=stepData['energyWeighted'], step=self.__geoGrid.step())
         # post result
-        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui(serializedData=serializedData, post=False) if shallUpdateGui else {}), energy=stepData['energy'], stopThresholdReached=stopThresholdReached, stepData={
+        self.__post(status=f"Step {self.__geoGrid.step()}, {1 / t.average():.0f} fps", serializedDataForProjection=serializedDataForProjection, **(self.__updateGui(serializedData=serializedData, post=False) if shallUpdateGui else {}), energy=stepData['energyWeighted'], stopThresholdReached=stopThresholdReached, stepData={
           'saveData': (shallPerformStep or self.__enforceSendingStepData),
           'saveImage': (shallPerformStep or self.__enforceSendingStepData) and self.__viewSettings['captureVideo'],
           **stepData,
