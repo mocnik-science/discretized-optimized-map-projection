@@ -97,12 +97,14 @@ class DOMP:
       self.__geoGridSettings.updateDampingFactor(1 - speed / 100)
     return 100 * (1 - self.__geoGridSettings._dampingFactor)
 
-  def stopThreshold(self, maxForceStrength=None, countDeficiencies=None):
+  def stopThreshold(self, maxForceStrength=None, countDeficiencies=None, maxSteps=None):
     if maxForceStrength is not None:
       self.__geoGridSettings.updateStopThresholdMaxForceStrength(maxForceStrength / 100)
     if countDeficiencies is not None:
       self.__geoGridSettings.updateStopThresholdCountDeficiencies(countDeficiencies)
-    return 100 * self.__geoGridSettings._stopThresholdMaxForceStrength, self.__geoGridSettings._stopThresholdCountDeficiencies, 
+    if maxSteps is not None:
+      self.__geoGridSettings.updateStopThresholdMaxSteps(maxSteps)
+    return 100 * self.__geoGridSettings._stopThresholdMaxForceStrength, self.__geoGridSettings._stopThresholdCountDeficiencies, self.__geoGridSettings._stopThresholdMaxSteps
 
   def limitLatForEnergy(self, limitLatForEnergy=None):
     if limitLatForEnergy is not None:

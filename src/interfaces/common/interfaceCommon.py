@@ -22,6 +22,8 @@ class InterfaceCommon:
     # count deficiencies
     deficiencies, _ = geoGrid.findDeficiencies(computeAlmostDeficiencies=False)
     stopThresholdReached = stopThresholdReached or (stepData['countDeficiencies'] if stepData else len(deficiencies)) >= geoGridSettings._stopThresholdCountDeficiencies
+    # max steps
+    stopThresholdReached = stopThresholdReached or geoGrid.step() >= geoGridSettings._stopThresholdMaxSteps
     if stopThresholdReached:
       geoGridSettings.setThresholdReached()
     return stopThresholdReached
@@ -92,6 +94,7 @@ class InterfaceCommon:
       'dampingFactor': str(settings['dampingFactor']),
       'stopThresholdMaxForceStrength': str(settings['stopThresholdMaxForceStrength']),
       'stopThresholdCountDeficiencies': str(settings['stopThresholdCountDeficiencies']),
+      'stopThresholdMaxSteps': str(settings['stopThresholdMaxSteps']),
       'limitLatForEnergy': str(settings['limitLatForEnergy']),
       'weights': _jsonDumps(settings['weights']),
       **(additionalData if additionalData is not None else {}),

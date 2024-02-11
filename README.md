@@ -27,7 +27,7 @@ with DOMP() as domp:
   # domp.dampingFactor(.97)
   # domp.speed(3)
   # Print('speed', domp.speed())
-  # domp.stopThreshold(maxForceStrength=.1, countDeficiencies=100)
+  # domp.stopThreshold(maxForceStrength=.1, countDeficiencies=100, maxSteps=5000)
   # domp.limitLatForEnergy(90)
 
   # domp.weights(POTENTIAL.AREA, active=False, weightLand=1, weightOceanActive=False, weightOcean=.3one, distanceTransitionStart=100, distanceTransitionEnd=800)

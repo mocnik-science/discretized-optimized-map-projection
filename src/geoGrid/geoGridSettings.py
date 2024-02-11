@@ -15,12 +15,13 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThresholdMaxForceStrength=.001, stopThresholdCountDeficiencies=100, limitLatForEnergy=90):
+  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThresholdMaxForceStrength=.001, stopThresholdCountDeficiencies=100, stopThresholdMaxSteps=5000, limitLatForEnergy=90):
     self.initialProjection = initialProjection
     self.resolution = resolution
     self._dampingFactor = dampingFactor
     self._stopThresholdMaxForceStrength = stopThresholdMaxForceStrength
     self._stopThresholdCountDeficiencies = stopThresholdCountDeficiencies
+    self._stopThresholdMaxSteps = stopThresholdMaxSteps
     self.limitLatForEnergy = limitLatForEnergy
     self._typicalDistance = None
     self._typicalArea = None
@@ -47,6 +48,7 @@ class GeoGridSettings:
       'dampingFactor': self._dampingFactor,
       'stopThresholdMaxForceStrength': self._stopThresholdMaxForceStrength,
       'stopThresholdCountDeficiencies': self._stopThresholdCountDeficiencies,
+      'stopThresholdMaxSteps': self._stopThresholdMaxSteps,
       'limitLatForEnergy': self.limitLatForEnergy,
       'weights': dict((potentialKind, weight.toJSON()) for (potentialKind, weight) in self._potentialsWeights.items()),
       **transient,
@@ -88,6 +90,7 @@ class GeoGridSettings:
     self.updateDampingFactor(data['dampingFactor'])
     self.updateStopThresholdMaxForceStrength(data['stopThresholdMaxForceStrength'])
     self.updateStopThresholdCountDeficiencies(data['stopThresholdCountDeficiencies'])
+    self.updateStopThresholdMaxSteps(data['stopThresholdMaxSteps'])
     self.updateLimitLatForEnergy(data['limitLatForEnergy'])
     self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
 
@@ -115,6 +118,9 @@ class GeoGridSettings:
   def updateStopThresholdCountDeficiencies(self, stopThresholdCountDeficiencies):
     self._updated()
     self._stopThresholdCountDeficiencies = stopThresholdCountDeficiencies
+  def updateStopThresholdMaxSteps(self, stopThresholdMaxSteps):
+    self._updated()
+    self._stopThresholdMaxSteps = stopThresholdMaxSteps
 
   def updateLimitLatForEnergy(self, limitLatForEnergy):
     self._updated()

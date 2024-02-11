@@ -9,9 +9,10 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings = geoGridSettings
     self.__workerThread = workerThread
     self.__data = {}
-    wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=(800, 300))
-    self.SetMinSize((800, 300))
-    self.SetMaxSize((800, 300))
+    size = (840, 300)
+    wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=size)
+    self.SetMinSize(size)
+    self.SetMaxSize(size)
 
     ## layout
     self._panel = wx.Panel(self, style=wx.DEFAULT)
@@ -29,10 +30,13 @@ class WindowSimulationSettings(wx.Frame):
       if element not in self.__disabled:
         self.__disabled[element] = []
       self.__disabled[element] += disabled
+    def staticText(box, label):
+      staticText = wx.StaticText(self._panel, label=label)
+      box.Add(staticText, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
+      return staticText
     def number(box, key, callback, defaultValue=1, minValue=0, maxValue=100, digits=0, increment=1, disabled=[], label=None, unit=None):
       box.AddSpacer(5)
-      labelStaticText = wx.StaticText(self._panel, label=label)
-      box.Add(labelStaticText, 0, wx.ALIGN_CENTRE_VERTICAL, 5)
+      labelStaticText = staticText(box, label)
       numberEntry = wx.SpinCtrlDouble(self._panel)
       numberEntry.SetMin(minValue)
       numberEntry.SetMax(maxValue)
@@ -62,17 +66,24 @@ class WindowSimulationSettings(wx.Frame):
     ## content: resolution and speed
     box.AddSpacer(5)
     generalSettingsBox1 = wx.BoxSizer(wx.HORIZONTAL)
-    generalSettingsBox1.AddSpacer(10)
+    generalSettingsBox1.AddSpacer(5)
+    gap = 140
     number(generalSettingsBox1, 'resolution', lambda: self.onDataUpdate(fullReload=True), defaultValue=self.__geoGridSettings.resolution, minValue=2, maxValue=10, label='resolution:')
-    generalSettingsBox1.AddSpacer(100)
+    generalSettingsBox1.AddSpacer(gap)
     number(generalSettingsBox1, 'limitLatForEnergy', self.onDataUpdate, defaultValue=self.__geoGridSettings.limitLatForEnergy, minValue=45, maxValue=90, digits=0, increment=1, label='limit latitude (energy computation):', unit='°N/S')
+    generalSettingsBox1.AddSpacer(gap)
+    number(generalSettingsBox1, 'speed100', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=.1, maxValue=20, digits=2, increment=.1, label='speed:')
     box.Add(generalSettingsBox1, 0, wx.ALL, 0)
     generalSettingsBox2 = wx.BoxSizer(wx.HORIZONTAL)
     generalSettingsBox2.AddSpacer(10)
-    number(generalSettingsBox2, 'speed100', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=.1, maxValue=20, digits=2, increment=.1, label='speed:')
-    generalSettingsBox2.AddSpacer(100)
-    number(generalSettingsBox2, 'stopThresholdMaxForceStrength100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThresholdMaxForceStrength, minValue=.01, maxValue=2, digits=2, increment=.1, label='stop threshold (min force):', unit='%')
-    number(generalSettingsBox2, 'stopThresholdCountDeficiencies', self.onDataUpdate, defaultValue=self.__geoGridSettings._stopThresholdCountDeficiencies, minValue=1, maxValue=1000, digits=0, increment=1, label='stop threshold (max deficiencies):')
+    gap = 20
+    staticText(generalSettingsBox2, 'stop')
+    generalSettingsBox2.AddSpacer(gap)
+    number(generalSettingsBox2, 'stopThresholdMaxForceStrength100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThresholdMaxForceStrength, minValue=.01, maxValue=2, digits=2, increment=.1, label='… when max force below:', unit='%')
+    generalSettingsBox2.AddSpacer(gap)
+    number(generalSettingsBox2, 'stopThresholdCountDeficiencies', self.onDataUpdate, defaultValue=self.__geoGridSettings._stopThresholdCountDeficiencies, minValue=1, maxValue=1000, digits=0, increment=1, label='… when exceeding deficiencies:')
+    generalSettingsBox2.AddSpacer(gap)
+    number(generalSettingsBox2, 'stopThresholdMaxSteps', self.onDataUpdate, defaultValue=self.__geoGridSettings._stopThresholdMaxSteps, minValue=1, maxValue=50000, digits=0, increment=1, label='… when exceeding steps:')
     box.Add(generalSettingsBox2, 0, wx.ALL, 0)
     box.AddSpacer(8)
 
@@ -81,6 +92,7 @@ class WindowSimulationSettings(wx.Frame):
       potentialBox = wx.BoxSizer(wx.HORIZONTAL)
       potentialBox.AddSpacer(10)
       checkBox(potentialBox, potential.kind, self.onDataUpdate, defaultValue=weight.isActive(), proportion=1, label=potential.kind.lower().replace('_', ' ') + ':', size=(200, -1))
+      potentialBox.AddSpacer(20)
       weightNumber(potentialBox, potential.kind + '-weight', self.onDataUpdate, defaultValue=weight.weightLand(), disabled=[potential.kind], label='land')
       potentialBox.AddSpacer(5)
       checkBox(potentialBox, potential.kind + '-ocean', self.onDataUpdate, defaultValue=weight.isWeightOceanActive(), disabled=[potential.kind])
@@ -118,6 +130,7 @@ class WindowSimulationSettings(wx.Frame):
       'speed100',
       'stopThresholdMaxForceStrength100',
       'stopThresholdCountDeficiencies',
+      'stopThresholdMaxSteps',
       'limitLatForEnergy',
     ]
     for potential in self.__geoGridSettings.potentials:
@@ -152,6 +165,8 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings.updateStopThresholdMaxForceStrength(self.__data['stopThresholdMaxForceStrength100'] / 100)
     # update geoGridSettings: stop threshold count deficiencies
     self.__geoGridSettings.updateStopThresholdCountDeficiencies(self.__data['stopThresholdCountDeficiencies'])
+    # update geoGridSettings: stop threshold max steps
+    self.__geoGridSettings.updateStopThresholdMaxSteps(self.__data['stopThresholdMaxSteps'])
     # update geoGridSettings: limit latitude for energy
     self.__geoGridSettings.updateLimitLatForEnergy(self.__data['limitLatForEnergy'])
     # update the app settings II
