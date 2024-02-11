@@ -73,7 +73,7 @@ class WorkerThread(Thread):
           # compute step data
           stepData = InterfaceCommon.computeStepData(self.__geoGrid, self.__geoGridSettings)
           # check whether the threshold has been reached
-          stopThresholdReached = InterfaceCommon.isStopThresholdReached(self.__geoGrid, self.__geoGridSettings)
+          stopThresholdReached = InterfaceCommon.isStopThresholdReached(self.__geoGrid, self.__geoGridSettings, stepData=stepData)
           if shallUpdateGui:
             serializedData = self.__geoGrid.serializedData(self.__viewSettings)
         # update transient information in the settings

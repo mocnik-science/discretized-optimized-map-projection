@@ -71,7 +71,8 @@ class WindowSimulationSettings(wx.Frame):
     generalSettingsBox2.AddSpacer(10)
     number(generalSettingsBox2, 'speed100', self.onDataUpdate, defaultValue=100 * (1 - self.__geoGridSettings._dampingFactor), minValue=.1, maxValue=20, digits=2, increment=.1, label='speed:')
     generalSettingsBox2.AddSpacer(100)
-    number(generalSettingsBox2, 'stopThreshold100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThreshold, minValue=.01, maxValue=2, digits=2, increment=.1, label='stop threshold:', unit='%')
+    number(generalSettingsBox2, 'stopThresholdMaxForceStrength100', self.onDataUpdate, defaultValue=100 * self.__geoGridSettings._stopThresholdMaxForceStrength, minValue=.01, maxValue=2, digits=2, increment=.1, label='stop threshold (min force):', unit='%')
+    number(generalSettingsBox2, 'stopThresholdCountDeficiencies', self.onDataUpdate, defaultValue=self.__geoGridSettings._stopThresholdCountDeficiencies, minValue=1, maxValue=1000, digits=0, increment=1, label='stop threshold (max deficiencies):')
     box.Add(generalSettingsBox2, 0, wx.ALL, 0)
     box.AddSpacer(8)
 
@@ -115,7 +116,8 @@ class WindowSimulationSettings(wx.Frame):
     keys = [
       'resolution',
       'speed100',
-      'stopThreshold100',
+      'stopThresholdMaxForceStrength100',
+      'stopThresholdCountDeficiencies',
       'limitLatForEnergy',
     ]
     for potential in self.__geoGridSettings.potentials:
@@ -146,8 +148,10 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings.updateResolution(round(self.__data['resolution']))
     # update geoGridSettings: damping factor
     self.__geoGridSettings.updateDampingFactor(1 - self.__data['speed100'] / 100)
-    # update geoGridSettings: stop threshold
-    self.__geoGridSettings.updateStopThreshold(self.__data['stopThreshold100'] / 100)
+    # update geoGridSettings: stop threshold max force strength
+    self.__geoGridSettings.updateStopThresholdMaxForceStrength(self.__data['stopThresholdMaxForceStrength100'] / 100)
+    # update geoGridSettings: stop threshold count deficiencies
+    self.__geoGridSettings.updateStopThresholdCountDeficiencies(self.__data['stopThresholdCountDeficiencies'])
     # update geoGridSettings: limit latitude for energy
     self.__geoGridSettings.updateLimitLatForEnergy(self.__data['limitLatForEnergy'])
     # update the app settings II

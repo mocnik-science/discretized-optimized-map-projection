@@ -15,11 +15,12 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThreshold=.001, limitLatForEnergy=90):
+  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThresholdMaxForceStrength=.001, stopThresholdCountDeficiencies=100, limitLatForEnergy=90):
     self.initialProjection = initialProjection
     self.resolution = resolution
     self._dampingFactor = dampingFactor
-    self._stopThreshold = stopThreshold
+    self._stopThresholdMaxForceStrength = stopThresholdMaxForceStrength
+    self._stopThresholdCountDeficiencies = stopThresholdCountDeficiencies
     self.limitLatForEnergy = limitLatForEnergy
     self._typicalDistance = None
     self._typicalArea = None
@@ -44,7 +45,8 @@ class GeoGridSettings:
       'initialProjection': self.initialProjection.toJSON(),
       'resolution': self.resolution,
       'dampingFactor': self._dampingFactor,
-      'stopThreshold': self._stopThreshold,
+      'stopThresholdMaxForceStrength': self._stopThresholdMaxForceStrength,
+      'stopThresholdCountDeficiencies': self._stopThresholdCountDeficiencies,
       'limitLatForEnergy': self.limitLatForEnergy,
       'weights': dict((potentialKind, weight.toJSON()) for (potentialKind, weight) in self._potentialsWeights.items()),
       **transient,
@@ -84,7 +86,8 @@ class GeoGridSettings:
     self.updateInitialProjection(Projection.fromJSON(data['initialProjection']))
     self.updateResolution(data['resolution'])
     self.updateDampingFactor(data['dampingFactor'])
-    self.updateStopThreshold(data['stopThreshold'])
+    self.updateStopThresholdMaxForceStrength(data['stopThresholdMaxForceStrength'])
+    self.updateStopThresholdCountDeficiencies(data['stopThresholdCountDeficiencies'])
     self.updateLimitLatForEnergy(data['limitLatForEnergy'])
     self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
 
@@ -106,9 +109,12 @@ class GeoGridSettings:
     for potential in self.potentials:
       potential.emptyCacheDampingFactor()
 
-  def updateStopThreshold(self, stopThreshold):
+  def updateStopThresholdMaxForceStrength(self, stopThresholdMaxForceStrength):
     self._updated()
-    self._stopThreshold = stopThreshold
+    self._stopThresholdMaxForceStrength = stopThresholdMaxForceStrength
+  def updateStopThresholdCountDeficiencies(self, stopThresholdCountDeficiencies):
+    self._updated()
+    self._stopThresholdCountDeficiencies = stopThresholdCountDeficiencies
 
   def updateLimitLatForEnergy(self, limitLatForEnergy):
     self._updated()
