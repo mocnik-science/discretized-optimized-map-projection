@@ -79,9 +79,9 @@ with DOMP() as domp:
   # domp.viewLabels()
   # domp.viewLabels(show=True)
 
-  # domp.viewCentres()
-  # domp.viewCentres(active=True)
-  # domp.viewCentres(weightsForPotential=POTENTIAL.AREA)
+  # domp.viewSupportingPoints()
+  # domp.viewSupportingPoints(active=True)
+  # domp.viewSupportingPoints(weightsForPotential=POTENTIAL.AREA)
 
   # domp.viewOriginalPolygons()
   # domp.viewOriginalPolygons(show=True)

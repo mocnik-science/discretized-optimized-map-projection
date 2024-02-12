@@ -41,7 +41,7 @@ class DOMP:
     self.viewEnergy()
     self.viewNeighbours()
     self.viewLabels()
-    self.viewCentres(active=True)
+    self.viewSupportingPoints(active=True)
     self.viewOriginalPolygons()
     self.viewContinents()
     # about
@@ -70,7 +70,7 @@ class DOMP:
     self.__viewSettings['drawNeighbours'] = show
   def viewLabels(self, show=False):
     self.__viewSettings['drawLabels'] = show
-  def viewCentres(self, active=False, weightsForPotential=None):
+  def viewSupportingPoints(self, active=False, weightsForPotential=None):
     self.__viewSettings['drawCentres'] = 'ACTIVE' if active else weightsForPotential if weightsForPotential else None
   def viewOriginalPolygons(self, show=False):
     self.__viewSettings['drawOriginalPolygons'] = show
