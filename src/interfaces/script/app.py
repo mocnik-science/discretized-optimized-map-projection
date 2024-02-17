@@ -25,7 +25,8 @@ for potential in potentials:
 # TODO load and save simulation settings
 
 class DOMP:
-  def __init__(self):
+  def __init__(self, cleanup=True):
+    self.__cleanup = cleanup
     # self.__appSettings = shelve.Shelf({})
     self.__geoGridSettings = GeoGridSettings()
     self.__viewSettings = {
@@ -266,6 +267,7 @@ class DOMP:
     return self
 
   def __exit__(self, exc_type, exc_value, traceback):
-    self.__callbackStatus('cleanup')
-    InterfaceCommon.cleanup()
+    if self.__cleanup:
+      self.__callbackStatus('cleanup')
+      InterfaceCommon.cleanup()
     Console.clearStatus()
