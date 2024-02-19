@@ -251,6 +251,11 @@ class DOMP:
     self.__videoDatas = [vd for vd in self.__videoDatas if vd != videoData]
     InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
 
+  ###### COLLECTING DATA
+
+  def collectData(self, pattern, **kwargs):
+    InterfaceCommon.collectData(DOMP.__fileFunction(**kwargs), pattern, self.__geoGridSettings)
+
   ###### WITH
 
   def __trace(self, frame, event, arg):

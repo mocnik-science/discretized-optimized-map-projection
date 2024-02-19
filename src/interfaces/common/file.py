@@ -2,12 +2,14 @@ import os
 import shutil
 
 class File:
-  def __init__(self, geoGridSettings, *parts, extension=None, path='~/Downloads', addHash=None):
+  _defaultPath = '~/Downloads'
+
+  def __init__(self, geoGridSettings, *parts, extension=None, path=None, addHash=None):
     self._initialProjectionName = geoGridSettings.initialProjection.name.replace(' ', '_').replace('-', '_')
     self._hash = geoGridSettings.hash()
     self._parts = [str(part) for part in parts] if parts else []
     self._extension = extension
-    self._paths = [path]
+    self._paths = [path or File._defaultPath]
     self._addHash = addHash
     self._finalPathAndFilename = None
     self._finalPath = None

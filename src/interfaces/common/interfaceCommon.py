@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import random
@@ -152,6 +153,21 @@ class InterfaceCommon:
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, videoData)
     renderVideo(fileNameTmp, 20)
     File(geoGridSettings, videoData, extension='mp4').apply(pathFunction).byTmpFile(fileNameTmp + '.mp4', move=True)
+
+  @staticmethod
+  def collectData(pathFunction, pattern, geoGridSettings):
+    lines = []
+    for filename in glob.glob(os.path.expanduser(File._defaultPath) + '/' + pattern, recursive=True):
+      with open(filename, 'r') as f:
+        linesNew = f.readlines()
+        if len(lines) == 0:
+          lines = linesNew
+        elif lines[0] == linesNew[0]:
+          lines += linesNew[1:]
+        else:
+          raise Exception('Error when collecting: different header')
+    with open(File(geoGridSettings, extension='csv').apply(pathFunction).pathAndFilename(), 'w') as f:
+      f.writelines(lines)
 
   @staticmethod
   def cleanup():
