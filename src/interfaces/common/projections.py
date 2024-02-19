@@ -23,9 +23,6 @@ class Projection:
       self.transform = lambda x, y: self.__multiplyByRadiusEarth(transformRad(Common.deg2rad(x), Common.deg2rad(y)))
     elif transformDeg:
       self.transform = lambda x, y: self.__multiplyByRadiusEarth(transformDeg(x, y))
-    elif srid:
-      self.transform = Transformer.from_crs(CRS('EPSG:4326'), CRS(srid), always_xy=True).transform
-      self.name += ' (PROJ)'
     else:
       self.transform = None
     self.canBeOptimized = canBeOptimized
@@ -35,6 +32,12 @@ class Projection:
 
   def __multiplyByRadiusEarth(self, xy):
     return (Geo.radiusEarth * xy[0], Geo.radiusEarth * xy[1])
+
+  def useSRID(self):
+    if self.srid is not None:
+      self.transform = Transformer.from_crs(CRS('EPSG:4326'), CRS(self.srid), always_xy=True).transform
+      self.name += ' (PROJ)'
+    return self
 
   def toJSON(self):
     return {
@@ -100,7 +103,6 @@ class PROJECTION:
     transformRad=rectangular_Projection_transformRad,
     scale=1,
     canBeOptimized=True,
-    usePROJ=False,
   )
   Aitoff = Projection(
     name='Aitoff',
@@ -164,10 +166,9 @@ class PROJECTION:
   Gall_Peters = Projection(
     name='Gall-Peters',
     projectionType=ProjectionType.EQUAL_AREA,
-    srid='unknown',
+    srid=None,
     transformRad=lambda l, t: (l / Common._sqrt2, Common._sqrt2 * math.sin(t)),
     canBeOptimized=True,
-    usePROJ=False,
   )
   Hammer_Aitoff = Projection(
     name='Hammer-Aitoff',
@@ -210,9 +211,8 @@ class PROJECTION:
     projectionType=ProjectionType.CONFORMAL,
     srid='ESRI:54090',
     scale=strategyForScale(corners=[[-180, 0], [-90, 0], [0, 0], [90, 0]], horizontal=True, vertical=True, diagonalUp=True, diagonalDown=True, degreeHorizontal=360, degreeVertical=360, degreeDiagonalUp=360, degreeDiagonalDown=360, epsilon=0),
-    usePROJ=False,
   )
-  Robinson_PROJ = Projection( # there is no closed-form expression
+  Robinson = Projection( # there is no closed-form expression
     name='Robinson',
     projectionType=ProjectionType.COMPROMISE,
     srid='ESRI:53030',
@@ -236,11 +236,15 @@ if PROJECTION.initialized == False:
   PROJECTION.initialized = True
   for attr in dir(PROJECTION):
     proj = getattr(PROJECTION, attr)
-    if isinstance(proj, Projection) and proj.usePROJ:
-      setattr(PROJECTION, attr + '_PROJ', Projection(
-        name=proj.name,
-        srid=proj.srid,
-      ))
+    if isinstance(proj, Projection):
+      print(proj.name, attr, proj.usePROJ, proj.srid is not None)
+      if proj.usePROJ and proj.srid is not None:
+        setattr(PROJECTION, attr + '_PROJ', Projection(
+          name=proj.name,
+          srid=proj.srid,
+        ).useSRID())
+      if proj.transform is None:
+        delattr(PROJECTION, attr)
   PROJECTION.allProjections = sorted([getattr(PROJECTION, attr) for attr in dir(PROJECTION) if isinstance(getattr(PROJECTION, attr), Projection)])
   PROJECTION.relevantProjections = sorted([proj for proj in PROJECTION.allProjections if proj not in [PROJECTION.unprojected]])
   PROJECTION.canBeOptimizedProjections = sorted([proj for proj in PROJECTION.allProjections if proj.canBeOptimized])
