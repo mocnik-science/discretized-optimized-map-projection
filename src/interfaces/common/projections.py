@@ -237,7 +237,6 @@ if PROJECTION.initialized == False:
   for attr in dir(PROJECTION):
     proj = getattr(PROJECTION, attr)
     if isinstance(proj, Projection):
-      print(proj.name, attr, proj.usePROJ, proj.srid is not None)
       if proj.usePROJ and proj.srid is not None:
         setattr(PROJECTION, attr + '_PROJ', Projection(
           name=proj.name,
