@@ -2,12 +2,14 @@
 
 import altair as alt
 import csv
+from multiprocessing import Pool
 import os
 import pandas as pd
 
 from src.interfaces.script import DOMP, POTENTIAL, PROJECTION, Print
 
 TESTING = False
+PARALLELIZE = TRUE
 
 ACTION_A = True
 ACTION_B = True
@@ -49,6 +51,14 @@ if CREATE_DATA:
     defaultView(domp)
     defaultWeights(domp)
 
+  ### PARALLELIZE
+  def parallelize(action, projections):
+    if PARALLELIZE:
+      with Pool() as pool:
+        pool.map(action, projections)
+    else:
+      [action(projection) for projection in projections]
+
   ### A: OPTIMIZATION
   def actionA(projection):
     with DOMP(cleanup=False) as domp:
@@ -87,8 +97,7 @@ if CREATE_DATA:
       domp.saveData(data, addPaths=[pathA, projection.name], filename='domp-optimization-' + projection.name + '.csv')
   
   if ACTION_A:
-    for projection in PROJECTION.canBeOptimizedProjections:
-      actionA(projection)
+    parallelize(actionA, PROJECTION.canBeOptimizedProjections)
     DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv')
 
   ### B: COMPARISON OF PROJECTIONS
@@ -177,8 +186,7 @@ if CREATE_DATA:
       _runComparison('area-0.3')
 
   if ACTION_B:
-    for projection in PROJECTION.allProjections:
-      actionB(projection)
+    parallelize(actionB, PROJECTION.allProjections)
     DOMP.collectData(pathB + '/*/**/domp-comparison-of-projections-*.csv', addPath=pathB, filename='domp-comparison-of-projections.csv')
 
 ### CREATE VISUALIZATIONS
