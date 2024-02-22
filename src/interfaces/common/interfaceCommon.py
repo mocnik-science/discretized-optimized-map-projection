@@ -117,14 +117,14 @@ class InterfaceCommon:
     File(geoGridSettings, dataData, extension='csv').apply(pathFunction).byTmpFile(fileNameTmp)
 
   @staticmethod
-  def saveScreenshot(pathFunction, geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, largeSymbols=False):
+  def saveScreenshot(pathFunction, geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, largeSymbols=False, extension='png'):
     if geoGrid:
       serializedData = serializedData or geoGrid.serializedData(viewSettings)
       projection = projection or geoGrid.projection()
       stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
     if serializedData is None or projection is None or stepData is None:
       raise Exception('Please provide either serializedData, projection, and stepData, or provide geogrid')
-    file = File(geoGridSettings, stepData['step'], extension='png', addHash=InterfaceCommon.hash()).apply(pathFunction)
+    file = File(geoGridSettings, stepData['step'], extension=extension, addHash=InterfaceCommon.hash()).apply(pathFunction)
     if not file.isCancelled():
       file.removeExisting()
       im = GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=stepData)

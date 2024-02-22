@@ -85,7 +85,8 @@ if CREATE_DATA:
     ### B: COMPARISON OF PROJECTIONS
     if ACTION_B:
       def screenshot(projection, *parts):
-        domp.screenshot(addPaths=[pathB, projection.name], addParts=parts)
+        for extension in ['png', 'pdf']:
+          domp.screenshot(addPaths=[pathB, projection.name], addParts=parts, extension=extension)
       
       def dump(data, projection, parts, initial=False):
         potentials = [POTENTIAL.DISTANCE, POTENTIAL.AREA, POTENTIAL.TRIANGLE_ALTITUDE]
