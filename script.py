@@ -177,7 +177,7 @@ if CREATE_DATA:
           domp.weights(POTENTIAL.DISTANCE, weightOceanActive=True)
         domp.saveData(data, addPaths=[pathB, projection.name], filename='domp-comparison-of-projections-' + part + '.csv')
 
-      # defaultWeights()
+      # defaultWeights(domp)
       _runComparison('default')
 
       defaultWeights(domp)
