@@ -35,8 +35,9 @@ class PotentialArea(Potential):
 
   def _value(self, cell, neighbouringCells):
     # cell area and partly area of the neighbouring cells
-    # hexagon:   1 + 6 * 2/6 = 3
-    # pentagon:  5/6 + 5 * 2/6 = 15/6 = 2.5
+    # hexagon:                            1 + 6 * 2/6 = 3
+    # hexagon with neighbouring pentagon: 1 + 5 * 2/6 + 2/5 * 5/6 = 3
+    # pentagon:                           5/6 + 5 * 2/6 = 15/6 = 2.5
     cartesianA = Cartesian.orientedArea(*(neighbouringCell.point() for neighbouringCell in neighbouringCells)) * self.calibrationFactor**2
     if cartesianA < 0:
     #   geoA = (3 if cell._isHexagon else 2.5) * self._settings._typicalArea
