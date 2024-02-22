@@ -253,6 +253,7 @@ class DOMP:
 
   ###### COLLECTING DATA
 
+  @staticmethod
   def collectData(self, pattern, **kwargs):
     InterfaceCommon.collectData(DOMP.__fileFunction(**kwargs), pattern, self.__geoGridSettings)
 

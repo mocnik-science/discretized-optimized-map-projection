@@ -20,14 +20,14 @@ pathB = 'B-comparison-of-projections'
 join = lambda *paths: os.path.expanduser(os.path.join('~', 'Downloads', *paths))
 
 if CREATE_DATA:
-  with DOMP(cleanup=False) as domp:
-    ### SETTINGS
+  ### SETTINGS
+  def defaultSettings(domp):
     domp.resolution(3)
     domp.speed(4)
     domp.stopThreshold(maxForceStrength=.1 if not TESTING else .4, countDeficiencies=100, maxSteps=5000 if not TESTING else 500)
     domp.limitLatForEnergy(90)
 
-    ### VIEW SETTINGS
+  def defaultView(domp):
     domp.viewForces(all=False)
     domp.viewEnergy(all=False)
     domp.viewNeighbours(show=False)
@@ -36,136 +36,150 @@ if CREATE_DATA:
     domp.viewOriginalPolygons(show=False)
     domp.viewContinents(show=False)
 
-    def defaultWeights():
-      domp.weights(POTENTIAL.AREA, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-      domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-      domp.weights(POTENTIAL.DISTANCE_HOMOGENEITY, active=False, weightLand=.2, weightOceanActive=True, weightOcean=.05, distanceTransitionStart=100, distanceTransitionEnd=800)
-      domp.weights(POTENTIAL.SHAPE, active=False, weightLand=.7, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-      domp.weights(POTENTIAL.ORIENTATION, active=False, weightLand=.1, weightOceanActive=False, weightOcean=.1, distanceTransitionStart=100, distanceTransitionEnd=800)
-      domp.weights(POTENTIAL.TRIANGLE_ALTITUDE, active=True, weightLand=1, weightOceanActive=False, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+  def defaultWeights(domp):
+    domp.weights(POTENTIAL.AREA, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+    domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+    domp.weights(POTENTIAL.DISTANCE_HOMOGENEITY, active=False, weightLand=.2, weightOceanActive=True, weightOcean=.05, distanceTransitionStart=100, distanceTransitionEnd=800)
+    domp.weights(POTENTIAL.SHAPE, active=False, weightLand=.7, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+    domp.weights(POTENTIAL.ORIENTATION, active=False, weightLand=.1, weightOceanActive=False, weightOcean=.1, distanceTransitionStart=100, distanceTransitionEnd=800)
+    domp.weights(POTENTIAL.TRIANGLE_ALTITUDE, active=True, weightLand=1, weightOceanActive=False, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
 
-    ### A: OPTIMIZATION
-    if ACTION_A:
-      defaultWeights()
-      for projection in PROJECTION.canBeOptimizedProjections:
-        data = domp.startData(preventSnapshots=True)
-        for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-continents']):
-          # view settings
-          parts = []
-          if context == 'supporting-points-forces-all':
-            parts = ['supporting-points', 'forces', 'all']
-            domp.viewSupportingPoints(active=True)
-            domp.viewForces(all=True, sum=True)
-          if context == 'supporting-points-forces-all-individual':
-            parts = ['supporting-points', 'forces', 'all', 'individual']
-            domp.viewSupportingPoints(active=True)
-            domp.viewForces(all=True, sum=False)
-          if context == 'neighbours-continents':
-            parts = ['neighbours', 'continents']
-            domp.viewNeighbours(show=True)
-            domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
-          # run
-          domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
-          domp.loadProjection(projection)
-          video = domp.startVideo()
-          if i == 0:
-            domp.startData(dataData=data)
-          domp.steps()
-          if i == 0:
-            domp.stopData(dataData=data)
-          domp.saveVideo(video, addPaths=[pathA, projection.name], addParts=parts)
-          # reset view settings
-          domp.viewSupportingPoints(active=False)
-          domp.viewNeighbours(show=False)
-          domp.viewContinents(show=False)
-          domp.viewForces(all=False)
-        domp.saveData(data, addPaths=[pathA, projection.name], filename='domp-optimization-' + projection.name + '.csv')
-      domp.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv')
+  def init(domp):
+    defaultSettings(domp)
+    defaultView(domp)
+    defaultWeights(domp)
 
-    ### B: COMPARISON OF PROJECTIONS
-    if ACTION_B:
-      def screenshot(projection, *parts):
+  ### A: OPTIMIZATION
+  def actionA(projection):
+    with DOMP(cleanup=False) as domp:
+      init(domp)
+      data = domp.startData(preventSnapshots=True)
+      for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-continents']):
+        # view settings
+        parts = []
+        if context == 'supporting-points-forces-all':
+          parts = ['supporting-points', 'forces', 'all']
+          domp.viewSupportingPoints(active=True)
+          domp.viewForces(all=True, sum=True)
+        if context == 'supporting-points-forces-all-individual':
+          parts = ['supporting-points', 'forces', 'all', 'individual']
+          domp.viewSupportingPoints(active=True)
+          domp.viewForces(all=True, sum=False)
+        if context == 'neighbours-continents':
+          parts = ['neighbours', 'continents']
+          domp.viewNeighbours(show=True)
+          domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
+        # run
+        domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
+        domp.loadProjection(projection)
+        video = domp.startVideo()
+        if i == 0:
+          domp.startData(dataData=data)
+        domp.steps()
+        if i == 0:
+          domp.stopData(dataData=data)
+        domp.saveVideo(video, addPaths=[pathA, projection.name], addParts=parts)
+        # reset view settings
+        domp.viewSupportingPoints(active=False)
+        domp.viewNeighbours(show=False)
+        domp.viewContinents(show=False)
+        domp.viewForces(all=False)
+      domp.saveData(data, addPaths=[pathA, projection.name], filename='domp-optimization-' + projection.name + '.csv')
+  
+  if ACTION_A:
+    for projection in PROJECTION.canBeOptimizedProjections:
+      actionA(projection)
+    DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv')
+
+  ### B: COMPARISON OF PROJECTIONS
+  def actionB(projection):
+    with DOMP(cleanup=False) as domp:
+      init(domp)
+
+      def _screenshot(projection, *parts):
         for extension in ['png', 'pdf']:
           domp.screenshot(addPaths=[pathB, projection.name], addParts=parts, extension=extension)
       
-      def dump(data, projection, parts, initial=False):
+      def _dump(data, projection, parts, initial=False):
         potentials = [POTENTIAL.DISTANCE, POTENTIAL.AREA, POTENTIAL.TRIANGLE_ALTITUDE]
         # data
         domp.appendData(data, additionalData={'case': '-'.join(parts)})
         # original polygons
         if initial:
           domp.viewOriginalPolygons(show=True)
-          screenshot(projection, 'original-polygons', *parts)
+          _screenshot(projection, 'original-polygons', *parts)
           domp.viewOriginalPolygons(show=False)
         # supporting points
         domp.viewSupportingPoints(active=True)
-        screenshot(projection, 'supporting-points', *parts)
+        _screenshot(projection, 'supporting-points', *parts)
         # supporting points with labels
         domp.viewLabels(show=True)
-        screenshot(projection, 'supporting-points-with-labels', *parts)
+        _screenshot(projection, 'supporting-points-with-labels', *parts)
         domp.viewLabels(show=False)
         domp.viewSupportingPoints(active=False)
         # neighbours
         domp.viewNeighbours(show=True)
-        screenshot(projection, 'neighbours', *parts)
+        _screenshot(projection, 'neighbours', *parts)
         domp.viewNeighbours(show=False)
         # forces
         domp.viewForces(all=True, sum=True)
-        screenshot(projection, 'forces', 'all', *parts)
+        _screenshot(projection, 'forces', 'all', *parts)
         domp.viewForces(all=True, sum=False)
-        screenshot(projection, 'forces', 'all', 'individual', *parts)
+        _screenshot(projection, 'forces', 'all', 'individual', *parts)
         for potential in potentials:
           domp.viewForces(potential=potential, sum=True)
-          screenshot(projection, 'forces', potential.lower(), *parts)
+          _screenshot(projection, 'forces', potential.lower(), *parts)
           domp.viewForces(potential=potential, sum=False)
-          screenshot(projection, 'forces', potential.lower(), 'individual', *parts)
+          _screenshot(projection, 'forces', potential.lower(), 'individual', *parts)
         domp.viewForces(all=False, potential=None)
         # energies
         domp.viewEnergy(all=True)
-        screenshot(projection, 'energies', 'all', *parts)
+        _screenshot(projection, 'energies', 'all', *parts)
         for potential in potentials:
           domp.viewEnergy(potential=potential)
-          screenshot(projection, 'energies', potential.lower(), *parts)
+          _screenshot(projection, 'energies', potential.lower(), *parts)
         domp.viewEnergy(all=False, potential=None)
         # continents
         domp.viewContinents(show=True)
-        screenshot(projection, 'continents', *parts)
+        _screenshot(projection, 'continents', *parts)
         domp.viewContinents(show=False)
 
-      def runComparison(part):
-        for projection in PROJECTION.allProjections:
-          domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
-          data = domp.startData(preventSnapshots=True)
-          for considerContinents in [False, True]:
-            # weights
-            domp.weights(POTENTIAL.AREA, weightOceanActive=considerContinents)
-            domp.weights(POTENTIAL.DISTANCE, weightOceanActive=considerContinents)
-            # run
-            parts = [part] + (['continents'] if considerContinents else [])
-            domp.loadProjection(projection)
-            dump(data, projection, parts, initial=True)
-            if projection.canBeOptimized:
-              domp.steps(100)
-              dump(data, projection, parts)
-              domp.steps()
-              dump(data, projection, parts)
-            # reset weights
-            domp.weights(POTENTIAL.AREA, weightOceanActive=True)
-            domp.weights(POTENTIAL.DISTANCE, weightOceanActive=True)
-          domp.saveData(data, addPaths=[pathB, projection.name], filename='domp-comparison-of-projections-' + part + '.csv')
+      def _runComparison(part):
+        domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
+        data = domp.startData(preventSnapshots=True)
+        for considerContinents in [False, True]:
+          # weights
+          domp.weights(POTENTIAL.AREA, weightOceanActive=considerContinents)
+          domp.weights(POTENTIAL.DISTANCE, weightOceanActive=considerContinents)
+          # run
+          parts = [part] + (['continents'] if considerContinents else [])
+          domp.loadProjection(projection)
+          _dump(data, projection, parts, initial=True)
+          if projection.canBeOptimized:
+            domp.steps(100)
+            _dump(data, projection, parts)
+            domp.steps()
+            _dump(data, projection, parts)
+          # reset weights
+          domp.weights(POTENTIAL.AREA, weightOceanActive=True)
+          domp.weights(POTENTIAL.DISTANCE, weightOceanActive=True)
+        domp.saveData(data, addPaths=[pathB, projection.name], filename='domp-comparison-of-projections-' + part + '.csv')
 
-      defaultWeights()
-      runComparison('default')
+      # defaultWeights()
+      _runComparison('default')
 
       defaultWeights()
       domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=.3, weightOceanActive=False)
-      runComparison('distance-0.3')
+      _runComparison('distance-0.3')
 
       defaultWeights()
       domp.weights(POTENTIAL.AREA, active=True, weightLand=.3, weightOceanActive=False)
-      runComparison('area-0.3')
+      _runComparison('area-0.3')
 
-      domp.collectData(pathB + '/*/**/domp-comparison-of-projections-*.csv', addPath=pathB, filename='domp-comparison-of-projections.csv')
+  if ACTION_B:
+    for projection in PROJECTION.allProjections:
+      actionB(projection)
+    DOMP.collectData(pathB + '/*/**/domp-comparison-of-projections-*.csv', addPath=pathB, filename='domp-comparison-of-projections.csv')
 
 ### CREATE VISUALIZATIONS
 if CREATE_VISUALIZATION:

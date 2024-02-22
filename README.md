@@ -90,4 +90,6 @@ with DOMP() as domp:
   # domp.viewContinents(showSimplified=True)
   # domp.viewContinents(showWithTolerance=2)
   # domp.viewContinents(show=True)
+
+  # DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=['path'], filename='domp-optimization.csv')
 ```
