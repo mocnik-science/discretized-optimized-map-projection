@@ -180,11 +180,11 @@ if CREATE_DATA:
       # defaultWeights()
       _runComparison('default')
 
-      defaultWeights()
+      defaultWeights(domp)
       domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=.3, weightOceanActive=False)
       _runComparison('distance-0.3')
 
-      defaultWeights()
+      defaultWeights(domp)
       domp.weights(POTENTIAL.AREA, active=True, weightLand=.3, weightOceanActive=False)
       _runComparison('area-0.3')
 
