@@ -4,9 +4,9 @@ import shutil
 class File:
   _defaultPath = '~/Downloads'
 
-  def __init__(self, geoGridSettings, *parts, extension=None, path=None, addHash=None):
-    self._initialProjectionName = geoGridSettings.initialProjection.name.replace(' ', '_').replace('-', '_')
-    self._hash = geoGridSettings.hash()
+  def __init__(self, *parts, geoGridSettings=None, extension=None, path=None, addHash=None):
+    self._initialProjectionName = geoGridSettings.initialProjection.name.replace(' ', '_').replace('-', '_') if geoGridSettings else ''
+    self._hash = geoGridSettings.hash() if geoGridSettings else ''
     self._parts = [str(part) for part in parts] if parts else []
     self._extension = extension
     self._paths = [path or File._defaultPath]
@@ -19,7 +19,7 @@ class File:
   def isCancelled(self):
     return self._cancelled
 
-  def update(self, path=None, addPath=None, addPaths=None, filename=None, addPart=None, addParts=None):
+  def update(self, path=None, addPath=None, addPaths=None, filename=None, addPart=None, addParts=None, extension=None):
     if path is not None:
       self._finalPath = path
     if addPaths is not None:
@@ -32,6 +32,8 @@ class File:
       self._parts += addParts
     if addPart is not None:
       self._parts += [addPart]
+    if extension is not None:
+      self._extension = extension
     return self
 
   def byDialog(self, dialog, resultOk, *args, **kwargs):

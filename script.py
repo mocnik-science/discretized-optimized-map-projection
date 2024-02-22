@@ -59,7 +59,6 @@ def parallelize(action, projections):
   else:
     [action(projection) for projection in projections]
 
-
 ### A: OPTIMIZATION
 if CREATE_DATA:
   DOMP.about()

@@ -114,7 +114,7 @@ class InterfaceCommon:
   @staticmethod
   def saveData(pathFunction, dataData, geoGridSettings):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, dataData + '.csv')
-    File(geoGridSettings, dataData, extension='csv').apply(pathFunction).byTmpFile(fileNameTmp)
+    File(dataData, geoGridSettings=geoGridSettings, extension='csv').apply(pathFunction).byTmpFile(fileNameTmp)
 
   @staticmethod
   def saveScreenshot(pathFunction, geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, largeSymbols=False, extension='png'):
@@ -124,7 +124,7 @@ class InterfaceCommon:
       stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
     if serializedData is None or projection is None or stepData is None:
       raise Exception('Please provide either serializedData, projection, and stepData, or provide geogrid')
-    file = File(geoGridSettings, stepData['step'], extension=extension, addHash=InterfaceCommon.hash()).apply(pathFunction)
+    file = File(stepData['step'], geoGridSettings=geoGridSettings, extension=extension, addHash=InterfaceCommon.hash()).apply(pathFunction)
     if not file.isCancelled():
       file.removeExisting()
       im = GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=stepData)
@@ -152,10 +152,10 @@ class InterfaceCommon:
   def saveVideo(pathFunction, videoData, geoGridSettings):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, videoData)
     renderVideo(fileNameTmp, 20)
-    File(geoGridSettings, videoData, extension='mp4').apply(pathFunction).byTmpFile(fileNameTmp + '.mp4', move=True)
+    File(videoData, geoGridSettings=geoGridSettings, extension='mp4').apply(pathFunction).byTmpFile(fileNameTmp + '.mp4', move=True)
 
   @staticmethod
-  def collectData(pathFunction, pattern, geoGridSettings):
+  def collectData(pathFunction, pattern):
     lines = []
     for filename in glob.glob(os.path.expanduser(File._defaultPath) + '/' + pattern, recursive=True):
       with open(filename, 'r') as f:
@@ -166,7 +166,7 @@ class InterfaceCommon:
           lines += linesNew[1:]
         else:
           raise Exception('Error when collecting: different header')
-    with open(File(geoGridSettings, extension='csv').apply(pathFunction).pathAndFilename(), 'w') as f:
+    with open(File(extension='csv').apply(pathFunction).pathAndFilename(), 'w') as f:
       f.writelines(lines)
 
   @staticmethod
