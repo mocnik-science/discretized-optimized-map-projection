@@ -2,14 +2,13 @@
 
 import altair as alt
 import csv
-from multiprocessing import Pool
+from multiprocess import Pool
 import os
 import pandas as pd
 
 from src.interfaces.script import DOMP, POTENTIAL, PROJECTION, Print
 
-TESTING = False
-PARALLELIZE = TRUE
+PARALLELIZE = True
 
 ACTION_A = True
 ACTION_B = True
@@ -17,51 +16,56 @@ ACTION_B = True
 CREATE_DATA = False
 CREATE_VISUALIZATION = True
 
+TESTING = False
+
 pathA = 'A-optimization'
 pathB = 'B-comparison-of-projections'
 join = lambda *paths: os.path.expanduser(os.path.join('~', 'Downloads', *paths))
 
+### SETTINGS
+def defaultSettings(domp):
+  domp.resolution(3)
+  domp.speed(4)
+  domp.stopThreshold(maxForceStrength=.1 if not TESTING else .4, countDeficiencies=100, maxSteps=5000 if not TESTING else 500)
+  domp.limitLatForEnergy(90)
+
+def defaultView(domp):
+  domp.viewForces(all=False)
+  domp.viewEnergy(all=False)
+  domp.viewNeighbours(show=False)
+  domp.viewLabels(show=False)
+  domp.viewSupportingPoints(active=False, weightsForPotential=None)
+  domp.viewOriginalPolygons(show=False)
+  domp.viewContinents(show=False)
+
+def defaultWeights(domp):
+  domp.weights(POTENTIAL.AREA, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+  domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+  domp.weights(POTENTIAL.DISTANCE_HOMOGENEITY, active=False, weightLand=.2, weightOceanActive=True, weightOcean=.05, distanceTransitionStart=100, distanceTransitionEnd=800)
+  domp.weights(POTENTIAL.SHAPE, active=False, weightLand=.7, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+  domp.weights(POTENTIAL.ORIENTATION, active=False, weightLand=.1, weightOceanActive=False, weightOcean=.1, distanceTransitionStart=100, distanceTransitionEnd=800)
+  domp.weights(POTENTIAL.TRIANGLE_ALTITUDE, active=True, weightLand=1, weightOceanActive=False, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
+
+def init(domp):
+  defaultSettings(domp)
+  defaultView(domp)
+  defaultWeights(domp)
+
+### PARALLELIZE
+def parallelize(action, projections):
+  if PARALLELIZE:
+    with Pool() as pool:
+      pool.map(action, projections)
+  else:
+    [action(projection) for projection in projections]
+
+
+### A: OPTIMIZATION
 if CREATE_DATA:
-  ### SETTINGS
-  def defaultSettings(domp):
-    domp.resolution(3)
-    domp.speed(4)
-    domp.stopThreshold(maxForceStrength=.1 if not TESTING else .4, countDeficiencies=100, maxSteps=5000 if not TESTING else 500)
-    domp.limitLatForEnergy(90)
-
-  def defaultView(domp):
-    domp.viewForces(all=False)
-    domp.viewEnergy(all=False)
-    domp.viewNeighbours(show=False)
-    domp.viewLabels(show=False)
-    domp.viewSupportingPoints(active=False, weightsForPotential=None)
-    domp.viewOriginalPolygons(show=False)
-    domp.viewContinents(show=False)
-
-  def defaultWeights(domp):
-    domp.weights(POTENTIAL.AREA, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-    domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-    domp.weights(POTENTIAL.DISTANCE_HOMOGENEITY, active=False, weightLand=.2, weightOceanActive=True, weightOcean=.05, distanceTransitionStart=100, distanceTransitionEnd=800)
-    domp.weights(POTENTIAL.SHAPE, active=False, weightLand=.7, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-    domp.weights(POTENTIAL.ORIENTATION, active=False, weightLand=.1, weightOceanActive=False, weightOcean=.1, distanceTransitionStart=100, distanceTransitionEnd=800)
-    domp.weights(POTENTIAL.TRIANGLE_ALTITUDE, active=True, weightLand=1, weightOceanActive=False, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
-
-  def init(domp):
-    defaultSettings(domp)
-    defaultView(domp)
-    defaultWeights(domp)
-
-  ### PARALLELIZE
-  def parallelize(action, projections):
-    if PARALLELIZE:
-      with Pool() as pool:
-        pool.map(action, projections)
-    else:
-      [action(projection) for projection in projections]
-
-  ### A: OPTIMIZATION
+  DOMP.about()
+  
   def actionA(projection):
-    with DOMP(cleanup=False) as domp:
+    with DOMP(cleanup=False, logging=not parallelize, hideAbout=True) as domp:
       init(domp)
       data = domp.startData(preventSnapshots=True)
       for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-continents']):
@@ -95,14 +99,14 @@ if CREATE_DATA:
         domp.viewContinents(show=False)
         domp.viewForces(all=False)
       domp.saveData(data, addPaths=[pathA, projection.name], filename='domp-optimization-' + projection.name + '.csv')
-  
+
   if ACTION_A:
     parallelize(actionA, PROJECTION.canBeOptimizedProjections)
     DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv')
 
   ### B: COMPARISON OF PROJECTIONS
   def actionB(projection):
-    with DOMP(cleanup=False) as domp:
+    with DOMP(cleanup=False, logging=not parallelize, hideAbout=True) as domp:
       init(domp)
 
       def _screenshot(projection, *parts):

@@ -2,15 +2,32 @@ import time
 
 from src.common.console import Console
 
-DISABLE_ALL_LOG = False
-FILTER_LOG = None
+class TimerConfig(object):
+  def __new__(cls):
+    if not hasattr(cls, 'instance'):
+      cls.instance = super(TimerConfig, cls).__new__(cls)
+      cls.instance.__disableAllLog = False
+      cls.instance.__filterLog = None
+    return cls.instance
+
+  def disableAllLog(self, *value):
+    if len(value) > 0:
+      self.__disableAllLog = value[0]
+    return self.__disableAllLog
+  def filterLog(self, *value):
+    if len(value) > 0:
+      self.__filterLog = value[0]
+    return self.__filterLog
+
+timerConfig = TimerConfig()
 
 class timer(object):
   __durationsByLabel = {}
   
   def __init__(self, label='', log=True, forceLog=False, showAverage=100, **kwargs):
     self.__label = label
-    self.__log = log and (not DISABLE_ALL_LOG or forceLog)
+    self.__log = log and (not timerConfig.disableAllLog() or forceLog)
+    self.__forceLog = forceLog
     self.__showAverage = showAverage
     self.__formatKwargs = kwargs
     self.__time = None
@@ -21,7 +38,7 @@ class timer(object):
 
   def __exit__(self, *args):
     duration = self.end()
-    if not self.__log or self.__time is None or (FILTER_LOG is not None and FILTER_LOG not in self.__label):
+    if not self.__log or (timerConfig.disableAllLog() and not self.__forceLog) or self.__time is None or (timerConfig.filterLog() is not None and timerConfig.filterLog() not in self.__label):
       return
     label1 = ''
     if 'step' in self.__formatKwargs:

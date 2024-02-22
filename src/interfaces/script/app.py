@@ -3,6 +3,7 @@ import py
 import sys
 
 from src.common.console import Console
+from src.common.timer import timerConfig
 from src.geoGrid.geoGrid import GeoGrid
 from src.geoGrid.geoGridSettings import GeoGridSettings
 from src.geoGrid.geoGridWeight import GeoGridWeight
@@ -25,8 +26,10 @@ for potential in potentials:
 # TODO load and save simulation settings
 
 class DOMP:
-  def __init__(self, cleanup=True):
+  def __init__(self, cleanup=True, logging=True, hideAbout=False):
     self.__cleanup = cleanup
+    self.__logging = logging
+    timerConfig.disableAllLog(not self.__logging)
     # self.__appSettings = shelve.Shelf({})
     self.__geoGridSettings = GeoGridSettings()
     self.__viewSettings = {
@@ -46,16 +49,19 @@ class DOMP:
     self.viewOriginalPolygons()
     self.viewContinents()
     # about
-    self.about()
+    if not hideAbout:
+      self.about()
     # load the default projection
     self.loadProjection()
 
   def __callbackStatus(self, status, energy=None, calibration=None):
-    Console.print(f"{'':<10} |", status, energy or '', calibration or '')
+    if self.__logging:
+      Console.print(f"{'':<10} |", status, energy or '', calibration or '')
   
   ###### ABOUT
 
-  def about(self):
+  @staticmethod
+  def about():
     Console.print(APP_NAME)
     Console.print(APP_COPYRIGHT)
     Console.print()
@@ -266,10 +272,11 @@ class DOMP:
     Console.status(f'\nline {lineNumber + 1:>5} |', self.__codeFulltext[lineNumber - 1].strip())
 
   def __enter__(self):
-    sys.settrace(lambda *args, **kwargs: None)
-    frame = sys._getframe(1)
-    self.__codeFulltext = py.code.Frame(sys._getframe(1)).code.fullsource
-    frame.f_trace = self.__trace
+    if self.__logging:
+      sys.settrace(lambda *args, **kwargs: None)
+      frame = sys._getframe(1)
+      self.__codeFulltext = py.code.Frame(sys._getframe(1)).code.fullsource
+      frame.f_trace = self.__trace
     return self
 
   def __exit__(self, exc_type, exc_value, traceback):

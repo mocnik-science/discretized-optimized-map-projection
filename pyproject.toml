@@ -13,7 +13,8 @@ classifiers = [
   "Programming Language :: Python :: 3"
 ]
 dependencies = [
-
+  "altair>=5.2.0",
+  "multiprocess>=0.70.16",
   "pillow>=10.2.0",
   "py>=1.11.0",
   "pyproj>=3.6.1",

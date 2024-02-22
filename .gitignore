@@ -1,5 +1,7 @@
 __pycache__
-/DGGRID
 .dggrid
 .naturalEarthData
 *.pickle.gzip
+/build
+/DGGRID
+/src/Discretized_Optimized_Map_Projection.egg-info
