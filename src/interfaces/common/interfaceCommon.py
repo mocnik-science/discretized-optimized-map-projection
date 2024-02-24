@@ -6,6 +6,8 @@ import shutil
 
 from src.common.video import renderVideo
 from src.geoGrid.geoGridRenderer import GeoGridRenderer
+from src.imageBackends.imageBackendPillow import ImageBackendPillow
+from src.imageBackends.imageBackendSvg import ImageBackendSvg
 from src.interfaces.common.common import APP_CAPTURE_PATH
 from src.interfaces.common.file import File
 
@@ -114,7 +116,9 @@ class InterfaceCommon:
   @staticmethod
   def saveData(pathFunction, dataData, geoGridSettings):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, dataData + '.csv')
-    File(dataData, geoGridSettings=geoGridSettings, extension='csv').apply(pathFunction).byTmpFile(fileNameTmp)
+    file = File(dataData, geoGridSettings=geoGridSettings, extension='csv').apply(pathFunction)
+    file.byTmpFile(fileNameTmp)
+    return file.pathAndFilename()
 
   @staticmethod
   def saveScreenshot(pathFunction, geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, largeSymbols=False, extension='png'):
@@ -127,8 +131,8 @@ class InterfaceCommon:
     file = File(stepData['step'], geoGridSettings=geoGridSettings, extension=extension, addHash=InterfaceCommon.hash()).apply(pathFunction)
     if not file.isCancelled():
       file.removeExisting()
-      im = GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=stepData)
-      im.save(file.pathAndFilename(), optimize=True)
+      GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=(1920, 1080), transparency=True, largeSymbols=largeSymbols, stepData=stepData, backend=ImageBackendSvg if extension == 'svg' else ImageBackendPillow).save(file.pathAndFilename())
+    return file.pathAndFilename()
 
   @staticmethod
   def renderImage(geoGridSettings, viewSettings, geoGrid=None, serializedData=None, projection=None, stepData=None, size=None):
@@ -138,7 +142,7 @@ class InterfaceCommon:
       stepData = stepData or InterfaceCommon.computeStepData(geoGrid, geoGridSettings)
     if serializedData is None or projection is None:
       raise Exception('Please provide either serializedData, projection, and stepData, or provide geogrid')
-    return GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=size if size else (1920, 1080), stepData=stepData), stepData
+    return GeoGridRenderer.render(serializedData, geoGridSettings=geoGridSettings, viewSettings=viewSettings, projection=projection, size=size if size else (1920, 1080), stepData=stepData).im(), stepData
 
   @staticmethod
   def startVideo():
@@ -152,7 +156,9 @@ class InterfaceCommon:
   def saveVideo(pathFunction, videoData, geoGridSettings):
     fileNameTmp = os.path.join(APP_CAPTURE_PATH, videoData)
     renderVideo(fileNameTmp, 20)
-    File(videoData, geoGridSettings=geoGridSettings, extension='mp4').apply(pathFunction).byTmpFile(fileNameTmp + '.mp4', move=True)
+    file = File(videoData, geoGridSettings=geoGridSettings, extension='mp4').apply(pathFunction)
+    file.byTmpFile(fileNameTmp + '.mp4', move=True)
+    return file.pathAndFilename()
 
   @staticmethod
   def collectData(pathFunction, pattern):
@@ -166,8 +172,10 @@ class InterfaceCommon:
           lines += linesNew[1:]
         else:
           raise Exception('Error when collecting: different header')
-    with open(File(extension='csv').apply(pathFunction).pathAndFilename(), 'w') as f:
+    pathAndFilename = File(extension='csv').apply(pathFunction).pathAndFilename()
+    with open(pathAndFilename, 'w') as f:
       f.writelines(lines)
+    return pathAndFilename
 
   @staticmethod
   def cleanup():

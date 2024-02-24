@@ -5,6 +5,7 @@ import csv
 from multiprocess import Pool
 import os
 import pandas as pd
+import subprocess
 
 from src.interfaces.script import DOMP, POTENTIAL, PROJECTION, Print
 
@@ -109,17 +110,22 @@ if CREATE_DATA:
       init(domp)
 
       def _screenshot(projection, *parts):
-        domp.screenshot(addPaths=[pathB, projection.name], addParts=parts, extension='png')
+        for extension in ['png', 'svg']:
+          filename = domp.screenshot(addPaths=[pathB, projection.name], addParts=parts, extension=extension)
+          if extension == 'svg':
+            path, fname = os.path.split(filename)
+            subprocess.run(f'zip -9 "{fname}.zip" "{fname}" && rm "{fname}"', shell=True, cwd=path, capture_output=True)
       
       def _dump(data, projection, parts, initial=False):
         potentials = [POTENTIAL.DISTANCE, POTENTIAL.AREA, POTENTIAL.TRIANGLE_ALTITUDE]
         # data
         domp.appendData(data, additionalData={'case': '-'.join(parts)})
-        # original polygons
-        if initial:
-          domp.viewOriginalPolygons(show=True)
-          _screenshot(projection, 'original-polygons', *parts)
-          domp.viewOriginalPolygons(show=False)
+        if initial and projection.canBeOptimized:
+          # initial polygons
+          if initial:
+            domp.viewOriginalPolygons(show=True)
+            _screenshot(projection, 'initial-polygons', *parts)
+            domp.viewOriginalPolygons(show=False)
         # supporting points
         domp.viewSupportingPoints(active=True)
         _screenshot(projection, 'supporting-points', *parts)
@@ -128,21 +134,22 @@ if CREATE_DATA:
         _screenshot(projection, 'supporting-points-with-labels', *parts)
         domp.viewLabels(show=False)
         domp.viewSupportingPoints(active=False)
-        # neighbours
-        domp.viewNeighbours(show=True)
-        _screenshot(projection, 'neighbours', *parts)
-        domp.viewNeighbours(show=False)
-        # forces
-        domp.viewForces(all=True, sum=True)
-        _screenshot(projection, 'forces', 'all', *parts)
-        domp.viewForces(all=True, sum=False)
-        _screenshot(projection, 'forces', 'all', 'individual', *parts)
-        for potential in potentials:
-          domp.viewForces(potential=potential, sum=True)
-          _screenshot(projection, 'forces', potential.lower(), *parts)
-          domp.viewForces(potential=potential, sum=False)
-          _screenshot(projection, 'forces', potential.lower(), 'individual', *parts)
-        domp.viewForces(all=False, potential=None)
+        if projection.canBeOptimized:
+          # neighbours
+          domp.viewNeighbours(show=True)
+          _screenshot(projection, 'neighbours', *parts)
+          domp.viewNeighbours(show=False)
+          # forces
+          domp.viewForces(all=True, sum=True)
+          _screenshot(projection, 'forces', 'all', *parts)
+          domp.viewForces(all=True, sum=False)
+          _screenshot(projection, 'forces', 'all', 'individual', *parts)
+          for potential in potentials:
+            domp.viewForces(potential=potential, sum=True)
+            _screenshot(projection, 'forces', potential.lower(), *parts)
+            domp.viewForces(potential=potential, sum=False)
+            _screenshot(projection, 'forces', potential.lower(), 'individual', *parts)
+          domp.viewForces(all=False, potential=None)
         # energies
         domp.viewEnergy(all=True)
         _screenshot(projection, 'energies', 'all', *parts)

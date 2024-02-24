@@ -80,7 +80,7 @@ class DOMP:
   def viewSupportingPoints(self, active=False, weightsForPotential=None):
     self.__viewSettings['drawCentres'] = 'ACTIVE' if active else weightsForPotential if weightsForPotential else None
   def viewOriginalPolygons(self, show=False):
-    self.__viewSettings['drawOriginalPolygons'] = show
+    self.__viewSettings['drawInitialPolygons'] = show
   def viewContinents(self, showStronglySimplified=False, showSimplified=False, show=False, showWithTolerance=None):
     self.__viewSettings['drawContinentsTolerance'] = 3 if showStronglySimplified else 1 if showSimplified else 'full' if show else showWithTolerance if showWithTolerance is not None else False
 
@@ -242,10 +242,10 @@ class DOMP:
 
   def saveData(self, dataData, **kwargs):
     self.stopData(dataData)
-    InterfaceCommon.saveData(DOMP.__fileFunction(**kwargs), dataData, self.__geoGridSettings)
+    return InterfaceCommon.saveData(DOMP.__fileFunction(**kwargs), dataData, self.__geoGridSettings)
 
-  def screenshot(self, largeSymbols=False, **kwargs):
-    InterfaceCommon.saveScreenshot(DOMP.__fileFunction(**kwargs), self.__geoGridSettings, self.__viewSettings, geoGrid=self.__geoGrid, largeSymbols=largeSymbols)
+  def screenshot(self, largeSymbols=False, extension='png', **kwargs):
+    return InterfaceCommon.saveScreenshot(DOMP.__fileFunction(**kwargs), self.__geoGridSettings, self.__viewSettings, geoGrid=self.__geoGrid, largeSymbols=largeSymbols, extension=extension)
 
   def startVideo(self):
     videoData = InterfaceCommon.startVideo()
@@ -255,13 +255,13 @@ class DOMP:
 
   def saveVideo(self, videoData, **kwargs):
     self.__videoDatas = [vd for vd in self.__videoDatas if vd != videoData]
-    InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
+    return InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
 
   ###### COLLECTING DATA
 
   @staticmethod
   def collectData(pattern, **kwargs):
-    InterfaceCommon.collectData(DOMP.__fileFunction(**kwargs), pattern)
+    return InterfaceCommon.collectData(DOMP.__fileFunction(**kwargs), pattern)
 
   ###### WITH
 

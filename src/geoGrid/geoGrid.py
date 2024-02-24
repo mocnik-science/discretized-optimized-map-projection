@@ -322,10 +322,10 @@ class GeoGrid:
       }
       # init data
       cells = dict((cell._id2, {}) for cell in self.__cells.values())
-      # original polygon coords
-      if viewSettings['drawOriginalPolygons']:
+      # initial polygon coords
+      if viewSettings['drawInitialPolygons']:
         for cell in self.__cells.values():
-          cells[cell._id2]['polygonOriginalCoords'] = cell._polygonOriginal.exterior.coords[:-1]
+          cells[cell._id2]['polygonInitialCoords'] = cell._polygonOriginal.exterior.coords[:-1]
       # neighbours xy
       if viewSettings['drawNeighbours']:
         for cell in self.__cells.values():

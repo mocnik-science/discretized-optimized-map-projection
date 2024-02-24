@@ -1,11 +1,11 @@
 import math
 import os
-from PIL import Image, ImageDraw, ImageFont
 
 from src.common.timer import timer
 from src.geometry.common import Common
 from src.geometry.geo import Geo
 from src.geometry.naturalEarth import NaturalEarth
+from src.imageBackends.imageBackendPillow import ImageBackendPillow
 from src.interfaces.common.common import APP_CAPTURE_PATH
 
 class GeoGridRenderer:
@@ -15,13 +15,13 @@ class GeoGridRenderer:
     'selectedEnergy': None,
     'drawNeighbours': False,
     'drawLabels': False,
-    'drawOriginalPolygons': False,
+    'drawInitialPolygons': False,
     'drawContinentsTolerance': 3,
     'showNthStep': 5,
   }
 
   @staticmethod
-  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSide=2000, border=10, transparency=False, largeSymbols=False, r=3, boundsExtend=1.3, projection=None, save=False, stepData=None):
+  def render(serializedData, geoGridSettings, viewSettings={}, size=None, maxSide=2000, border=10, transparency=False, largeSymbols=False, r=3, boundsExtend=1.3, projection=None, save=False, stepData=None, backend=ImageBackendPillow):
     # handle serialized data
     cells = serializedData['cells']
     path = serializedData['path']
@@ -59,73 +59,75 @@ class GeoGridRenderer:
       s = w / (xMax - xMin)
       projectToImage = lambda x, y: (dx2 + s * (x - xMin), dy2 + s * (-y - yMin))
       k = Common._pi_180 * Geo.radiusEarth
-      lonLatToCartesian = lambda cs: (k * c for c in cs)
+      lonLatToCartesian = lambda cs: tuple(k * c for c in cs)
       viewSettings = {
         **viewSettings,
         'widthOverall': widthOverall,
         'heightOverall': heightOverall,
       }
       # create image
-      im = Image.new('RGBA', (widthOverall, heightOverall)) if transparency else Image.new('RGB', (widthOverall, heightOverall), (255, 255, 255))
-      draw = ImageDraw.Draw(im)
+      image = backend(widthOverall, heightOverall, projectToImage, transparentBackground=transparency)
       # render
-      argsForRendering = [[draw, projectToImage], lonLatToCartesian, cells, geoGridSettings, viewSettings, 5 if largeSymbols else 1, (4 if largeSymbols else 1) * r, projection, stepData]
+      argsForRendering = [image, lonLatToCartesian, cells, geoGridSettings, viewSettings, 5 if largeSymbols else 1, (4 if largeSymbols else 1) * r, projection, stepData]
       GeoGridRenderer.renderContinentalBorders(*argsForRendering)
-      GeoGridRenderer.renderOriginalPolygons(*argsForRendering)
+      GeoGridRenderer.renderInitialPolygons(*argsForRendering)
       GeoGridRenderer.renderNeighbours(*argsForRendering)
       GeoGridRenderer.renderForces(*argsForRendering)
       GeoGridRenderer.renderCentres(*argsForRendering)
       GeoGridRenderer.renderStepData(*argsForRendering)
       # save
       if save:
-        GeoGridRenderer.save(im, path, resolution, step)
+        GeoGridRenderer.save(image, path, resolution, step)
       # return image
-      return im
+      return image
 
   @staticmethod
-  def renderContinentalBorders(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+  def renderContinentalBorders(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if projection is None:
       return
     if viewSettings['drawContinentsTolerance']:
       csExteriors, csInteriors = NaturalEarth.preparedData(viewSettings['drawContinentsTolerance'])
-      for cs in csExteriors:
-        GeoGridRenderer.__polygon(d, [projection.project(*c) for c in cs], fill=(230, 230, 230))
-        # GeoGridRenderer.__polygon(d, [*lonLatToCartesian(c) for c in cs], outline=(0, 255, 0))
-      for cs in csInteriors:
-        GeoGridRenderer.__polygon(d, [projection.project(*c) for c in cs], fill=(255, 255, 255))
+      image.group('continents-outer', (image.polygon_([projection.project(*c) for c in cs], fill=(230, 230, 230)) for cs in csExteriors))
+      # image.group('continents-outer-stroke', (image.polygon_([projection.project(*c) for c in cs], stroke=(0, 255, 0)) for cs in csExteriors))
+      image.group('continents-inner', (image.polygon_([projection.project(*c) for c in cs], fill=(255, 255, 255)) for cs in csInteriors))
 
   @staticmethod
-  def renderOriginalPolygons(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
-    if viewSettings['drawOriginalPolygons'] and geoGridSettings.canBeOptimized():
-      for cell in cells.values():
-        GeoGridRenderer.__polygon(d, [lonLatToCartesian(c) for c in cell['polygonOriginalCoords']], outline=(255, 100, 100), width=w)
+  def renderInitialPolygons(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+    if viewSettings['drawInitialPolygons'] and geoGridSettings.canBeOptimized():
+      image.group('initial-cells', (image.polygon_([lonLatToCartesian(c) for c in cell['polygonInitialCoords']], stroke=(255, 100, 100), width=w) for cell in cells.values()))
 
   @staticmethod
-  def renderNeighbours(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+  def renderNeighbours(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['drawNeighbours'] and geoGridSettings.canBeOptimized():
+      neighbours = []
       for cell in cells.values():
         if 'neighboursXY' in cell:
           for xy in cell['neighboursXY']:
-            GeoGridRenderer.__line(d, cell['xy'], xy, fill=(220, 220, 220), width=w)
+            neighbours.append(image.line_(cell['xy'], xy, stroke=(220, 220, 220), width=w))
+      image.group('neighbours', neighbours)
 
   @staticmethod
-  def renderForces(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+  def renderForces(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['selectedPotential'] is not None and geoGridSettings.canBeOptimized():
+      forces = []
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
           p1, p2 = cell['forceVector']
-          GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150), width=w)
+          forces.append(image.line_(p1, p2, stroke=(150, 150, 150), width=w))
       else:
         for cell in cells.values():
           p1, p2s = cell['forceVectors']
           for p2 in p2s:
-            GeoGridRenderer.__line(d, p1, p2, fill=(150, 150, 150), width=w)
+            forces.append(image.line_(p1, p2, stroke=(150, 150, 150), width=w))
+      image.group('forces', forces)
 
   @staticmethod
-  def renderCentres(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+  def renderCentres(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     factor = 1e-4
     if viewSettings['drawLabels']:
-      font = ImageFont.truetype('Helvetica', size=14)
+      font = image.getImageFont('Helvetica', size=14)
+    centres = []
+    labels = []
     for id2, cell in cells.items():
       if geoGridSettings.cannotBeOptimized() and not cell['isActive']:
         continue
@@ -143,47 +145,32 @@ class GeoGridRenderer:
             if not weight.isVanishing() and potential.kind == viewSettings['drawCentres']:
               fill = GeoGridRenderer.__blendColour(.5 * weight.forCellData(cell), colour0=(230, 230, 230), colour1=(255, 0, 0))
       if fill is not None:
-        GeoGridRenderer.__point(d, cell['xy'], radius, fill=fill)
+        centres.append(image.point_(cell['xy'], radius, fill=fill))
       if viewSettings['drawLabels']:
-        GeoGridRenderer.__text(d, tuple(map(sum, zip(cell['xy'], lonLatToCartesian((.6, -.3))))), str(id2), font=font, fill=(0, 0, 0), anchor='mm' if viewSettings['drawCentres'] is None else 'la', align='center' if viewSettings['drawCentres'] is None else 'left')
+        labels.append(image.text_(tuple(map(sum, zip(cell['xy'], lonLatToCartesian((.6, -.3))))), str(id2), font=font, fill=(0, 0, 0), anchor='mm' if viewSettings['drawCentres'] is None else 'la', align='center' if viewSettings['drawCentres'] is None else 'left'))
+    if len(centres):
+      image.group('centres', centres)
+    if len(labels):
+      image.group('labels', labels)
 
   @staticmethod
-  def renderStepData(d, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+  def renderStepData(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if viewSettings['captureVideo'] and stepData:
-      font = ImageFont.truetype('Helvetica', size=40)
-      GeoGridRenderer.__text(d, (30, viewSettings['heightOverall'] - 20), f"Step {stepData['step']}", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='ls', align='left')
+      texts = []
+      font = image.getImageFont('Helvetica', size=40)
+      texts.append(image.text_((30, viewSettings['heightOverall'] - 20), f"Step {stepData['step']}", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='ls', align='left'))
       innerEnergy, outerEnergy = stepData['energy']
-      GeoGridRenderer.__text(d, (viewSettings['widthOverall'] - 30, viewSettings['heightOverall'] - 20), f"energy = {innerEnergy:.2e} ({outerEnergy:.2e})", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='rs', align='right')
-
-  @staticmethod
-  def __point(d, p, r, imageCoordinates=False, **kwargs):
-    draw, projectToImage = d
-    x, y = p if imageCoordinates else projectToImage(*p)
-    draw.ellipse((x - r, y - r, x + r, y + r), **kwargs)
-
-  @staticmethod
-  def __line(d, p1, p2, imageCoordinates=False, **kwargs):
-    draw, projectToImage = d
-    draw.line((*(p1 if imageCoordinates else projectToImage(*p1)), *(p2 if imageCoordinates else projectToImage(*p2))), **kwargs)
-
-  @staticmethod
-  def __polygon(d, ps, imageCoordinates=False, **kwargs):
-    draw, projectToImage = d
-    draw.polygon([p if imageCoordinates else projectToImage(*p) for p in ps], **kwargs)
-
-  @staticmethod
-  def __text(d, p, text, imageCoordinates=False, **kwargs):
-    draw, projectToImage = d
-    draw.text(p if imageCoordinates else projectToImage(*p), text, **kwargs)
+      texts.append(image.text_((viewSettings['widthOverall'] - 30, viewSettings['heightOverall'] - 20), f"energy = {innerEnergy:.2e} ({outerEnergy:.2e})", imageCoordinates=True, font=font, fill=(0, 0, 0), anchor='rs', align='right'))
+      image.group('stepData', texts)
 
   @staticmethod
   def __blendColour(value, colour0, colour1):
     return tuple(round((1 - value) * colour0[i] + value * colour1[i]) for i in range(0, 3))
 
   @staticmethod
-  def save(im, hash, step):
+  def save(image, hash, step):
     path = os.path.join(APP_CAPTURE_PATH, hash)
     pathAndFilename = os.path.join(path, f"frame-{step:08d}.png")
     os.makedirs(path, exist_ok=True)
     if not os.path.exists(pathAndFilename):
-      im.save(pathAndFilename, optimize=True)
+      image.save(pathAndFilename)

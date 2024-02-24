@@ -123,8 +123,10 @@ class WindowMain(wx.Frame):
     captureMenu = wx.Menu()
     menuBar.Append(captureMenu, "&Capture")
     addItem(captureMenu, 'Save data', None, self.onSaveData)
-    addItem(captureMenu, 'Save screenshot', None, self.onSaveScreenshot)
-    addItem(captureMenu, 'Save screenshot (large symbols)', None, lambda *args: self.onSaveScreenshot(*args, largeSymbols=True))
+    addItem(captureMenu, 'Save screenshot (png)', None, self.onSaveScreenshot)
+    addItem(captureMenu, 'Save screenshot (png; large symbols)', None, lambda *args: self.onSaveScreenshot(*args, largeSymbols=True))
+    addItem(captureMenu, 'Save screenshot (svg)', None, lambda *args: self.onSaveScreenshot(*args, svg=True))
+    addItem(captureMenu, 'Save screenshot (svg; large symbols)', None, lambda *args: self.onSaveScreenshot(*args, largeSymbols=True, svg=True))
     menuItemsOnlyIfCanBeOptimized.append(addCheckItem(captureMenu, 'Start/stop video capture', self.__viewSettings, 'captureVideo', self.updateViewSettings))
 
     # view menu
@@ -166,8 +168,8 @@ class WindowMain(wx.Frame):
     for potential in self.__geoGridSettings.potentials:
       addRadioItem(viewMenu, f"Show weights for {potential.kind.lower().replace('_', ' ')}", self.__viewSettings, key, potential.kind, self.updateViewSettings)
     viewMenu.AppendSeparator()
-    # view menu: draw original polygons
-    key = 'drawOriginalPolygons'
+    # view menu: draw initial polygons
+    key = 'drawInitialPolygons'
     menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Hide initial cells', self.__viewSettings, key, False, self.updateViewSettings))
     menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Show initial cells', self.__viewSettings, key, True, self.updateViewSettings))
     viewMenu.AppendSeparator()
@@ -276,8 +278,8 @@ class WindowMain(wx.Frame):
   def onSaveData(self, event):
     self.__renderThread.saveData(self)
 
-  def onSaveScreenshot(self, event, largeSymbols=False):
-    self.__renderThread.saveScreenshot(self, largeSymbols=largeSymbols)
+  def onSaveScreenshot(self, event, largeSymbols=False, svg=False):
+    self.__renderThread.saveScreenshot(self, largeSymbols=largeSymbols, svg=svg)
   
   def loadImage(self, image):
     self.__newImage = image

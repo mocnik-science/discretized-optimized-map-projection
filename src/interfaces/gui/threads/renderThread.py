@@ -96,9 +96,9 @@ class RenderThread(Thread):
     _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save data', wildcard='CSV files (*.csv)|*.csv')
     InterfaceCommon.saveData(_fileFunction, self.__dataData, self.__geoGridSettings)
 
-  def saveScreenshot(self, parentWindow, largeSymbols=False):
-    _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save screenshot', wildcard='Image files (*.png)|*.png')
-    InterfaceCommon.saveScreenshot(_fileFunction, self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, largeSymbols=largeSymbols)
+  def saveScreenshot(self, parentWindow, largeSymbols=False, svg=False):
+    _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save screenshot', wildcard='Scalable Vector Graphics (*.svg)|*.svg' if svg else 'Portable Network Graphics (*.png)|*.png')
+    InterfaceCommon.saveScreenshot(_fileFunction, self.__geoGridSettings, self.__viewSettings, serializedData=self.__serializedData or self.__serializedDataLast, projection=self.__projection, stepData=self.__stepData, largeSymbols=largeSymbols, extension='svg' if svg else 'png')
 
   def saveVideo(self, parentWindow):
     _fileFunction = RenderThread.__fileFunction(parentWindow, message='Save video', wildcard='Video files (*.mp4)|*.mp4')
