@@ -263,7 +263,7 @@ if CREATE_VISUALIZATION:
           )
         chartLine = base.mark_line(clip=True).encode(
           x=alt.X('step:Q', title='step').scale(domain=(0, domainEnd)),
-          y=alt.Y('innerEnergyWeighted:Q', axis=axis, title='inner energy' + factorEnergyStr).scale(domain=(0, 1e9 / factorEnergy)),
+          y=alt.Y('innerEnergyWeighted:Q', axis=axis, title='inner energy' + factorEnergyStr).scale(domain=(0, 1.05e9 / factorEnergy)),
           opacity=alt.value(.5),
         )
         chartLabel = base.mark_text(align='left', dx=5).encode(
@@ -629,7 +629,7 @@ if CREATE_VISUALIZATION:
         return alt.Chart(data2).mark_point().encode(
           x=alt.X('initialProjectionName:N', title=None), # 'projection'),
           xOffset=alt.Y('case:N'),
-          y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr),
+          y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 19))),
           color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label') if showLegend else None).scale(scheme='category10'),
           shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-0.3', 'area-0.3']) if showLegend else None).scale(domain=domainCase2, range=domainCaseContinentsNoContinents),
         ).properties(
