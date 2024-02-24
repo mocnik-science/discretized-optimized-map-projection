@@ -23,6 +23,7 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "scipy>=1.12.0",
   "shapely>=2.0.2",
+  "vl-convert-python>=1.2.3",
   "wxpython>=4.2.1",
 ]
 
