@@ -109,8 +109,7 @@ if CREATE_DATA:
       init(domp)
 
       def _screenshot(projection, *parts):
-        for extension in ['png', 'pdf']:
-          domp.screenshot(addPaths=[pathB, projection.name], addParts=parts, extension=extension)
+        domp.screenshot(addPaths=[pathB, projection.name], addParts=parts, extension='png')
       
       def _dump(data, projection, parts, initial=False):
         potentials = [POTENTIAL.DISTANCE, POTENTIAL.AREA, POTENTIAL.TRIANGLE_ALTITUDE]
@@ -197,7 +196,7 @@ if CREATE_VISUALIZATION:
   factorEnergy = 1e8
   factorEnergyStr = ' [10^8]'
   factorEnergyTransform = {'energyWeighted': 'datum.energyWeighted / ' + str(factorEnergy)}
-  stepsMax = 220
+  stepsMax = 219
   config = {
     'font': 'Helvetica Neue',
   }
@@ -216,6 +215,12 @@ if CREATE_VISUALIZATION:
     'stroke': '#888',
     'strokeOpacity': 1,
   }
+  labelExprCase = 'datum.label == \'default\' ? \'default\' : datum.label == \'default-continents\' ? \'default (continents)\' : datum.label == \'distance-0.3\' ? \'distance\' : datum.label == \'distance-0.3-continents\' ? \'distance (continents)\' : datum.label == \'area-0.3\' ? \'area\' : datum.label == \'area-0.3-continents\' ? \'area (continents)\' : \'-\''
+  domainCase = ['default', 'default-continents', 'distance-0.3', 'distance-0.3-continents', 'area-0.3', 'area-0.3-continents']
+  domainCaseContinents = ['default-continents', 'distance-0.3-continents', 'area-0.3-continents']
+  domainCaseNoContinents = ['default', 'distance-0.3', 'area-0.3']
+  rangeCase = 3 * ['circle', 'triangle']
+  domainCaseContinentsNoContinents = ['circle', 'triangle', 'square']
   ### A: OPTIMIZATION
   if ACTION_A:
     filename = join(pathA, 'domp-optimization.csv')
@@ -235,6 +240,7 @@ if CREATE_VISUALIZATION:
         data = pd.DataFrame(rows)
       ## CHART A/01
       # alt.data_transformers.disable_max_rows()
+      domainEnd = 3.05 * stepsMax
       for forPrint in [False, True]:
         axis = alt.Axis(grid=False)
         base = alt.Chart(data)
@@ -249,12 +255,12 @@ if CREATE_VISUALIZATION:
             color=alt.Color('initialProjectionName:N', legend=None).scale(scheme='category10'),
           )
         chartLine = base.mark_line(clip=True).encode(
-          x=alt.X('step:Q', title='step').scale(domain=(0, 3 * stepsMax)),
+          x=alt.X('step:Q', title='step').scale(domain=(0, domainEnd)),
           y=alt.Y('innerEnergyWeighted:Q', axis=axis, title='inner energy' + factorEnergyStr).scale(domain=(0, 1e9 / factorEnergy)),
           opacity=alt.value(.5),
         )
         chartLabel = base.mark_text(align='left', dx=5).encode(
-          x=alt.X('step:Q', aggregate='max').scale(domain=(0, 3 * stepsMax)),
+          x=alt.X('step:Q', aggregate='max').scale(domain=(0, domainEnd)),
           y=alt.Y('innerEnergyWeighted:Q', aggregate='min'),
           text=alt.Text('initialProjectionName'),
         )
@@ -265,9 +271,9 @@ if CREATE_VISUALIZATION:
         ).configure_view(
           **configView,
         ).transform_filter(
-          alt.datum.step < 3 * stepsMax
+          alt.datum.step < domainEnd
         ).properties(
-          width=600,
+          width=620,
           height=180,
         ).save(join(pathA, 'chart-a01' + ('' if forPrint else 'b') + '.pdf'))
       ## CHART A/02/legend
@@ -518,7 +524,7 @@ if CREATE_VISUALIZATION:
       dataGrouped = dataTmp.groupby(['initialProjectionName', 'case']).aggregate({'innerEnergyWeighted0': 'first', 'innerEnergyWeightedThreshold': 'first'})
       dataGrouped = pd.DataFrame(dataGrouped.to_records())
       axis = alt.Axis(grid=False)
-      widthHeightChart = 180
+      widthHeightChart = 120
       plotDiagonal = alt.Chart().mark_rule(color='gray', strokeWidth=1).encode(
         x=alt.value(.5),
         y=alt.value(widthHeightChart + .5),
@@ -526,36 +532,20 @@ if CREATE_VISUALIZATION:
         y2=alt.value(.5),
         opacity=alt.value(.1),
       )
-      separateProjections = ['Eckert III', 'Gall-Peters', 'unprojected']
-      for version in ['', 'b', 'c']:
-        if version == '':
-          dataGrouped2 = dataGrouped[~dataGrouped['initialProjectionName'].isin(['unprojected'])].copy()
-        elif version == 'b':
-          dataGrouped2 = dataGrouped[~dataGrouped['initialProjectionName'].isin(separateProjections)].copy()
-        elif version == 'c':
-          dataGrouped2 = dataGrouped[dataGrouped['initialProjectionName'].isin(separateProjections)].copy()
-        m = max(*[dataGrouped2[axisName].dropna().max() for axisName in ['innerEnergyWeighted0', 'innerEnergyWeightedThreshold']])
-        scale = alt.Scale(domain=(0, m))
-        plotEnergy = alt.Chart().mark_point().encode(
-          x=alt.X('innerEnergyWeighted0:Q', axis=axis, title='initially' + factorEnergyStr).scale(scale),
-          y=alt.Y('innerEnergyWeightedThreshold:Q', axis=axis, title='optimized' + factorEnergyStr).scale(scale),
-          color=alt.Color('case:N', legend=None if len(version) > 0 else alt.Legend(
-            labelExpr='datum.label == \'default\' ? \'default\' : datum.label == \'default-continents\' ? \'default (continents)\' : datum.label == \'distance-0.3\' ? \'distance\' : datum.label == \'distance-0.3-continents\' ? \'distance (continents\' : datum.label == \'area-0.3\' ? \'area\' : datum.label == \'area-0.3-continents\' ? \'area (continents)\' : \'-\'',
-          )).scale(domain=['default', 'default-continents', 'distance-0.3', 'distance-0.3-continents', 'area-0.3', 'area-0.3-continents'], range=['#1f77b4', '#1f77b4', '#ff7f0e', '#ff7f0e', '#2ca02c', '#2ca02c']),
-          shape=alt.Shape('case:N').scale(domain=['default', 'default-continents', 'distance-0.3', 'distance-0.3-continents', 'area-0.3', 'area-0.3-continents'], range=3 * ['circle', 'triangle']),
-        ).properties(
-          width=widthHeightChart,
-          height=widthHeightChart,
-        )
-        (plotDiagonal + plotEnergy).facet(
-          facet=alt.Facet('initialProjectionName:N', title=None, header=alt.Header(labelOrient='top', labelPadding=-20, labelFontSize=11, labelFontWeight='bolder')),
-          columns=4,
-          spacing=10,
-          data=dataGrouped2,
-        ).configure(
+      def createDictProjectionsM():
+        dictProjectionsM = []
+        for projection in dataGrouped['initialProjectionName'].unique():
+          if projection == 'unprojected':
+            continue
+          dictProjectionsM.append((projection, max(*[dataGrouped[dataGrouped['initialProjectionName'] == projection][axisName].dropna().max() for axisName in ['innerEnergyWeighted0', 'innerEnergyWeightedThreshold']])))
+        dictProjectionsM.sort(key=lambda x: x[1])
+        return dictProjectionsM
+      def configPlot(plot, deltaLegendY=0):
+        return plot.configure(
           **config,
         ).configure_axis(
           **configAxis,
+          minExtent=18,
         ).configure_axisX(
           offset=-3,
         ).configure_axisY(
@@ -565,41 +555,82 @@ if CREATE_VISUALIZATION:
         ).configure_legend(
           title=None,
           orient='none',
-          legendX=630,
-          legendY=626,
-        ).save(join(pathB, 'chart-b01' + version + '.pdf'))
-      ## CHART B/01/legend
-      base = alt.Chart(data).mark_line().encode(
-        x=alt.value(0),
-        y=alt.value(0),
-        color=alt.Color('case:N', legend=alt.Legend(
-          labelExpr='datum.label == \'default\' ? \'default\' : datum.label == \'default-continents\' ? \'default (continents)\' : datum.label == \'distance-0.3\' ? \'distance\' : datum.label == \'distance-0.3-continents\' ? \'distance (continents\' : datum.label == \'area-0.3\' ? \'area\' : datum.label == \'area-0.3-continents\' ? \'area (continents)\' : \'-\'',
-        )).scale(domain=['default', 'default-continents', 'distance-0.3', 'distance-0.3-continents', 'area-0.3', 'area-0.3-continents'], range=['#1f77b4', '#1f77b4', '#ff7f0e', '#ff7f0e', '#2ca02c', '#2ca02c']),
-        shape=alt.Shape('case:N').scale(domain=['default', 'default-continents', 'distance-0.3', 'distance-0.3-continents', 'area-0.3', 'area-0.3-continents'], range=3 * ['circle', 'triangle']),
-      ).configure(
-        **config,
-      ).configure_axis(
-        **configAxis,
-      ).configure_view(
-        **configView,
-      ).configure_view(
-        stroke=None,
-      ).configure_legend(
-        title=None,
-      ).transform_filter(
-        alt.datum.step == 0
-      ).properties(
-        width=1,
-        height=1,
-      ).save(join(pathB, 'chart-b01-legend.pdf'))
+          legendX=513,
+          legendY=266 + deltaLegendY,
+        )
+      def createPlot(include, avoid=None, showAxisLabel=True):
+        dsGrouped = dataGrouped.copy()
+        if avoid:
+          dsGrouped = dsGrouped[~dsGrouped['initialProjectionName'].isin(avoid)]
+        m = max(m2 for (_, m2) in include) * 1.025
+        include = [x for (x, _) in include]
+        dsGrouped = dsGrouped[dsGrouped['initialProjectionName'].isin(include)]
+        scale = alt.Scale(domain=(0, m))
+        plotEnergy = alt.Chart().mark_point().encode(
+          x=alt.X('innerEnergyWeighted0:Q', axis=axis, title='initially' + factorEnergyStr if showAxisLabel else None).scale(scale),
+          y=alt.Y('innerEnergyWeightedThreshold:Q', axis=axis, title='optimized' + factorEnergyStr).scale(scale),
+          color=alt.Color('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=['#1f77b4', '#1f77b4', '#ff7f0e', '#ff7f0e', '#2ca02c', '#2ca02c']),
+          shape=alt.Shape('case:N').scale(domain=domainCase, range=rangeCase),
+        ).properties(
+          width=widthHeightChart,
+          height=widthHeightChart,
+        )
+        return (plotDiagonal + plotEnergy).facet(
+          facet=alt.Facet('initialProjectionName:N', title=None, header=alt.Header(labelOrient='top', labelPadding=-18, labelFontSize=11, labelFontWeight='bolder'), sort=include if include else None),
+          columns=5,
+          spacing=1,
+          data=dsGrouped,
+        )
+      # chart b01
+      configPlot(createPlot(createDictProjectionsM(), avoid=['unprojected'])).save(join(pathB, 'chart-b01.pdf'))
+      # chart b01b
+      dictProjectionsM = createDictProjectionsM()
+      dictProjectionsMChunks = [dictProjectionsM[i : i + 5] for i in range(0, len(dictProjectionsM), 5)]
+      plotsFacetted = alt.vconcat(*[createPlot(xs, showAxisLabel=i == len(dictProjectionsMChunks) - 1) for i, xs in enumerate(dictProjectionsMChunks)], spacing=4)
+      configPlot(plotsFacetted, deltaLegendY=39).save(join(pathB, 'chart-b01b.pdf'))
+      # ## CHART B/01/legend
+      # base = alt.Chart(data).mark_line().encode(
+      #   x=alt.value(0),
+      #   y=alt.value(0),
+      #   color=alt.Color('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=['#1f77b4', '#1f77b4', '#ff7f0e', '#ff7f0e', '#2ca02c', '#2ca02c']),
+      #   shape=alt.Shape('case:N').scale(domain=domainCase, range=rangeCase),
+      # ).configure(
+      #   **config,
+      # ).configure_axis(
+      #   **configAxis,
+      # ).configure_view(
+      #   **configView,
+      # ).configure_view(
+      #   stroke=None,
+      # ).configure_legend(
+      #   title=None,
+      # ).transform_filter(
+      #   alt.datum.step == 0
+      # ).properties(
+      #   width=1,
+      #   height=1,
+      # ).save(join(pathB, 'chart-b01-legend.pdf'))
       ## CHART B/02
       data = data[data['initialProjectionName'] != 'unprojected']
-      alt.Chart(data).mark_point().encode(
-        x=alt.X('initialProjectionName:N', title='projection'),
-        xOffset=alt.Y('case:N'),
-        y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + factorEnergyStr),
-        color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label')),
-      ).configure(
+      dataContinents = data[data['case'].str.contains('-continents')].copy()
+      dataNoContinents = data[~data['case'].str.contains('-continents')].copy()
+      loop = [
+        (None, dataNoContinents, domainCaseNoContinents, True),
+        ('continents', dataContinents, domainCaseContinents, False),
+      ]
+      def createPlot(label, data2, domainCase2, showLegend):
+        return alt.Chart(data2).mark_point().encode(
+          x=alt.X('initialProjectionName:N', title=None), # 'projection'),
+          xOffset=alt.Y('case:N'),
+          y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr),
+          color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label') if showLegend else None).scale(scheme='category10'),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-0.3', 'area-0.3']) if showLegend else None).scale(domain=domainCase2, range=domainCaseContinentsNoContinents),
+        ).properties(
+          width=620,
+          # width=900,
+          height=280,
+        )
+      alt.vconcat(*[createPlot(*x) for x in loop]).configure(
         **config,
       ).configure_axis(
         **configAxisWithGrid,
@@ -611,7 +642,4 @@ if CREATE_VISUALIZATION:
         offset=1,
         padding=5,
         fillColor='white',
-      ).properties(
-        width=900,
-        height=280,
       ).save(join(pathB, 'chart-b02.pdf'))
