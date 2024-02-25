@@ -87,9 +87,9 @@ class GeoGridRenderer:
       return
     if viewSettings['drawContinentsTolerance']:
       csExteriors, csInteriors = NaturalEarth.preparedData(viewSettings['drawContinentsTolerance'])
-      image.group('continents-outer', (image.polygon_([projection.project(*c) for c in cs], fill=(230, 230, 230)) for cs in csExteriors))
-      # image.group('continents-outer-stroke', (image.polygon_([projection.project(*c) for c in cs], stroke=(0, 255, 0)) for cs in csExteriors))
-      image.group('continents-inner', (image.polygon_([projection.project(*c) for c in cs], fill=(255, 255, 255)) for cs in csInteriors))
+      image.group('land-outer', (image.polygon_([projection.project(*c) for c in cs], fill=(230, 230, 230)) for cs in csExteriors))
+      # image.group('land-outer-stroke', (image.polygon_([projection.project(*c) for c in cs], stroke=(0, 255, 0)) for cs in csExteriors))
+      image.group('land-inner', (image.polygon_([projection.project(*c) for c in cs], fill=(255, 255, 255)) for cs in csInteriors))
 
   @staticmethod
   def renderInitialPolygons(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):

@@ -76,7 +76,7 @@ if CREATE_DATA:
     with DOMP(cleanup=False, logging=not parallelize, hideAbout=True) as domp:
       init(domp)
       data = domp.startData(preventSnapshots=True)
-      for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-continents']):
+      for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-land']):
         # view settings
         parts = []
         if context == 'supporting-points-forces-all':
@@ -87,8 +87,8 @@ if CREATE_DATA:
           parts = ['supporting-points', 'forces', 'all', 'individual']
           domp.viewSupportingPoints(active=True)
           domp.viewForces(all=True, sum=False)
-        if context == 'neighbours-continents':
-          parts = ['neighbours', 'continents']
+        if context == 'neighbours-land':
+          parts = ['neighbours', 'land']
           domp.viewNeighbours(show=True)
           domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
         # run
@@ -165,20 +165,20 @@ if CREATE_DATA:
           domp.viewEnergy(potential=potential)
           _screenshot(projection, 'energies', potential.lower(), *parts)
         domp.viewEnergy(all=False, potential=None)
-        # continents
+        # land
         domp.viewContinents(show=True)
-        _screenshot(projection, 'continents', *parts)
+        _screenshot(projection, 'land', *parts)
         domp.viewContinents(show=False)
 
       def _runComparison(part):
         domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
         data = domp.startData(preventSnapshots=True)
-        for considerContinents in [False, True]:
+        for considerLand in [False, True]:
           # weights
-          domp.weights(POTENTIAL.AREA, weightOceanActive=considerContinents)
-          domp.weights(POTENTIAL.DISTANCE, weightOceanActive=considerContinents)
+          domp.weights(POTENTIAL.AREA, weightOceanActive=considerLand)
+          domp.weights(POTENTIAL.DISTANCE, weightOceanActive=considerLand)
           # run
-          parts = [part] + (['continents'] if considerContinents else [])
+          parts = [part] + (['land'] if considerLand else [])
           domp.loadProjection(projection)
           _dump(data, projection, parts, initial=True)
           if projection.canBeOptimized:
@@ -230,14 +230,14 @@ if CREATE_VISUALIZATION:
     'stroke': '#888',
     'strokeOpacity': 1,
   }
-  labelExprCase = 'datum.label == \'default\' ? \'default\' : datum.label == \'default-continents\' ? \'default (continents)\' : datum.label == \'distance-1.7\' ? \'distance\' : datum.label == \'distance-1.7-continents\' ? \'distance (continents)\' : datum.label == \'area-1.7\' ? \'area\' : datum.label == \'area-1.7-continents\' ? \'area (continents)\' : \'-\''
-  domainCase = ['default', 'default-continents', 'distance-1.7', 'distance-1.7-continents', 'area-1.7', 'area-1.7-continents']
-  domainCaseContinents = ['default-continents', 'distance-1.7-continents', 'area-1.7-continents']
-  domainCaseNoContinents = ['default', 'distance-1.7', 'area-1.7']
+  labelExprCase = 'datum.label == \'default\' ? \'default\' : datum.label == \'default-land\' ? \'default (land)\' : datum.label == \'distance-1.7\' ? \'distance\' : datum.label == \'distance-1.7-land\' ? \'distance (land)\' : datum.label == \'area-1.7\' ? \'area\' : datum.label == \'area-1.7-land\' ? \'area (land)\' : \'-\''
+  domainCase = ['default', 'default-land', 'distance-1.7', 'distance-1.7-land', 'area-1.7', 'area-1.7-land']
+  domainCaseLand = ['default-land', 'distance-1.7-land', 'area-1.7-land']
+  domainCaseNoLand = ['default', 'distance-1.7', 'area-1.7']
   rangeCase = ['circle', 'circle', 'triangle', 'triangle', 'square', 'square']
-  rangeCaseContinentsNoContinents = ['circle', 'triangle', 'square']
-  domainContinents = ['default', 'default-continents', 'distance-1.7', 'distance-1.7-continents', 'area-1.7', 'area-1.7-continents']
-  rangeContinents = 3 * ['#1f77b4', '#ff7f0e']
+  rangeCaseLandNoLand = ['circle', 'triangle', 'square']
+  domainLand = ['default', 'default-land', 'distance-1.7', 'distance-1.7-land', 'area-1.7', 'area-1.7-land']
+  rangeLand = 3 * ['#1f77b4', '#ff7f0e']
   ### A: OPTIMIZATION
   if ACTION_A:
     filename = join(pathA, 'domp-optimization.csv')
@@ -586,7 +586,7 @@ if CREATE_VISUALIZATION:
         plotEnergy = alt.Chart().mark_point().encode(
           x=alt.X('innerEnergyWeighted0:Q', axis=axis, title='initially' + factorEnergyStr if showAxisLabel else None).scale(scale),
           y=alt.Y('innerEnergyWeightedThreshold:Q', axis=axis, title='optimized' + factorEnergyStr).scale(scale),
-          color=alt.Shape('case:N').scale(domain=domainContinents, range=rangeContinents),
+          color=alt.Shape('case:N').scale(domain=domainLand, range=rangeLand),
           shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
         ).properties(
           width=widthHeightChart,
@@ -609,7 +609,7 @@ if CREATE_VISUALIZATION:
       # base = alt.Chart(data).mark_line().encode(
       #   x=alt.value(0),
       #   y=alt.value(0),
-      #   color=alt.Shape('case:N').scale(domain=domainContinents, range=rangeContinents),
+      #   color=alt.Shape('case:N').scale(domain=domainLand, range=rangeLand),
       #   shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
       # ).configure(
       #   **config,
@@ -629,11 +629,11 @@ if CREATE_VISUALIZATION:
       # ).save(join(pathB, 'chart-b01-legend.pdf'))
       ## CHART B/02
       data = data[data['initialProjectionName'] != 'unprojected']
-      dataContinents = data[data['case'].str.contains('-continents')].copy()
-      dataNoContinents = data[~data['case'].str.contains('-continents')].copy()
+      dataLand = data[data['case'].str.contains('-land')].copy()
+      dataNoLand = data[~data['case'].str.contains('-land')].copy()
       loop = [
-        (None, dataNoContinents, domainCaseNoContinents, True),
-        ('continents', dataContinents, domainCaseContinents, False),
+        (None, dataNoLand, domainCaseNoLand, True),
+        ('land', dataLand, domainCaseLand, False),
       ]
       def createPlot(label, data2, domainCase2, showLegend):
         return alt.Chart(data2).mark_point(clip=True).encode(
@@ -641,7 +641,7 @@ if CREATE_VISUALIZATION:
           xOffset=alt.Y('case:N'),
           y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 19))),
           color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label') if showLegend else None).scale(scheme='category10'),
-          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=rangeCaseContinentsNoContinents),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=rangeCaseLandNoLand),
         ).properties(
           width=620,
           # width=900,
