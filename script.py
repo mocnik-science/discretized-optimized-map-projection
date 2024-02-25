@@ -47,6 +47,14 @@ def defaultWeights(domp):
   domp.weights(POTENTIAL.ORIENTATION, active=False, weightLand=.1, weightOceanActive=False, weightOcean=.1, distanceTransitionStart=100, distanceTransitionEnd=800)
   domp.weights(POTENTIAL.TRIANGLE_ALTITUDE, active=True, weightLand=1, weightOceanActive=False, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
 
+def distanceWeights(domp):
+  domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=1.7, weightOceanActive=False)
+  domp.weights(POTENTIAL.AREA, active=True, weightLand=.3, weightOceanActive=False)
+
+def areaWeights(domp):
+  domp.weights(POTENTIAL.AREA, active=True, weightLand=1.7, weightOceanActive=False)
+  domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=.3, weightOceanActive=False)
+
 def init(domp):
   defaultSettings(domp)
   defaultView(domp)
@@ -187,12 +195,12 @@ if CREATE_DATA:
       _runComparison('default')
 
       defaultWeights(domp)
-      domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=.3, weightOceanActive=False)
-      _runComparison('distance-0.3')
+      distanceWeights(domp)
+      _runComparison('distance-1.7')
 
       defaultWeights(domp)
-      domp.weights(POTENTIAL.AREA, active=True, weightLand=.3, weightOceanActive=False)
-      _runComparison('area-0.3')
+      areaWeights(domp)
+      _runComparison('area-1.7')
 
   if ACTION_B:
     parallelize(actionB, PROJECTION.allProjections)
@@ -222,10 +230,10 @@ if CREATE_VISUALIZATION:
     'stroke': '#888',
     'strokeOpacity': 1,
   }
-  labelExprCase = 'datum.label == \'default\' ? \'default\' : datum.label == \'default-continents\' ? \'default (continents)\' : datum.label == \'distance-0.3\' ? \'distance\' : datum.label == \'distance-0.3-continents\' ? \'distance (continents)\' : datum.label == \'area-0.3\' ? \'area\' : datum.label == \'area-0.3-continents\' ? \'area (continents)\' : \'-\''
-  domainCase = ['default', 'default-continents', 'distance-0.3', 'distance-0.3-continents', 'area-0.3', 'area-0.3-continents']
-  domainCaseContinents = ['default-continents', 'distance-0.3-continents', 'area-0.3-continents']
-  domainCaseNoContinents = ['default', 'distance-0.3', 'area-0.3']
+  labelExprCase = 'datum.label == \'default\' ? \'default\' : datum.label == \'default-continents\' ? \'default (continents)\' : datum.label == \'distance-1.7\' ? \'distance\' : datum.label == \'distance-1.7-continents\' ? \'distance (continents)\' : datum.label == \'area-1.7\' ? \'area\' : datum.label == \'area-1.7-continents\' ? \'area (continents)\' : \'-\''
+  domainCase = ['default', 'default-continents', 'distance-1.7', 'distance-1.7-continents', 'area-1.7', 'area-1.7-continents']
+  domainCaseContinents = ['default-continents', 'distance-1.7-continents', 'area-1.7-continents']
+  domainCaseNoContinents = ['default', 'distance-1.7', 'area-1.7']
   rangeCase = 3 * ['circle', 'triangle']
   domainCaseContinentsNoContinents = ['circle', 'triangle', 'square']
   ### A: OPTIMIZATION
@@ -626,12 +634,12 @@ if CREATE_VISUALIZATION:
         ('continents', dataContinents, domainCaseContinents, False),
       ]
       def createPlot(label, data2, domainCase2, showLegend):
-        return alt.Chart(data2).mark_point().encode(
+        return alt.Chart(data2).mark_point(clip=True).encode(
           x=alt.X('initialProjectionName:N', title=None), # 'projection'),
           xOffset=alt.Y('case:N'),
           y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 19))),
           color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label') if showLegend else None).scale(scheme='category10'),
-          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-0.3', 'area-0.3']) if showLegend else None).scale(domain=domainCase2, range=domainCaseContinentsNoContinents),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=domainCaseContinentsNoContinents),
         ).properties(
           width=620,
           # width=900,
