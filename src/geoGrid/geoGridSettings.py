@@ -15,7 +15,7 @@ from src.mechanics.potential.potentials import potentials
 # U = - \int F(r) dr
 
 class GeoGridSettings:
-  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThresholdMaxForceStrength=.001, stopThresholdCountDeficiencies=100, stopThresholdMaxSteps=5000, limitLatForEnergy=90):
+  def __init__(self, initialProjection=PROJECTION.unprojected, resolution=3, dampingFactor=.96, stopThresholdMaxForceStrength=.001, stopThresholdCountDeficiencies=100, stopThresholdMaxSteps=5000, limitLatForEnergy=90, normalizeWeights=True):
     self.initialProjection = initialProjection
     self.resolution = resolution
     self._dampingFactor = dampingFactor
@@ -24,10 +24,12 @@ class GeoGridSettings:
     self._stopThresholdMaxSteps = stopThresholdMaxSteps
     self.limitLatForEnergy = limitLatForEnergy
     self._typicalDistance = None
+    self._normalizeWeights = normalizeWeights
     self._typicalArea = None
     self._almostDeficiencyRatioOfTypicalDistance = .05 # a triangle is considered almost being an deficiency, if its height is smaller than the ratio of the typical distance provided here
     self.potentials = sorted([potential(self) for potential in potentials], key=lambda potential: potential.computationalOrder)
     self._potentialsWeights = dict([(potential.kind, potential.defaultWeight or GeoGridWeight()) for potential in self.potentials])
+    self.__geoGrid = None
     self._updated(initial=True)
 
   def toJSON(self, includeTransient=False):
@@ -39,6 +41,7 @@ class GeoGridSettings:
         'thresholdReached': self._thresholdReached,
         'innerEnergy': self._energy[0],
         'outerEnergy': self._energy[1],
+        'sumOfWeights': self._sumOfWeights,
       }
     return {
       'fileFormat': APP_FILE_FORMAT,
@@ -50,6 +53,7 @@ class GeoGridSettings:
       'stopThresholdCountDeficiencies': self._stopThresholdCountDeficiencies,
       'stopThresholdMaxSteps': self._stopThresholdMaxSteps,
       'limitLatForEnergy': self.limitLatForEnergy,
+      'normalizeWeights': self._normalizeWeights,
       'weights': dict((potentialKind, weight.toJSON()) for (potentialKind, weight) in self._potentialsWeights.items()),
       **transient,
     }
@@ -75,11 +79,13 @@ class GeoGridSettings:
       self._thresholdReached = False
       self._energy = None
       self._step = None
+      self._sumOfWeights = None
     elif self._step is not None:
       self._untouched = False
       self._thresholdReached = False
       self._energy = None
       self._step = None
+      self._sumOfWeights = None
 
   def updateFromJSON(self, data):
     self._updated()
@@ -92,6 +98,7 @@ class GeoGridSettings:
     self.updateStopThresholdCountDeficiencies(data['stopThresholdCountDeficiencies'])
     self.updateStopThresholdMaxSteps(data['stopThresholdMaxSteps'])
     self.updateLimitLatForEnergy(data['limitLatForEnergy'])
+    self.updateNormalizeWeights(data['normalizeWeights'])
     self.updatePotentialsWeights(dict((potentialKind, GeoGridWeight.fromJSON(weightData)) for (potentialKind, weightData) in data['weights'].items()))
 
   def updateInitialProjection(self, initialProjection):
@@ -126,10 +133,9 @@ class GeoGridSettings:
     self._updated()
     self.limitLatForEnergy = limitLatForEnergy
 
-  def updateGridStats(self, gridStats):
+  def updateNormalizeWeights(self, normalizeWeights):
     self._updated()
-    self._typicalDistance = gridStats.typicalDistance()
-    self._typicalArea = gridStats.typicalArea()
+    self._normalizeWeights = normalizeWeights
 
   def updatePotentialsWeights(self, weights):
     self._updated()
@@ -141,7 +147,34 @@ class GeoGridSettings:
     return not self.canBeOptimized()
 
   def weightedPotentials(self):
+    if self._sumOfWeights is None and self._normalizeWeights:
+      if not self.__geoGrid:
+        raise Exception('Execute GeoGridSettings.initWithGeoGrid first')
+      innerCells = [cell for cell in self.__geoGrid.cells().values() if cell._isActive and cell._selfAndAllNeighboursAreActive and cell.within(lat=self.limitLatForEnergy)]
+      # simulate with sum of weights = 1
+      self._sumOfWeights = 1
+      weightedPotentials = self.weightedPotentials()
+      # compute sum of weights
+      self._sumOfWeights = 0
+      for (weight, _) in weightedPotentials:
+        if weight.isVanishing():
+          continue
+        for cell in innerCells:
+          self._sumOfWeights += weight.forCell(cell)
+      self._sumOfWeights /= len(innerCells)
+    for _, weight in self._potentialsWeights.items():
+      weight.setSumOfWeights(self._sumOfWeights if self._normalizeWeights else 1)
     return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]
+
+  ## init
+
+  def initWithGridStats(self, gridStats):
+    self._updated()
+    self._typicalDistance = gridStats.typicalDistance()
+    self._typicalArea = gridStats.typicalArea()
+
+  def initWithGeoGrid(self, geoGrid):
+    self.__geoGrid = geoGrid
 
   ## transient information
 

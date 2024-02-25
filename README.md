@@ -31,6 +31,7 @@ with DOMP() as domp:
   # domp.limitLatForEnergy(90)
 
   # domp.weights(POTENTIAL.AREA, active=False, weightLand=1, weightOceanActive=False, weightOcean=.3one, distanceTransitionStart=100, distanceTransitionEnd=800)
+  # domp.normalizeWeights(normalizeWeights=False)
 
   ### Saving data, screenshots, and videos
 

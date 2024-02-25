@@ -156,6 +156,11 @@ class DOMP:
     weightJSON['distanceTransitionEnd'] /= 1000
     return weightJSON
 
+  def normalizeWeights(self, normalizeWeights=None):
+    if normalizeWeights is not None:
+      self.__geoGridSettings.updateNormalizeWeights(normalizeWeights)
+    return self.__geoGridSettings._normalizeWeights
+
   ###### LOADING PROJECTIONS
 
   def loadProjection(self, projection=PROJECTION.unprojected, name=None, srid=None, **kwargs):

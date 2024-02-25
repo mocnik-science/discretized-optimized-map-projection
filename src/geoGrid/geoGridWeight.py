@@ -10,6 +10,7 @@ class GeoGridWeight:
     self.__weightOcean = weightOcean
     self.__distanceTransitionStart = distanceTransitionStart
     self.__distanceTransitionEnd = distanceTransitionEnd
+    self.__sumOfWeights = None
     self.__cache = {}
 
   def toJSON(self):
@@ -39,6 +40,9 @@ class GeoGridWeight:
   def distanceTransitionEnd(self):
     return self.__distanceTransitionEnd
 
+  def setSumOfWeights(self, sumOfWeights):
+    self.__sumOfWeights = sumOfWeights
+
   def isVanishing(self):
     return not self.isActive() or (self.__weightLand == 0 and (not self.__weightOceanActive or self.__weightOcean == 0))
 
@@ -50,14 +54,14 @@ class GeoGridWeight:
     if not self.isActive():
       return 0
     if cellData['distanceToLand'] in self.__cache:
-      return self.__cache[cellData['distanceToLand']]
+      return self.__cache[cellData['distanceToLand']] / self.__sumOfWeights
     weight = None
     if not self.__weightOceanActive or self.__weightLand == self.__weightOcean:
       weight = self.__weightLand
     else:
       weight = self._easeInOutSine(cellData['distanceToLand'], xStart=self.__distanceTransitionStart, xEnd=self.__distanceTransitionEnd, yStart=self.__weightLand, yEnd=self.__weightOcean)
     self.__cache[cellData['distanceToLand']] = weight
-    return weight
+    return weight / self.__sumOfWeights
 
   @staticmethod
   def _easeInOutSine(x, xStart=0, xEnd=1, yStart=0, yEnd=1):

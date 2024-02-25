@@ -57,8 +57,9 @@ class GeoGrid:
     # empty the tmp path
     if os.path.exists(self.__pathTmp):
       shutil.rmtree(self.__pathTmp)
-    # update the settings
-    self.__settings.updateGridStats(self.__gridStats)
+    # init the settings
+    self.__settings.initWithGridStats(self.__gridStats)
+    self.__settings.initWithGeoGrid(self)
     # project to initial crs
     if self.__settings.initialProjection and self.__settings.initialProjection.transform is not None:
       with timer('apply initial CRS'):

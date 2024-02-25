@@ -40,6 +40,7 @@ def defaultView(domp):
   domp.viewContinents(show=False)
 
 def defaultWeights(domp):
+  domp.normalizeWeights(normalizeWeights=False)
   domp.weights(POTENTIAL.AREA, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
   domp.weights(POTENTIAL.DISTANCE, active=True, weightLand=1, weightOceanActive=True, weightOcean=.3, distanceTransitionStart=100, distanceTransitionEnd=800)
   domp.weights(POTENTIAL.DISTANCE_HOMOGENEITY, active=False, weightLand=.2, weightOceanActive=True, weightOcean=.05, distanceTransitionStart=100, distanceTransitionEnd=800)

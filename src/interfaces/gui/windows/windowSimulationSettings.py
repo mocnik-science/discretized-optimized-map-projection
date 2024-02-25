@@ -9,7 +9,7 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings = geoGridSettings
     self.__workerThread = workerThread
     self.__data = {}
-    size = (840, 300)
+    size = (840, 330)
     wx.Frame.__init__(self, None, wx.ID_ANY, title='Simulation Settings', size=size)
     self.SetMinSize(size)
     self.SetMaxSize(size)
@@ -85,6 +85,11 @@ class WindowSimulationSettings(wx.Frame):
     generalSettingsBox2.AddSpacer(gap)
     number(generalSettingsBox2, 'stopThresholdMaxSteps', self.onDataUpdate, defaultValue=self.__geoGridSettings._stopThresholdMaxSteps, minValue=1, maxValue=50000, digits=0, increment=1, label='… when exceeding steps:')
     box.Add(generalSettingsBox2, 0, wx.ALL, 0)
+    box.AddSpacer(8)
+    generalSettingsBox3 = wx.BoxSizer(wx.HORIZONTAL)
+    generalSettingsBox3.AddSpacer(10)
+    checkBox(generalSettingsBox3, 'normalizeWeights', self.onDataUpdate, defaultValue=self.__geoGridSettings._normalizeWeights, label='normalize weights')
+    box.Add(generalSettingsBox3, 0, wx.ALL, 0)
     box.AddSpacer(8)
 
     ## content: weights
@@ -169,6 +174,8 @@ class WindowSimulationSettings(wx.Frame):
     self.__geoGridSettings.updateStopThresholdMaxSteps(self.__data['stopThresholdMaxSteps'])
     # update geoGridSettings: limit latitude for energy
     self.__geoGridSettings.updateLimitLatForEnergy(self.__data['limitLatForEnergy'])
+    # update geoGridSettings: normalize weights
+    self.__geoGridSettings.updateNormalizeWeights(self.__data['normalizeWeights'])
     # update the app settings II
     if hasChanged:
       self.__appSettings['geoGridSettings'] = self.__geoGridSettings.toJSON()
