@@ -586,7 +586,7 @@ if CREATE_VISUALIZATION:
         plotEnergy = alt.Chart().mark_point().encode(
           x=alt.X('innerEnergyWeighted0:Q', axis=axis, title='initially' + factorEnergyStr if showAxisLabel else None).scale(scale),
           y=alt.Y('innerEnergyWeightedThreshold:Q', axis=axis, title='optimized' + factorEnergyStr).scale(scale),
-          color=alt.Shape('case:N').scale(domain=domainLand, range=rangeLand),
+          color=alt.Color('case:N').scale(domain=domainLand, range=rangeLand),
           shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
         ).properties(
           width=widthHeightChart,
