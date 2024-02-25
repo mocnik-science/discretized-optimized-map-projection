@@ -48,7 +48,7 @@ class Projection:
     }
   
   @staticmethod
-  def fromJSON(self, data):
+  def fromJSON(data):
     return Projection(**data)
 
   def __repr__(self):
