@@ -62,16 +62,38 @@ def init(domp):
   defaultWeights(domp)
 
 ### PARALLELIZE
-def parallelize(action, projections):
-  if PARALLELIZE:
-    with Pool() as pool:
-      pool.map(action, projections)
-  else:
-    [action(i, projection) for projection in projections]
+class Parallelize:
+  def __init__(self, parallelize=PARALLELIZE):
+    self._parallelize = parallelize
+    self._actions = []
+    self._actionsCleanup = []
+  def add(self, action, args):
+    self._actions.append((action, args))
+  def addCleanup(self, action):
+    self._actionsCleanup.append(action)
+  def run(self):
+    tasks = []
+    for action, args in self._actions:
+      tasks += [(action, i, arg) for i, arg in enumerate(args)]
+    if self._parallelize:
+      with Pool() as pool:
+        pool.map(Parallelize.__runTask, tasks)
+    else:
+      [Parallelize.__runTask(task) for task in tasks]
+    self._actions = []
+    [action() for action in self._actionsCleanup]
+    self._actionsCleanup = []
+
+  @staticmethod
+  def __runTask(task):
+    action, i, arg = task
+    action(i, arg)
 
 ### A: OPTIMIZATION
 if CREATE_DATA:
   DOMP.about()
+
+  paralellize = Parallelize()
   
   def actionA(_, projection):
     with DOMP(cleanup=False, logging=not PARALLELIZE, hideAbout=True) as domp:
@@ -110,8 +132,8 @@ if CREATE_DATA:
       domp.saveData(data, addPaths=[pathA, projection.name], filename='domp-optimization-' + projection.name + '.csv')
 
   if ACTION_A:
-    parallelize(actionA, PROJECTION.canBeOptimizedProjections)
-    DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv')
+    paralellize.add(actionA, PROJECTION.canBeOptimizedProjections)
+    paralellize.addCleanup(lambda: DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv'))
 
   ### B: COMPARISON OF PROJECTIONS
   def actionB(i, projection):
@@ -213,8 +235,10 @@ if CREATE_DATA:
       _runComparison(key)
 
   if ACTION_B:
-    parallelize(actionB, PROJECTION.allProjections)
-    DOMP.collectData(pathB + '/*/**/domp-comparison-of-projections-*.csv', addPath=pathB, filename='domp-comparison-of-projections.csv')
+    paralellize.add(actionB, PROJECTION.allProjections)
+    paralellize.addCleanup(lambda: DOMP.collectData(pathB + '/*/**/domp-comparison-of-projections-*.csv', addPath=pathB, filename='domp-comparison-of-projections.csv'))
+
+  paralellize.run()
 
 ### CREATE VISUALIZATIONS
 if CREATE_VISUALIZATION:

@@ -13,17 +13,22 @@ class GeoGridWeight:
     self.__sumOfWeights = None
     self.__cache = {}
 
-  def toJSON(self):
-    return {
+  def toJSON(self, includeTransient=False):
+    data = {
       'active': self.__active,
       'weightLand': self.__weightLand,
-      'weightLandEffective': self.__weightLand / self.__sumOfWeights,
       'weightOceanActive': self.__weightOceanActive,
       'weightOcean': self.__weightOcean,
-      'weightOceanEffective': self.__weightOcean / self.__sumOfWeights,
       'distanceTransitionStart': self.__distanceTransitionStart,
       'distanceTransitionEnd': self.__distanceTransitionEnd,
     }
+    if includeTransient:
+      data = {
+        **data,
+        'weightLandEffective': self.__weightLand / self.__sumOfWeights,
+        'weightOceanEffective': self.__weightOcean / self.__sumOfWeights,
+      }
+    return data
 
   @staticmethod
   def fromJSON(data):

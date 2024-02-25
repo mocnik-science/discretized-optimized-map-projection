@@ -123,7 +123,11 @@ class DOMP:
     if not potentialKind:
       if any(x is not None for x in [active, weightLand, weightOceanActive, weightOcean, distanceTransitionStart, distanceTransitionEnd]):
         raise Exception('Values can only be updated if the kind of the potential to update is provided')
-      return {potentialKind: weight.toJSON() for potentialKind, weight in self.__geoGridSettings._potentialsWeights.items()}
+      weights = {potentialKind: weight.toJSON(includeTransient=True) for potentialKind, weight in self.__geoGridSettings._potentialsWeights.items()}
+      for weight in weights.values():
+        weight['distanceTransitionStart'] /= 1000
+        weight['distanceTransitionEnd'] /= 1000
+      return weights
     if not potentialKind in self.__geoGridSettings._potentialsWeights:
       raise Exception('Invalid kind of the potential')
     weight = self.__geoGridSettings._potentialsWeights[potentialKind]
@@ -151,7 +155,7 @@ class DOMP:
       weight = GeoGridWeight(**weightJSON)
       self.__geoGridSettings.updatePotentialsWeights({potentialKind: weight})
       self.__geoGrid.computeEnergiesAndForces()
-    weightJSON = weight.toJSON()
+    weightJSON = weight.toJSON(includeTransient=True)
     weightJSON['distanceTransitionStart'] /= 1000
     weightJSON['distanceTransitionEnd'] /= 1000
     return weightJSON
