@@ -234,8 +234,10 @@ if CREATE_VISUALIZATION:
   domainCase = ['default', 'default-continents', 'distance-1.7', 'distance-1.7-continents', 'area-1.7', 'area-1.7-continents']
   domainCaseContinents = ['default-continents', 'distance-1.7-continents', 'area-1.7-continents']
   domainCaseNoContinents = ['default', 'distance-1.7', 'area-1.7']
-  rangeCase = 3 * ['circle', 'triangle']
-  domainCaseContinentsNoContinents = ['circle', 'triangle', 'square']
+  rangeCase = ['circle', 'circle', 'triangle', 'triangle', 'square', 'square']
+  rangeCaseContinentsNoContinents = ['circle', 'triangle', 'square']
+  domainContinents = ['default', 'default-continents', 'distance-1.7', 'distance-1.7-continents', 'area-1.7', 'area-1.7-continents']
+  rangeContinents = 3 * ['#1f77b4', '#ff7f0e']
   ### A: OPTIMIZATION
   if ACTION_A:
     filename = join(pathA, 'domp-optimization.csv')
@@ -584,8 +586,8 @@ if CREATE_VISUALIZATION:
         plotEnergy = alt.Chart().mark_point().encode(
           x=alt.X('innerEnergyWeighted0:Q', axis=axis, title='initially' + factorEnergyStr if showAxisLabel else None).scale(scale),
           y=alt.Y('innerEnergyWeightedThreshold:Q', axis=axis, title='optimized' + factorEnergyStr).scale(scale),
-          color=alt.Color('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=['#1f77b4', '#1f77b4', '#ff7f0e', '#ff7f0e', '#2ca02c', '#2ca02c']),
-          shape=alt.Shape('case:N').scale(domain=domainCase, range=rangeCase),
+          color=alt.Shape('case:N').scale(domain=domainContinents, range=rangeContinents),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
         ).properties(
           width=widthHeightChart,
           height=widthHeightChart,
@@ -607,8 +609,8 @@ if CREATE_VISUALIZATION:
       # base = alt.Chart(data).mark_line().encode(
       #   x=alt.value(0),
       #   y=alt.value(0),
-      #   color=alt.Color('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=['#1f77b4', '#1f77b4', '#ff7f0e', '#ff7f0e', '#2ca02c', '#2ca02c']),
-      #   shape=alt.Shape('case:N').scale(domain=domainCase, range=rangeCase),
+      #   color=alt.Shape('case:N').scale(domain=domainContinents, range=rangeContinents),
+      #   shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
       # ).configure(
       #   **config,
       # ).configure_axis(
@@ -639,7 +641,7 @@ if CREATE_VISUALIZATION:
           xOffset=alt.Y('case:N'),
           y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 19))),
           color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label') if showLegend else None).scale(scheme='category10'),
-          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=domainCaseContinentsNoContinents),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=rangeCaseContinentsNoContinents),
         ).properties(
           width=620,
           # width=900,
