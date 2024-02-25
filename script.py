@@ -640,7 +640,7 @@ if CREATE_VISUALIZATION:
           x=alt.X('initialProjectionName:N', title=None), # 'projection'),
           xOffset=alt.Y('case:N'),
           y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 19))),
-          color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'0 steps\' : datum.label == \'100\' ? \'100 steps\' : datum.label') if showLegend else None).scale(scheme='category10'),
+          color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'t = 0\' : datum.label == \'100\' ? \'t = 100\' : datum.label') if showLegend else None).scale(scheme='category10'),
           shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=rangeCaseLandNoLand),
         ).properties(
           width=620,
