@@ -178,8 +178,8 @@ class InterfaceCommon:
     return pathAndFilename
 
   @staticmethod
-  def saveJSON(pathFunction, data, geoGridSettings):
-    file = File(geoGridSettings=geoGridSettings, extension='json').apply(pathFunction)
+  def saveJSON(pathFunction, data):
+    file = File(extension='json').apply(pathFunction)
     file.byJSONData(data)
     return file.pathAndFilename()
 

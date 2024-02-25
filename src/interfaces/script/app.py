@@ -267,7 +267,7 @@ class DOMP:
     return InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
 
   def saveJSON(self, data, **kwargs):
-    return InterfaceCommon.saveJSON(DOMP.__fileFunction(**kwargs), data, self.__geoGridSettings)
+    return InterfaceCommon.saveJSON(DOMP.__fileFunction(**kwargs), data)
 
   ###### COLLECTING DATA
 

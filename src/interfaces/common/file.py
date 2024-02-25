@@ -48,7 +48,16 @@ class File:
   def filename(self):
     if self._finalPathAndFilename is not None:
       return None
-    return self._finalFilename or f"domp-{self._initialProjectionName}-{self._hash}{'-' + '-'.join(self._parts) if self._parts else ''}{'-' + self._addHash if self._addHash else ''}{'.' + self._extension if self._extension else ''}"
+    parts = []
+    if self._initialProjectionName:
+      parts += [self._initialProjectionName]
+    if self._hash:
+      parts += [self._hash]
+    if self._parts:
+      parts += self._parts
+    if self._addHash:
+      parts += [self._addHash]
+    return self._finalFilename or f"domp-{'-'.join(parts)}{'.' + self._extension if self._extension else ''}"
   def path(self):
     return os.path.expanduser(self._finalPath or os.path.join(*self._paths))
   def pathAndFilename(self):
