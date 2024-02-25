@@ -32,6 +32,7 @@ with DOMP() as domp:
 
   # domp.weights(POTENTIAL.AREA, active=False, weightLand=1, weightOceanActive=False, weightOcean=.3one, distanceTransitionStart=100, distanceTransitionEnd=800)
   # domp.normalizeWeights(normalizeWeights=False)
+  # domp.saveJSON(domp.weights(), addPart='weights')
 
   ### Saving data, screenshots, and videos
 

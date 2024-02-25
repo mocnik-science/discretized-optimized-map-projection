@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 
@@ -75,3 +76,6 @@ class File:
       return
     method = os.replace if move else shutil.copy2
     method(fileNameTmp, self.removeExisting())
+  def byJSONData(self, data):
+    with open(self.pathAndFilename(), 'w') as file:
+      json.dump(data, file)

@@ -178,6 +178,12 @@ class InterfaceCommon:
     return pathAndFilename
 
   @staticmethod
+  def saveJSON(pathFunction, data, geoGridSettings):
+    file = File(geoGridSettings=geoGridSettings, extension='json').apply(pathFunction)
+    file.byJSONData(data)
+    return file.pathAndFilename()
+
+  @staticmethod
   def cleanup():
     try:
       with os.scandir(APP_CAPTURE_PATH) as entries:

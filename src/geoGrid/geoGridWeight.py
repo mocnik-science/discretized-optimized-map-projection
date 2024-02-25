@@ -17,8 +17,10 @@ class GeoGridWeight:
     return {
       'active': self.__active,
       'weightLand': self.__weightLand,
+      'weightLandEffective': self.__weightLand / self.__sumOfWeights,
       'weightOceanActive': self.__weightOceanActive,
       'weightOcean': self.__weightOcean,
+      'weightOceanEffective': self.__weightOcean / self.__sumOfWeights,
       'distanceTransitionStart': self.__distanceTransitionStart,
       'distanceTransitionEnd': self.__distanceTransitionEnd,
     }

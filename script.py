@@ -67,14 +67,14 @@ def parallelize(action, projections):
     with Pool() as pool:
       pool.map(action, projections)
   else:
-    [action(projection) for projection in projections]
+    [action(i, projection) for projection in projections]
 
 ### A: OPTIMIZATION
 if CREATE_DATA:
   DOMP.about()
   
-  def actionA(projection):
-    with DOMP(cleanup=False, logging=not parallelize, hideAbout=True) as domp:
+  def actionA(_, projection):
+    with DOMP(cleanup=False, logging=not PARALLELIZE, hideAbout=True) as domp:
       init(domp)
       data = domp.startData(preventSnapshots=True)
       for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-land']):
@@ -114,8 +114,8 @@ if CREATE_DATA:
     DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=pathA, filename='domp-optimization.csv')
 
   ### B: COMPARISON OF PROJECTIONS
-  def actionB(projection):
-    with DOMP(cleanup=False, logging=not parallelize, hideAbout=True) as domp:
+  def actionB(i, projection):
+    with DOMP(cleanup=False, logging=not PARALLELIZE, hideAbout=True) as domp:
       init(domp)
 
       def _screenshot(projection, *parts):
@@ -192,16 +192,25 @@ if CREATE_DATA:
           domp.weights(POTENTIAL.DISTANCE, weightOceanActive=True)
         domp.saveData(data, addPaths=[pathB, projection.name], filename='domp-comparison-of-projections-' + part + '.csv')
 
+      key = 'default'
       # defaultWeights(domp)
-      _runComparison('default')
+      if i == 0:
+        domp.saveJSON(domp.weights(), addPaths=pathB, addPart=key)
+      _runComparison(key)
 
+      key = 'distance-1.7'
       defaultWeights(domp)
       distanceWeights(domp)
-      _runComparison('distance-1.7')
+      if i == 0:
+        domp.saveJSON(domp.weights(), addPaths=pathB, addPart=key)
+      _runComparison(key)
 
+      key = 'area-1.7'
       defaultWeights(domp)
       areaWeights(domp)
-      _runComparison('area-1.7')
+      if i == 0:
+        domp.saveJSON(domp.weights(), addPaths=pathB, addPart=key)
+      _runComparison(key)
 
   if ACTION_B:
     parallelize(actionB, PROJECTION.allProjections)

@@ -123,7 +123,7 @@ class DOMP:
     if not potentialKind:
       if any(x is not None for x in [active, weightLand, weightOceanActive, weightOcean, distanceTransitionStart, distanceTransitionEnd]):
         raise Exception('Values can only be updated if the kind of the potential to update is provided')
-      return '_'
+      return {potentialKind: weight.toJSON() for potentialKind, weight in self.__geoGridSettings._potentialsWeights.items()}
     if not potentialKind in self.__geoGridSettings._potentialsWeights:
       raise Exception('Invalid kind of the potential')
     weight = self.__geoGridSettings._potentialsWeights[potentialKind]
@@ -261,6 +261,9 @@ class DOMP:
   def saveVideo(self, videoData, **kwargs):
     self.__videoDatas = [vd for vd in self.__videoDatas if vd != videoData]
     return InterfaceCommon.saveVideo(DOMP.__fileFunction(**kwargs), videoData, self.__geoGridSettings)
+
+  def saveJSON(self, data, **kwargs):
+    return InterfaceCommon.saveJSON(DOMP.__fileFunction(**kwargs), data, self.__geoGridSettings)
 
   ###### COLLECTING DATA
 
