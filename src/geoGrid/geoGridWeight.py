@@ -25,8 +25,8 @@ class GeoGridWeight:
     if includeTransient:
       data = {
         **data,
-        'weightLandEffective': self.__weightLand / self.__sumOfWeights,
-        'weightOceanEffective': self.__weightOcean / self.__sumOfWeights,
+        'weightLandEffective': self.__weightLand / self.__sumOfWeights if self.__active else None,
+        'weightOceanEffective': self.__weightOcean / self.__sumOfWeights if self.__active and self.__weightOceanActive else None,
       }
     return data
 
