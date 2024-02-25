@@ -8,6 +8,7 @@ class PotentialTriangleAltitude(Potential):
   computationalOrder = 1
   defaultWeight = GeoGridWeight(active=True, weightLand=1, weightOceanActive=False, weightOcean=0.3, distanceTransitionStart=100000, distanceTransitionEnd=800000)
   calibrationPossible = False
+  considerForSumOfWeights = False
   maximumStrengthRatioOfTypicalDistance = .2
   __dataForCellCache = {}
 

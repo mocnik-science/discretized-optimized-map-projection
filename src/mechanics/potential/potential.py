@@ -7,6 +7,7 @@ class Potential:
   computationalOrder = 0
   defaultWeight = None
   calibrationPossible = False
+  considerForSumOfWeights = True
   __exponent = 1
   __geoBearingsCache = {}
   __geoDistanceCache = {}

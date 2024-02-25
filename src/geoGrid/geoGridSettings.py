@@ -156,15 +156,16 @@ class GeoGridSettings:
       weightedPotentials = self.weightedPotentials()
       # compute sum of weights
       self._sumOfWeights = 0
-      for (weight, _) in weightedPotentials:
-        if weight.isVanishing():
+      for weight, potential in weightedPotentials:
+        if weight.isVanishing() or not potential.considerForSumOfWeights:
           continue
         for cell in innerCells:
           self._sumOfWeights += weight.forCell(cell)
       self._sumOfWeights /= len(innerCells)
-    for _, weight in self._potentialsWeights.items():
-      weight.setSumOfWeights(self._sumOfWeights if self._normalizeWeights else 1)
-    return [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]
+    weightedPotentials = [(self._potentialsWeights[potential.kind], potential) for potential in self.potentials if self._potentialsWeights[potential.kind] is not None]
+    for weight, potential in weightedPotentials:
+      weight.setSumOfWeights(self._sumOfWeights if self._normalizeWeights and potential.considerForSumOfWeights else 1)
+    return weightedPotentials
 
   ## init
 
