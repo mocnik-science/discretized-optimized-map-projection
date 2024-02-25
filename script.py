@@ -217,21 +217,21 @@ if CREATE_DATA:
       key = 'default'
       # defaultWeights(domp)
       if i == 0:
-        domp.saveJSON(domp.weights(), addPaths=pathB, addPart=key)
+        domp.saveJSON(domp.weights(), addPath=pathB, addPart=key)
       _runComparison(key)
 
       key = 'distance-1.7'
       defaultWeights(domp)
       distanceWeights(domp)
       if i == 0:
-        domp.saveJSON(domp.weights(), addPaths=pathB, addPart=key)
+        domp.saveJSON(domp.weights(), addPath=pathB, addPart=key)
       _runComparison(key)
 
       key = 'area-1.7'
       defaultWeights(domp)
       areaWeights(domp)
       if i == 0:
-        domp.saveJSON(domp.weights(), addPaths=pathB, addPart=key)
+        domp.saveJSON(domp.weights(), addPath=pathB, addPart=key)
       _runComparison(key)
 
   if ACTION_B:
