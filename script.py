@@ -193,15 +193,17 @@ if CREATE_DATA:
         _screenshot(projection, 'land', *parts)
         domp.viewContinents(show=False)
 
-      def _runComparison(part):
+      def _runComparison(part, saveWeights):
         domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
         data = domp.startData(preventSnapshots=True)
         for considerLand in [False, True]:
+          parts = [part] + (['land'] if considerLand else [])
           # weights
           domp.weights(POTENTIAL.AREA, weightOceanActive=considerLand)
           domp.weights(POTENTIAL.DISTANCE, weightOceanActive=considerLand)
+          if saveWeights:
+            domp.saveJSON(domp.weights(), addPath=pathB, addParts=parts)
           # run
-          parts = [part] + (['land'] if considerLand else [])
           domp.loadProjection(projection)
           _dump(data, projection, parts, initial=True)
           if projection.canBeOptimized:
@@ -214,25 +216,16 @@ if CREATE_DATA:
           domp.weights(POTENTIAL.DISTANCE, weightOceanActive=True)
         domp.saveData(data, addPaths=[pathB, projection.name], filename='domp-comparison-of-projections-' + part + '.csv')
 
-      key = 'default'
       # defaultWeights(domp)
-      if i == 0:
-        domp.saveJSON(domp.weights(), addPath=pathB, addPart=key)
-      _runComparison(key)
+      _runComparison('default', i == 0)
 
-      key = 'distance-1.7'
       defaultWeights(domp)
       distanceWeights(domp)
-      if i == 0:
-        domp.saveJSON(domp.weights(), addPath=pathB, addPart=key)
-      _runComparison(key)
+      _runComparison('distance-1.7', i == 0)
 
-      key = 'area-1.7'
       defaultWeights(domp)
       areaWeights(domp)
-      if i == 0:
-        domp.saveJSON(domp.weights(), addPath=pathB, addPart=key)
-      _runComparison(key)
+      _runComparison('area-1.7', i == 0)
 
   if ACTION_B:
     paralellize.add(actionB, PROJECTION.allProjections)
