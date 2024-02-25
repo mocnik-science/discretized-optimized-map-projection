@@ -69,7 +69,7 @@ class GeoGridRenderer:
       image = backend(widthOverall, heightOverall, projectToImage, transparentBackground=transparency)
       # render
       argsForRendering = [image, lonLatToCartesian, cells, geoGridSettings, viewSettings, 5 if largeSymbols else 1, (4 if largeSymbols else 1) * r, projection, stepData]
-      GeoGridRenderer.renderContinentalBorders(*argsForRendering)
+      GeoGridRenderer.renderContinents(*argsForRendering)
       GeoGridRenderer.renderInitialPolygons(*argsForRendering)
       GeoGridRenderer.renderNeighbours(*argsForRendering)
       GeoGridRenderer.renderForces(*argsForRendering)
@@ -82,7 +82,7 @@ class GeoGridRenderer:
       return image
 
   @staticmethod
-  def renderContinentalBorders(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+  def renderContinents(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
     if projection is None:
       return
     if viewSettings['drawContinentsTolerance']:
