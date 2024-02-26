@@ -241,7 +241,7 @@ if CREATE_VISUALIZATION:
   stepsMax = 780
   stepsMaxLong = 1000
   energyMax = 6.5e8
-  energyMaxLong = 8e8
+  energyMaxLong = 7.5e8
   config = {
     'font': 'Helvetica Neue',
   }
@@ -624,13 +624,13 @@ if CREATE_VISUALIZATION:
           spacing=1,
           data=dsGrouped,
         )
-      # chart b01
-      configPlot(createPlot(createDictProjectionsM(), avoid=['unprojected'])).save(join(pathB, 'chart-b01.pdf'))
       # chart b01b
       dictProjectionsM = createDictProjectionsM()
       dictProjectionsMChunks = [dictProjectionsM[i : i + 5] for i in range(0, len(dictProjectionsM), 5)]
       plotsFacetted = alt.vconcat(*[createPlot(xs, showAxisLabel=i == len(dictProjectionsMChunks) - 1) for i, xs in enumerate(dictProjectionsMChunks)], spacing=4)
-      configPlot(plotsFacetted, deltaLegendY=39).save(join(pathB, 'chart-b01b.pdf'))
+      configPlot(plotsFacetted, deltaLegendY=39).save(join(pathB, 'chart-b01.pdf'))
+      # chart b01
+      configPlot(createPlot(createDictProjectionsM(), avoid=['unprojected'])).save(join(pathB, 'chart-b01b.pdf'))
       # ## CHART B/01/legend
       # base = alt.Chart(data).mark_line().encode(
       #   x=alt.value(0),
