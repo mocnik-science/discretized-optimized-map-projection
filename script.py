@@ -238,7 +238,10 @@ if CREATE_VISUALIZATION:
   factorEnergy = 1e8
   factorEnergyStr = ' [10^8]'
   factorEnergyTransform = {'energyWeighted': 'datum.energyWeighted / ' + str(factorEnergy)}
-  stepsMax = 219
+  stepsMax = 780
+  stepsMaxLong = 1000
+  energyMax = 6.5e8
+  energyMaxLong = 8e8
   config = {
     'font': 'Helvetica Neue',
   }
@@ -257,14 +260,11 @@ if CREATE_VISUALIZATION:
     'stroke': '#888',
     'strokeOpacity': 1,
   }
-  labelExprCase = 'datum.label == \'default\' ? \'default\' : datum.label == \'default-land\' ? \'default (land)\' : datum.label == \'distance-1.7\' ? \'distance\' : datum.label == \'distance-1.7-land\' ? \'distance (land)\' : datum.label == \'area-1.7\' ? \'area\' : datum.label == \'area-1.7-land\' ? \'area (land)\' : \'-\''
-  domainCase = ['default', 'default-land', 'distance-1.7', 'distance-1.7-land', 'area-1.7', 'area-1.7-land']
-  domainCaseLand = ['default-land', 'distance-1.7-land', 'area-1.7-land']
-  domainCaseNoLand = ['default', 'distance-1.7', 'area-1.7']
-  rangeCase = ['circle', 'circle', 'triangle', 'triangle', 'square', 'square']
-  rangeCaseLandNoLand = ['circle', 'triangle', 'square']
-  domainLand = ['default', 'default-land', 'distance-1.7', 'distance-1.7-land', 'area-1.7', 'area-1.7-land']
-  rangeLand = 3 * ['#1f77b4', '#ff7f0e']
+  labelExprCase = 'datum.label == \'area-1.7\' ? \'area\' : datum.label == \'area-1.7-land\' ? \'area (land)\' : datum.label == \'default\' ? \'default\' : datum.label == \'default-land\' ? \'default (land)\' : datum.label == \'distance-1.7\' ? \'distance\' : datum.label == \'distance-1.7-land\' ? \'distance (land)\' : \'-\''
+  domainCase = ['area-1.7', 'area-1.7-land', 'default', 'default-land', 'distance-1.7', 'distance-1.7-land']
+  domainCaseNoLand = ['area-1.7', 'default', 'distance-1.7']
+  rangeCaseShape = ['square', 'square', 'circle', 'circle', 'triangle', 'triangle']
+  rangeCaseColor = 3 * ['#1f77b4', '#ff7f0e']
   ### A: OPTIMIZATION
   if ACTION_A:
     filename = join(pathA, 'domp-optimization.csv')
@@ -284,7 +284,6 @@ if CREATE_VISUALIZATION:
         data = pd.DataFrame(rows)
       ## CHART A/01
       # alt.data_transformers.disable_max_rows()
-      domainEnd = 3.05 * stepsMax
       for forPrint in [False, True]:
         axis = alt.Axis(grid=False)
         base = alt.Chart(data)
@@ -299,12 +298,12 @@ if CREATE_VISUALIZATION:
             color=alt.Color('initialProjectionName:N', legend=None).scale(scheme='category10'),
           )
         chartLine = base.mark_line(clip=True).encode(
-          x=alt.X('step:Q', title='step').scale(domain=(0, domainEnd)),
-          y=alt.Y('innerEnergyWeighted:Q', axis=axis, title='inner energy' + factorEnergyStr).scale(domain=(0, 1.05e9 / factorEnergy)),
+          x=alt.X('step:Q', title='step').scale(domain=(0, stepsMaxLong)),
+          y=alt.Y('innerEnergyWeighted:Q', axis=axis, title='inner energy' + factorEnergyStr).scale(domain=(0, energyMaxLong / factorEnergy)),
           opacity=alt.value(.5),
         )
         chartLabel = base.mark_text(align='left', dx=5).encode(
-          x=alt.X('step:Q', aggregate='max').scale(domain=(0, domainEnd)),
+          x=alt.X('step:Q', aggregate='max').scale(domain=(0, stepsMaxLong)),
           y=alt.Y('innerEnergyWeighted:Q', aggregate='min'),
           text=alt.Text('initialProjectionName'),
         )
@@ -315,7 +314,7 @@ if CREATE_VISUALIZATION:
         ).configure_view(
           **configView,
         ).transform_filter(
-          alt.datum.step < domainEnd
+          alt.datum.step < stepsMaxLong
         ).properties(
           width=620,
           height=180,
@@ -401,7 +400,7 @@ if CREATE_VISUALIZATION:
           fold=['innerEnergyWeighted', 'outerEnergyWeighted'],
           as_=['energyWeightedType', 'energyWeighted'],
         ).encode(
-          y=alt.Y('energyWeighted:Q', axis=alt.Axis(minExtent=minExtent), title='energy' + factorEnergyStr).scale(domain=(0, 1e9 / factorEnergy)),
+          y=alt.Y('energyWeighted:Q', axis=alt.Axis(minExtent=minExtent), title='energy' + factorEnergyStr).scale(domain=(0, energyMax / factorEnergy)),
           strokeDash=alt.StrokeDash('energyWeightedType:N', legend=alt.Legend(labelExpr='replace(datum.label, \'EnergyWeighted\', \'\')')),
         ).properties(
           width=280,
@@ -524,7 +523,7 @@ if CREATE_VISUALIZATION:
         for i, (energyName, energy) in enumerate(energiesOuterSubset.items()):
           chartEnergies.append(base.mark_line(clip=True).encode(
             x=alt.X('step:Q', axis=alt.Axis(labels=(i == len(energiesOuterSubset) - 1), labelAlign='center', title=None)).scale(scaleX),
-            y=alt.Y(energy + ':Q', axis=alt.Axis(minExtent=minExtent), title=energyName + factorEnergyStr).scale(domain=(0, 1e9 / factorEnergy)),
+            y=alt.Y(energy + ':Q', axis=alt.Axis(minExtent=minExtent), title=energyName + factorEnergyStr).scale(domain=(0, energyMax / factorEnergy)),
           ).properties(
             width=280,
             height=415/3,
@@ -613,8 +612,8 @@ if CREATE_VISUALIZATION:
         plotEnergy = alt.Chart().mark_point().encode(
           x=alt.X('innerEnergyWeighted0:Q', axis=axis, title='initially' + factorEnergyStr if showAxisLabel else None).scale(scale),
           y=alt.Y('innerEnergyWeightedThreshold:Q', axis=axis, title='optimized' + factorEnergyStr).scale(scale),
-          color=alt.Color('case:N').scale(domain=domainLand, range=rangeLand),
-          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
+          color=alt.Color('case:N').scale(domain=domainCase, range=rangeCaseColor),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCaseShape),
         ).properties(
           width=widthHeightChart,
           height=widthHeightChart,
@@ -636,8 +635,8 @@ if CREATE_VISUALIZATION:
       # base = alt.Chart(data).mark_line().encode(
       #   x=alt.value(0),
       #   y=alt.value(0),
-      #   color=alt.Shape('case:N').scale(domain=domainLand, range=rangeLand),
-      #   shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCase),
+      #   color=alt.Shape('case:N').scale(domain=domainCase, range=rangeCaseColor),
+      #   shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase)).scale(domain=domainCase, range=rangeCaseShape),
       # ).configure(
       #   **config,
       # ).configure_axis(
@@ -659,19 +658,18 @@ if CREATE_VISUALIZATION:
       dataLand = data[data['case'].str.contains('-land')].copy()
       dataNoLand = data[~data['case'].str.contains('-land')].copy()
       loop = [
-        (None, dataNoLand, domainCaseNoLand, True),
-        ('land', dataLand, domainCaseLand, False),
+        (None, dataNoLand, True),
+        ('land', dataLand, False),
       ]
-      def createPlot(label, data2, domainCase2, showLegend):
+      def createPlot(label, data2, showLegend):
         return alt.Chart(data2).mark_point(clip=True).encode(
           x=alt.X('initialProjectionName:N', title=None), # 'projection'),
-          xOffset=alt.Y('case:N'),
-          y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 19))),
+          xOffset=alt.X('case:N').scale(domain=domainCase, paddingOuter=.7),
+          y=alt.Y('innerEnergyWeighted:Q', title='inner energy' + (', ' + label if label else '') + factorEnergyStr).scale(alt.Scale(domain=(0, 10.5))),
           color=alt.Color('steps:N', legend=alt.Legend(labelExpr='datum.label == \'0\' ? \'t = 0\' : datum.label == \'100\' ? \'t = 100\' : datum.label') if showLegend else None).scale(scheme='category10'),
-          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=['default', 'distance-1.7', 'area-1.7']) if showLegend else None).scale(domain=domainCase2, range=rangeCaseLandNoLand),
+          shape=alt.Shape('case:N', legend=alt.Legend(labelExpr=labelExprCase, values=domainCaseNoLand) if showLegend else None).scale(domain=domainCase, range=rangeCaseShape),
         ).properties(
           width=620,
-          # width=900,
           height=280,
         )
       alt.vconcat(*[createPlot(*x) for x in loop]).configure(
