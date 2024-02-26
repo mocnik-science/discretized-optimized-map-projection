@@ -298,7 +298,7 @@ if CREATE_VISUALIZATION:
             color=alt.Color('initialProjectionName:N', legend=None).scale(scheme='category10'),
           )
         chartLine = base.mark_line(clip=True).encode(
-          x=alt.X('step:Q', title='step').scale(domain=(0, stepsMaxLong)),
+          x=alt.X('step:Q', title='time').scale(domain=(0, stepsMaxLong)),
           y=alt.Y('innerEnergyWeighted:Q', axis=axis, title='inner energy' + factorEnergyStr).scale(domain=(0, energyMaxLong / factorEnergy)),
           opacity=alt.value(.5),
         )
