@@ -79,13 +79,12 @@ class GeoGridSettings:
       self._thresholdReached = False
       self._energy = None
       self._step = None
-      self._sumOfWeights = None
     elif self._step is not None:
       self._untouched = False
       self._thresholdReached = False
       self._energy = None
       self._step = None
-      self._sumOfWeights = None
+    self._sumOfWeights = None
 
   def updateFromJSON(self, data):
     self._updated()
