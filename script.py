@@ -558,12 +558,12 @@ if CREATE_VISUALIZATION:
         data = pd.DataFrame(rows)
         data = data[data['initialProjectionName'] != 'Mercator']
         data = data[~data['initialProjectionName'].str.endswith(' (PROJ)')]
-        data['steps'] = data['step'].apply(lambda step: int(step) if step in ['0', '100'] else 'threshold')
+        data['steps'] = data['step'].apply(lambda step: int(step) if step in ['0', '100'] else 't = *, threshold')
         data = data.sort_values(by=['case', 'initialProjectionName'])
       ## CHART B/01
       dataTmp = data.copy()
       dataTmp['innerEnergyWeighted0'] = data.apply(lambda row: row['innerEnergyWeighted'] if row['steps'] == 0 else None, axis=1).apply(pd.to_numeric)
-      dataTmp['innerEnergyWeightedThreshold'] = data.apply(lambda row: row['innerEnergyWeighted'] if row['steps'] == 'threshold' else None, axis=1).apply(pd.to_numeric)
+      dataTmp['innerEnergyWeightedThreshold'] = data.apply(lambda row: row['innerEnergyWeighted'] if row['steps'] == 't = *, threshold' else None, axis=1).apply(pd.to_numeric)
       dataGrouped = dataTmp.groupby(['initialProjectionName', 'case']).aggregate({'innerEnergyWeighted0': 'first', 'innerEnergyWeightedThreshold': 'first'})
       dataGrouped = pd.DataFrame(dataGrouped.to_records())
       axis = alt.Axis(grid=False)
