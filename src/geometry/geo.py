@@ -10,16 +10,29 @@ class Geo:
 
   @staticmethod
   def distance(start, end): # in metres
+    return Geo.distanceLawOfCosines(start, end)
+
+  @staticmethod
+  def distanceLawOfCosines(start, end): # in metres
     startX = Common.deg2rad(start.x)
     startY = Common.deg2rad(start.y)
     endX = Common.deg2rad(end.x)
     endY = Common.deg2rad(end.y)
-    # Haversine theorem
+    # spherical law of cosines
     a = math.sin((endY - startY) / 2)**2 + math.cos(startY) * math.cos(endY) * math.sin((endX - startX) / 2)**2
     return Geo.radiusEarth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     # faster, but numerically less stable:
     # a = (1 - math.cos(endY - startY) + math.cos(startY) * math.cos(endY) * (1 - math.cos(endX - startX))) / 2
     # return Geo.radiusEarth * 2 * math.asin(min(1, math.sqrt(a)))
+
+  @staticmethod
+  def distanceHaversine(start, end): # in metres
+    startX = Common.deg2rad(start.x)
+    startY = Common.deg2rad(start.y)
+    endX = Common.deg2rad(end.x)
+    endY = Common.deg2rad(end.y)
+    # Haversine theorem
+    return Geo.radiusEarth * math.acos(math.sin(startY) * math.sin(endY) + math.cos(startY) * math.cos(endY) * math.cos(endX - startX))
 
   @staticmethod
   def bearing(start, end): # in radiant, negatively oriented, north is 0
