@@ -49,7 +49,8 @@ class Geo:
     # compute spherical excess
     e = -Common._pi
     for i, j, k in [[0, 1, 2], [1, 2, 0], [2, 0, 1]]:
-      e += Common.normalizeAngle(Geo.bearing(triangle[i], triangle[j]) - Geo.bearing(triangle[i], triangle[k]), intervalStart=-Common._pi)
+      eNew = Common.normalizeAngle(Geo.bearing(triangle[i], triangle[j]) - Geo.bearing(triangle[i], triangle[k]))
+      e += eNew if eNew <= Common._pi else Common._2pi - eNew
       # d = Geo.bearing(triangle[i], triangle[j]) - Geo.bearing(triangle[i], triangle[k])
       # if d < -Common._pi:
       #   d += Common._2pi
