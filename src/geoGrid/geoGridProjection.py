@@ -30,6 +30,8 @@ class GeoGridProjection:
     if nearestCellData is None or cornerCellsData is None:
       raise Exception('No nearest cell found')
     cornerCellsData = [nearestCellData, *cornerCellsData]
+    if cornerCellsData[0]['centreOriginal'].x == lon and cornerCellsData[0]['centreOriginal'].y == lat:
+      return cornerCellsData[0]['point'].x, cornerCellsData[0]['point'].y
     cs = GeoGridProjection.__toBarycentricCoordinatesSpherical([cellData['centreOriginal'] for cellData in cornerCellsData], pointLonLat)
     return GeoGridProjection.__fromBarycentricCoordinates([cellData['point'] for cellData in cornerCellsData], cs)
 
