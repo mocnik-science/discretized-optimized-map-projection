@@ -139,7 +139,7 @@ class GeoGridRenderer:
       for cell in cells.values():
         if 'neighboursXY' in cell:
           for xy in cell['neighboursXY']:
-            neighbours.append(image.line_(cell['xy'], xy, stroke=(220, 220, 220), width=w))
+            neighbours.append(image.line_([cell['xy'], xy], stroke=(220, 220, 220), width=w))
       image.group('neighbours', neighbours)
 
   @staticmethod
@@ -148,13 +148,12 @@ class GeoGridRenderer:
       forces = []
       if viewSettings['selectedVisualizationMethod'] == 'SUM':
         for cell in cells.values():
-          p1, p2 = cell['forceVector']
-          forces.append(image.line_(p1, p2, stroke=(150, 150, 150), width=w))
+          forces.append(image.line_(cell['forceVector'], stroke=(150, 150, 150), width=w))
       else:
         for cell in cells.values():
           p1, p2s = cell['forceVectors']
           for p2 in p2s:
-            forces.append(image.line_(p1, p2, stroke=(150, 150, 150), width=w))
+            forces.append(image.line_([p1, p2], stroke=(150, 150, 150), width=w))
       image.group('forces', forces)
 
   @staticmethod
