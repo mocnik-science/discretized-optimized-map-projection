@@ -38,7 +38,7 @@ def defaultView(domp):
   domp.viewSupportingPoints(active=False, weightsForPotential=None)
   domp.viewOriginalPolygons(show=False)
   domp.viewContinents(show=False)
-  domp.viewGraticule(show=False)
+  domp.viewGraticule(show=False, degResolution=1)
 
 def defaultWeights(domp):
   domp.normalizeWeights(normalizeWeights=True)
@@ -116,6 +116,7 @@ if CREATE_DATA:
           domp.viewNeighbours(show=True)
           domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
         if context == 'graticule-land':
+          parts = ['graticule', 'land']
           domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
           domp.viewGraticule(show=True, degResolution=2)
         # run
