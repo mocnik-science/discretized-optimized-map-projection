@@ -24,7 +24,7 @@ class ImageBackend:
 
   def line(self, *args, **kwargs):
     self._manifest(self.line_(*args, **kwargs))
-  def line_(self, p1, p2, imageCoordinates=False, stroke=(0, 0, 0), width=1):
+  def line_(self, ps, imageCoordinates=False, stroke=(0, 0, 0), width=1):
     raise Exception('Not implemented')
 
   def polygon(self, *args, **kwargs):

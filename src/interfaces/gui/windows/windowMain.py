@@ -180,6 +180,15 @@ class WindowMain(wx.Frame):
     addRadioItem(viewMenu, 'Show simplified continents (slow)', self.__viewSettings, key, 1, self.updateViewSettings)
     addRadioItem(viewMenu, 'Show continents (very slow)', self.__viewSettings, key, 'full', self.updateViewSettings)
     viewMenu.AppendSeparator()
+    # view menu: draw graticule
+    key = 'drawGraticule'
+    addRadioItem(viewMenu, 'Hide graticule', self.__viewSettings, key, False, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Show graticule', self.__viewSettings, key, True, self.updateViewSettings)
+    viewMenu.AppendSeparator()
+    key = 'drawGraticuleDegResolution'
+    addRadioItem(viewMenu, 'Graticule in default resolution', self.__viewSettings, key, 6, self.updateViewSettings)
+    addRadioItem(viewMenu, 'Graticule in better resolution (slow)', self.__viewSettings, key, 2, self.updateViewSettings)
+    viewMenu.AppendSeparator()
     # view menu: showNthStep
     key = 'showNthStep'
     menuItemsOnlyIfCanBeOptimized.append(addRadioItem(viewMenu, 'Try to render every step', self.__viewSettings, key, 1, self.updateViewSettings))

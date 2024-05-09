@@ -83,6 +83,10 @@ class DOMP:
     self.__viewSettings['drawInitialPolygons'] = show
   def viewContinents(self, showStronglySimplified=False, showSimplified=False, show=False, showWithTolerance=None):
     self.__viewSettings['drawContinentsTolerance'] = 3 if showStronglySimplified else 1 if showSimplified else 'full' if show else showWithTolerance if showWithTolerance is not None else False
+  def viewGraticule(self, show=False, dDegree=20, degResolution=6):
+    self.__viewSettings['drawGraticule'] = show
+    self.__viewSettings['drawGraticuleDDegree'] = dDegree
+    self.__viewSettings['drawGraticuleDegResolution'] = degResolution
 
   ###### GEO GRID SETTINGS
 

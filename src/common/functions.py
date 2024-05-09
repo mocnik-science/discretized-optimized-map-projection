@@ -14,3 +14,15 @@ def minBy(xs, by, includeMin=False):
   if includeMin:
     return xMin, fMin
   return xMin
+
+def brange(start, stop, step=1, partitions=None, closed=True, epsilon=1e-10):
+  xs = []
+  if partitions is None:
+    if (stop - start) / step < 0:
+      raise Exception('infinite list')
+    while (start < stop + epsilon if closed else start <= stop + epsilon):
+      xs.append(start)
+      start += step
+    return xs
+  else:
+    return [start + (stop - start) / partitions * i for i in range(partitions + 1)]

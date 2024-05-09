@@ -37,8 +37,8 @@ class ImageBackendSvg(ImageBackend):
   def point_(self, p, r, imageCoordinates=False, fill=(0, 0, 0)):
     return svg.Circle(*self._project(p, imageCoordinates=imageCoordinates), r, fill=self.__rgb(fill))
 
-  def line_(self, p1, p2, imageCoordinates=False, stroke=(0, 0, 0), width=1):
-    return svg.Line(*self._project(p1, imageCoordinates=imageCoordinates), *self._project(p2, imageCoordinates=imageCoordinates), stroke=self.__rgb(stroke), stroke_width=width)
+  def line_(self, *ps, imageCoordinates=False, stroke=(0, 0, 0), width=1):
+    return svg.Line(*flatten([self._project(p, imageCoordinates=imageCoordinates) for p in ps]), stroke=self.__rgb(stroke), stroke_width=width)
 
   def polygon_(self, ps, imageCoordinates=False, stroke=None, fill=None, width=1):
     return svg.Lines(*flatten([self._project(p, imageCoordinates=imageCoordinates) for p in ps]), fill=self.__rgb(fill), stroke=self.__rgb(stroke), stroke_width=width)

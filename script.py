@@ -38,6 +38,7 @@ def defaultView(domp):
   domp.viewSupportingPoints(active=False, weightsForPotential=None)
   domp.viewOriginalPolygons(show=False)
   domp.viewContinents(show=False)
+  domp.viewGraticule(show=False)
 
 def defaultWeights(domp):
   domp.normalizeWeights(normalizeWeights=True)
@@ -99,7 +100,7 @@ if CREATE_DATA:
     with DOMP(cleanup=False, logging=not PARALLELIZE, hideAbout=True) as domp:
       init(domp)
       data = domp.startData(preventSnapshots=True)
-      for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-land']):
+      for i, context in enumerate(['supporting-points-forces-all', 'supporting-points-forces-all-individual', 'neighbours-land', 'graticule-land']):
         # view settings
         parts = []
         if context == 'supporting-points-forces-all':
@@ -114,6 +115,9 @@ if CREATE_DATA:
           parts = ['neighbours', 'land']
           domp.viewNeighbours(show=True)
           domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
+        if context == 'graticule-land':
+          domp.viewContinents(show=not TESTING, showStronglySimplified=TESTING)
+          domp.viewGraticule(show=True, degResolution=2)
         # run
         domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)
         domp.loadProjection(projection)
@@ -128,6 +132,7 @@ if CREATE_DATA:
         domp.viewSupportingPoints(active=False)
         domp.viewNeighbours(show=False)
         domp.viewContinents(show=False)
+        domp.viewGraticule(show=False)
         domp.viewForces(all=False)
       domp.saveData(data, addPaths=[pathA, projection.name], filename='domp-optimization-' + projection.name + '.csv')
 
@@ -192,6 +197,10 @@ if CREATE_DATA:
         domp.viewContinents(show=True)
         _screenshot(projection, 'land', *parts)
         domp.viewContinents(show=False)
+        # graticule
+        domp.viewGraticule(show=True, degResolution=2)
+        _screenshot(projection, 'graticule', *parts)
+        domp.viewGraticule(show=False)
 
       def _runComparison(part, saveWeights):
         domp.limitLatForEnergy(90 if projection != PROJECTION.Mercator else 85.06)

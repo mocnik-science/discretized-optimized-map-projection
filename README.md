@@ -93,5 +93,9 @@ with DOMP() as domp:
   # domp.viewContinents(showWithTolerance=2)
   # domp.viewContinents(show=True)
 
+  # domp.viewGraticule(show=True)
+  # domp.viewGraticule(dDegree=30)
+  # domp.viewGraticule(degResolution=6)
+
   # DOMP.collectData(pathA + '/*/**/domp-optimization-*.csv', addPath=['path'], filename='domp-optimization.csv')
 ```

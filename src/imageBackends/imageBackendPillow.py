@@ -19,8 +19,8 @@ class ImageBackendPillow(ImageBackend):
     x, y = self._project(p, imageCoordinates=imageCoordinates)
     return self.__draw.ellipse((x - r, y - r, x + r, y + r), fill=fill)
 
-  def line_(self, p1, p2, imageCoordinates=False, stroke=(0, 0, 0), width=1):
-    return self.__draw.line([self._project(p1, imageCoordinates=imageCoordinates), self._project(p2, imageCoordinates=imageCoordinates)], fill=stroke, width=width)
+  def line_(self, ps, imageCoordinates=False, stroke=(0, 0, 0), width=1):
+    return self.__draw.line([self._project(p, imageCoordinates=imageCoordinates) for p in ps], fill=stroke, width=width)
 
   def polygon_(self, ps, imageCoordinates=False, stroke=None, fill=None, width=1):
     return self.__draw.polygon([self._project(p, imageCoordinates=imageCoordinates) for p in ps], fill=fill, outline=stroke, width=width)

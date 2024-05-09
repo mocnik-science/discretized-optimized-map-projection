@@ -1,12 +1,37 @@
 import math
 import os
 
+from src.common.functions import brange
 from src.common.timer import timer
 from src.geometry.common import Common
 from src.geometry.geo import Geo
 from src.geometry.naturalEarth import NaturalEarth
 from src.imageBackends.imageBackendPillow import ImageBackendPillow
 from src.interfaces.common.common import APP_CAPTURE_PATH
+
+class Graticule:
+  def __new__(cls):
+    if not hasattr(cls, '_Graticule__instance'):
+      cls.__instance = super().__new__(cls)
+      cls.__initialized = False
+    return cls.__instance
+  
+  def __init__(self):
+    if not self.__initialized:
+      self.__cache = {}
+      self.__initialized = True
+
+  def coordinates(self, dDegree=20, degResolution=6):
+    key = (dDegree, degResolution)
+    if key in self.__cache:
+      return self.__cache[key]
+    dDegreeN = round(180 / dDegree)
+    n = dDegreeN * math.floor(dDegree / degResolution)
+    self.__cache[key] = [
+      [[(x, y) for x in brange(-180, 180, partitions=2 * n)] for y in brange(-90, 90, partitions=dDegreeN)],
+      [[(x, y) for y in brange(-90, 90, partitions=n)] for x in brange(-180, 180, partitions=2 * dDegreeN)],
+    ]
+    return self.__cache[key]
 
 class GeoGridRenderer:
   viewSettingsDefault = {
@@ -17,6 +42,9 @@ class GeoGridRenderer:
     'drawLabels': False,
     'drawInitialPolygons': False,
     'drawContinentsTolerance': 3,
+    'drawGraticule': False,
+    'drawGraticuleDDegree': 20,
+    'drawGraticuleDegResolution': 6,
     'showNthStep': 5,
   }
 
@@ -70,6 +98,7 @@ class GeoGridRenderer:
       # render
       argsForRendering = [image, lonLatToCartesian, cells, geoGridSettings, viewSettings, 5 if largeSymbols else 1, (4 if largeSymbols else 1) * r, projection, stepData]
       GeoGridRenderer.renderContinents(*argsForRendering)
+      GeoGridRenderer.renderGraticule(*argsForRendering)
       GeoGridRenderer.renderInitialPolygons(*argsForRendering)
       GeoGridRenderer.renderNeighbours(*argsForRendering)
       GeoGridRenderer.renderForces(*argsForRendering)
@@ -90,6 +119,13 @@ class GeoGridRenderer:
       image.group('land-outer', (image.polygon_([projection.project(*c) for c in cs], fill=(230, 230, 230)) for cs in csExteriors))
       # image.group('land-outer-stroke', (image.polygon_([projection.project(*c) for c in cs], stroke=(0, 255, 0)) for cs in csExteriors))
       image.group('land-inner', (image.polygon_([projection.project(*c) for c in cs], fill=(255, 255, 255)) for cs in csInteriors))
+
+  @staticmethod
+  def renderGraticule(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
+    if projection is None:
+      return
+    if viewSettings['drawGraticule']:
+      image.group('graticule', (image.line_([projection.project(*c) for c in gc], stroke=(200, 200, 200), width=2) for gcs in Graticule().coordinates(dDegree=viewSettings['drawGraticuleDDegree'], degResolution=viewSettings['drawGraticuleDegResolution']) for gc in gcs))
 
   @staticmethod
   def renderInitialPolygons(image, lonLatToCartesian, cells, geoGridSettings, viewSettings, w, r, projection, stepData):
