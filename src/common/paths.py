@@ -4,11 +4,14 @@ def guessProjQGIS():
   qgisApp = '/Applications/QGIS.app'
   if os.path.exists(qgisApp):
     return qgisApp
-  return ''
+  return None
 
 def projDb(appSettings):
   if 'filenameProjQGIS' not in appSettings:
-    return None
+    filenameProjQGIS = guessProjQGIS()
+    if filenameProjQGIS is None:
+      return None
+    appSettings['filenameProjQGIS'] = filenameProjQGIS
   filenameProjDb = os.path.join(appSettings['filenameProjQGIS'], 'Contents', 'Resources', 'proj', 'proj.db')
   if appSettings['filenameProjQGIS'].endswith('.app') and os.path.exists(filenameProjDb):
     return filenameProjDb
