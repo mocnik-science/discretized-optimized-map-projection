@@ -8,6 +8,40 @@ The theoretical underpinnings of this software, including a description of the m
 
 * FB Mocnik: [**Compromise Projections for World Maps – An Optimization Approach Using Discrete Global Grid Systems and Principles From Classical Mechanics**](https://doi.org/10.1080/17538947.2024.2369636).  International Journal of Digital Earth, 2024.  doi:10.1080/17538947.2024.2369636
 
+## Visual Explanation of the Optimization Process
+
+The following examples show how existing projections, here referred to as initial projections, are step by step optimized according to a predefined wish list of requirements.  The optimization process is described in the article referrenced above.  The software included in this repository is a reference implementation of this optimization process.  All examples shown here have been computed using this software.
+
+### Comparison of Initial and Optimized Projections
+
+This wish list used in the examples below includes, among others, the requirement that the distortion of both distances and areas is low on land masses.  Accordingly, deviations from the initial to the optimized projection have strong influence on the mapping of land masses, and the optimized projection is, incontrast to the initial projections, non-symmetrical.
+
+![Comparison](https://github.com/mocnik-science/discretized-optimized-map-projection-supplementary/blob/main/images/comparison.jpg?raw=true)
+
+### Example: Eckert IV
+
+During the optimization process, the support points move such that the resulting forces cancel each other out.  As a result, the energy (which can be understood as an indicator for how well the projection meets the wish list) decreases.  Correspondingly, the resulting projection is better aligned with the wish list and shows (in the context of that wish list) less distortion than the initial projection.
+
+https://github.com/mocnik-science/discretized-optimized-map-projection/assets/12628698/7ffc1c73-4726-4d34-8fc5-57c509754d3d
+
+[domp-Eckert_VI-4678431-464965-supporting-points-forces-all-individual.mp4](https://github.com/mocnik-science/discretized-optimized-map-projection-supplementary/raw/main/videos/domp-Eckert_VI-4678431-464965-supporting-points-forces-all-individual.mp4)
+
+https://github.com/mocnik-science/discretized-optimized-map-projection/assets/12628698/bfa58619-f0d9-4d65-b5c8-9491901f3e09
+
+[domp-Eckert_VI-4678431-853765-neighbours-land.mp4](https://github.com/mocnik-science/discretized-optimized-map-projection-supplementary/raw/main/videos/domp-Eckert_VI-4678431-853765-neighbours-land.mp4)
+
+### Example: Mollweide
+
+In the example of the Mollweide projection, it is particularly evident that the forces are particularly high for those points that are located on land masses.  Accordingly, the resulting optimized projection differs from the initial Mollweide projection especially strong on land areas.
+
+https://github.com/mocnik-science/discretized-optimized-map-projection/assets/12628698/8ba66590-7492-443c-b16a-fa963fa0ade5
+
+[domp-Mollweide-db92e48-226331-supporting-points-forces-all-individual.mp4](https://github.com/mocnik-science/discretized-optimized-map-projection-supplementary/raw/main/videos/domp-Mollweide-db92e48-226331-supporting-points-forces-all-individual.mp4)
+
+https://github.com/mocnik-science/discretized-optimized-map-projection/assets/12628698/87735612-8de4-4f47-b384-0b4b6aa90fa5
+
+[domp-Mollweide-db92e48-945858-neighbours-land.mp4](https://github.com/mocnik-science/discretized-optimized-map-projection-supplementary/raw/main/videos/domp-Mollweide-db92e48-945858-neighbours-land.mp4)
+
 ## Short Overview
 
 ### Installation
@@ -89,7 +123,7 @@ domp.about()
 ```
 A corresponding message will appear in the command line.  You can proceed with loading projections:
 ```python
-# load a pre-defined projection
+# load a predefined projection
 domp.loadProjection(PROJECTION.Eckert_I)
 # save a screenshot to the `~/Downloads` folder
 domp.screenshot()

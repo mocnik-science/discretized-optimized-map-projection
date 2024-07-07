@@ -8,7 +8,7 @@ with DOMP() as domp:
   
   ### Load and reset projections
 
-  # load a pre-defined projection
+  # load a predefined projection
   domp.loadProjection(PROJECTION.Eckert_I)
   # save a screenshot to the `~/Downloads` folder
   domp.screenshot()
