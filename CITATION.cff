@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please provide a link to the following paper:"
+message: "If you use this software, please provide a link to the following paper."
 authors:
 - family-names: "Mocnik"
   given-names: "Franz-Benjamin"
@@ -15,7 +15,5 @@ preferred-citation:
     orcid: "https://orcid.org/0000-0002-1759-6336"
   title: "Compromise Projections for World Maps – An Optimization Approach Using Discrete Global Grid Systems and Principles From Classical Mechanics"
   journal: "International Journal of Digital Earth"
-  issue: ?
-  volume: ?
   year: 2024
   doi: 10.1080/17538947.2024.2369636
