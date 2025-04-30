@@ -6,7 +6,7 @@ Projections for world maps can only be a compromise between different requiremen
 
 The theoretical underpinnings of this software, including a description of the mechanisms used to translate the wish list of requirements to a projection, can be found here:
 
-* FB Mocnik: [**Compromise Projections for World Maps – An Optimization Approach Using Discrete Global Grid Systems and Principles From Classical Mechanics**](https://doi.org/10.1080/17538947.2024.2369636).  International Journal of Digital Earth, 2024.  doi:10.1080/17538947.2024.2369636
+* FB Mocnik: [**Compromise Projections for World Maps – An Optimization Approach Using Discrete Global Grid Systems and Principles From Classical Mechanics**](https://doi.org/10.1080/17538947.2024.2369636).  International Journal of Digital Earth 18(1), 2025.  doi:10.1080/17538947.2024.2369636
 
 ## Visual Explanation of the Optimization Process
 
@@ -283,7 +283,7 @@ python3 script-example.py
 
 This software is written and maintained by Franz-Benjamin Mocnik, <mail@mocnik-science.net>.
 
-(c) by Franz-Benjamin Mocnik, 2023–2024.
+(c) by Franz-Benjamin Mocnik, 2023–2025.
 
 ## License
 
