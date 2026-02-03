@@ -40,7 +40,7 @@ class WorkerThread(Thread):
     self.__waitForRendering = False
     self.__enforceSendingStepData = False
     self.start()
-  
+
   def fullReload(self):
     self.__geoGrid = GeoGrid(self.__geoGridSettings, callbackStatus=lambda status, energy, calibration=None: self.__post(status=status, energy=energy, calibration=calibration))
     self.__post(projection=self.__geoGrid.projection())
@@ -95,7 +95,8 @@ class WorkerThread(Thread):
         self.__needsGUIUpdate = False
 
   def __post(self, **kwargs):
-    wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
+    if self.__notifyWindow and self.__notifyWindow.IsBeingDeleted() is False:
+      wx.PostEvent(self.__notifyWindow, WorkerResultEvent(**kwargs))
 
   def __updateGui(self, serializedData=None, post=True):
     self.__needsGUIUpdate = False

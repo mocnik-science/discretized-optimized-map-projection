@@ -36,7 +36,7 @@ class RenderThread(Thread):
     self.__dataData = InterfaceCommon.startData()
     self.__videoData = InterfaceCommon.startVideo()
     self.start()
-  
+
   def run(self):
     t = timer(log=False)
     # loop
@@ -64,7 +64,8 @@ class RenderThread(Thread):
         self.__serializedData = None
 
   def __post(self, **kwargs):
-    wx.PostEvent(self.__notifyWindow, RenderResultEvent(**kwargs))
+    if self.__notifyWindow and self.__notifyWindow.IsBeingDeleted() is False:
+      wx.PostEvent(self.__notifyWindow, RenderResultEvent(**kwargs))
 
   def setProjection(self, projection):
     self.__projection = projection

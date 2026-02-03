@@ -27,7 +27,7 @@ class WindowMain(wx.Frame):
     self.__windowProj = None
     self.__windowSimulationSettings = None
     self.__windowAbout = None
-    wx.Frame.__init__(self, None, wx.ID_ANY, title=APP_NAME, size=(900, 600))
+    super().__init__(None, wx.ID_ANY, title=APP_NAME, size=(900, 600))
 
     ## menu bar
     # view settings
@@ -289,24 +289,27 @@ class WindowMain(wx.Frame):
 
   def onSaveScreenshot(self, event, largeSymbols=False, svg=False):
     self.__renderThread.saveScreenshot(self, largeSymbols=largeSymbols, svg=svg)
-  
+
   def loadImage(self, image):
-    self.__newImage = image
-    if self.__isLoadingNewImage:
-      return
-    self.__isLoadingNewImage = True
-    while self.__newImage is not None:
-      wx.Yield()
-      im = self.__newImage
-      self.__newImage = None
-      try:
-        im2 = wx.Image(*im.size)
-        im2.SetData(im.convert('RGB').tobytes())
-        self._image.SetBitmap(wx.Bitmap(im2))
-        self._panel.Layout()
-      except:
-        pass
-    self.__isLoadingNewImage = False
+    def _update():
+      if not self or not self.IsShown():
+        return
+      self.__newImage = image
+      if self.__isLoadingNewImage:
+        return
+      self.__isLoadingNewImage = True
+      if self.__newImage is not None:
+        im = self.__newImage
+        self.__newImage = None
+        try:
+          im2 = wx.Image(*im.size)
+          im2.SetData(im.convert('RGB').tobytes())
+          self._image.SetBitmap(wx.Bitmap(im2))
+          self._panel.Layout()
+        except:
+          pass
+      self.__isLoadingNewImage = False
+    wx.CallAfter(_update)
 
   def setStatus(self, text):
     try:
@@ -338,9 +341,11 @@ class WindowMain(wx.Frame):
   def quitThreads(self):
     if self.__workerThread is not None:
       self.__workerThread.quit()
+      self.__workerThread.join(timeout=1)
     self.__workerThread = None
     if self.__renderThread is not None:
       self.__renderThread.quit()
+      self.__renderThread.join(timeout=1)
     self.__renderThread = None
 
   def reset(self):
@@ -361,7 +366,7 @@ class WindowMain(wx.Frame):
     EVT_WORKER_THREAD_UPDATE(self, self.__workerThreadUpdate)
     self.__workerThread = WorkerThread(self, self.__geoGridSettings, self.__viewSettings)
     self.__workerThread.update()
-  
+
   def __renderThreadUpdate(self, event):
     if self.__renderThread is None:
       return
@@ -523,10 +528,7 @@ class WindowMain(wx.Frame):
 
   def onClose(self, event):
     self.quitThreads()
-    if self.__windowProj and not isWindowDestroyed(self.__windowProj):
-      self.__windowProj.Destroy()
-    if self.__windowSimulationSettings and not isWindowDestroyed(self.__windowSimulationSettings):
-      self.__windowSimulationSettings.Destroy()
-    if self.__windowAbout and not isWindowDestroyed(self.__windowAbout):
-      self.__windowAbout.Destroy()
-    self.Destroy()
+    for w in (self.__windowProj, self.__windowSimulationSettings, self.__windowAbout):
+      if w and not isWindowDestroyed(w):
+        w.Destroy()
+    event.Skip()

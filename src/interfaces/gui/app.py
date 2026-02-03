@@ -21,8 +21,16 @@ class App(wx.App):
   def OnInit(self):
     self.tskic = TaskBarIcon()
     windowMain = WindowMain(self.__appSettings, self.__viewSettings)
+    self.SetTopWindow(windowMain)
     windowMain.Show()
     return True
+
+  def OnExit(self):
+    if self.tskic:
+      self.tskic.RemoveIcon()
+      self.tskic.Destroy()
+      self.tskic = None
+    return 0
 
 def run():
   os.makedirs(APP_FILES_PATH, exist_ok=True)
